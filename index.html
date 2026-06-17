@@ -711,7 +711,7 @@
       <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy Set<span class="nav-count">10</span></button></li>
       <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">15</span></button></li>
       <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count">11</span></button></li>
-      <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">8</span></button></li>
+      <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">9</span></button></li>
       <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">12</span></button></li>
       <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta Lake<span class="nav-count">5</span></button></li>
       <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>ADF<span class="nav-count">12</span></button></li>
@@ -2854,7 +2854,7 @@ ON customers(customer_id);
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">1</div>
     <div class="q-title-wrap">
-      <div class="q-title">Walk me through SQL query execution order, types of joins, and the differences between CTE, CTAS, Views &amp; Stored Procedures</div>
+      <div class="q-title">SQL query execution order & Types of Joins</div>
       <div class="q-tags"><span class="q-tag tag-fund">SQL Fundamentals</span><span class="q-tag tag-code">Core Concept</span></div>
     </div>
     <div class="q-chevron">▼</div>
@@ -2909,8 +2909,21 @@ WHERE NOT EXISTS (
     WHERE c.customer_id = o.customer_id);</code></pre></div></div></li>
     </ul>
     <div class="callout info"><span class="callout-icon">📌</span><div>In plain SQL, semi/anti joins are written using <code>EXISTS</code> / <code>NOT EXISTS</code> or <code>IN</code> / <code>NOT IN</code>. In PySpark, they're literal join types: <code>df1.join(df2, "id", "left_semi")</code> and <code>df1.join(df2, "id", "left_anti")</code>.</div></div>
-<hr>
-    <p><strong>3. CTE, CTAS, Views &amp; Stored Procedures</strong></p>
+
+  </div>
+</div>
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">2</div>
+    <div class="q-title-wrap">
+      <div class="q-title">CTE, CTAS, Views, Stored Procedures &amp; Indexes</div>
+      <div class="q-tags"><span class="q-tag tag-code">Core Concept</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
     <p>These all help organize and reuse SQL logic, but they solve different problems — I usually explain them by when I'd reach for each one.</p>
 
     <p><strong>CTE (Common Table Expression)</strong> — a temporary, named result set(virtual table) in SQL that can be used multiple times within a single query. Defined using the <strong>WITH</strong> keyword, it allows us to break down large queries into smaller, manageable logical sections that can be referenced multiple times within the same statement. I use this to break a complex query into readable steps, especially before a final SELECT or before a window function.</p>
@@ -2995,7 +3008,7 @@ EXEC usp_refresh_customer_summary;</code></pre></div></div>
 
 
    <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Indexes in SQL — types, internals, when to use / avoid</div><div class="q-tags"><span class="q-tag tag-perf">Indexes</span><span class="q-tag tag-fund">Core Concept</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Indexes in SQL — types, internals, when to use / avoid</div><div class="q-tags"><span class="q-tag tag-perf">Indexes</span><span class="q-tag tag-fund">Core Concept</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>An index is a separate data structure (B-tree or other) that stores a sorted copy of one or more columns with pointers to original rows. It converts O(n) table scans into O(log n) lookups.</p>
       <p><strong>Types:</strong></p>
@@ -3013,7 +3026,7 @@ EXEC usp_refresh_customer_summary;</code></pre></div></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">How would you optimize a slow SQL query? What steps and tools do you use?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How would you optimize a slow SQL query? What steps and tools do you use?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ol>
         <li><strong>Read the execution plan first:</strong> <code>EXPLAIN ANALYZE SELECT ...</code> — look for full table scans, sort operations, nested loops, and large gaps between estimated and actual row counts.</li>
@@ -3029,7 +3042,7 @@ EXEC usp_refresh_customer_summary;</code></pre></div></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Explain database indexing and its impact on performance.</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Explain database indexing and its impact on performance.</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>An index is a separate data structure (usually a B-tree) that stores a sorted copy of one or more columns along with pointers to the original rows. Instead of scanning every row, the database finds matching rows in O(log n) time.</p>
       <ul>
@@ -3043,7 +3056,7 @@ EXEC usp_refresh_customer_summary;</code></pre></div></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Explain the MERGE statement. How is it different from UPSERT?</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Explain the MERGE statement. How is it different from UPSERT?</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>UPSERT is a concept: insert if a record doesn't exist, update if it does. MERGE is the SQL statement that implements this — and more. MERGE is a superset of UPSERT — it can handle UPDATE, INSERT, and DELETE in one atomic statement.</p>
       <div class="split-grid">
@@ -3065,7 +3078,7 @@ WHEN NOT MATCHED BY SOURCE THEN
 
   <div class="q-card">
       <div class="q-header" onclick="toggle(this)">
-        <div class="q-num">6</div>
+        <div class="q-num">7</div>
         <div class="q-title-wrap">
           <div class="q-title">What are window functions in SQL and when would you use them?</div>
           <div class="q-tags"><span class="q-tag tag-fund">Concept</span><span class="q-tag tag-pattern">Window Functions</span></div>
@@ -3122,7 +3135,7 @@ df.select(
 
 <div class="q-card">
       <div class="q-header" onclick="toggle(this)">
-        <div class="q-num">7</div>
+        <div class="q-num">8</div>
         <div class="q-title-wrap">
           <div class="q-title">Explain normalization vs denormalization — when would you use each in a data engineering context?</div>
           <div class="q-tags"><span class="q-tag tag-fund">DB Design</span></div>
@@ -3143,7 +3156,7 @@ df.select(
 
     <div class="q-card">
       <div class="q-header" onclick="toggle(this)">
-        <div class="q-num">8</div>
+        <div class="q-num">9</div>
         <div class="q-title-wrap">
           <div class="q-title">A SQL query is running very slow on a large table. How would you troubleshoot and optimize it? You receive duplicate data from a source system — how do you handle it in your pipeline?</div>
           <div class="q-tags"><span class="q-tag tag-debug">Optimization</span><span class="q-tag tag-pattern">Pipeline Design</span></div>
@@ -5035,6 +5048,10 @@ df.withColumn("month_end", last_day(col("order_date")))
 </div><!-- /coding -->
 
 
+
+<!-- ════════════════════════════════════════════════════════
+     AIRFLOW ESSENTIALS — what is Airflow, DAGs, core components, execution flow
+═══════════════════════════════════════════════════════════ -->
 <div id="airflow" class="section">
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
@@ -5691,8 +5708,9 @@ def validate_df(df, name):
   <div class="hr-card q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">Why do you want to switch companies? Why are you leaving your current role?</div><div class="q-tags"><span class="q-tag tag-hr">Career</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
-      <p>"I've genuinely learned a lot at TCS — working on a real Citibank production environment, dealing with migration complexity, and building pipelines that actual business teams depend on. That experience has been valuable.</p>
-      <p>But I've reached a stage where I want to go deeper into data platform engineering, work on larger data scales, and take more architectural ownership. TCS is a services model — you deliver what the client specifies. I want a role where I can shape the data architecture, influence tool choices, and build things that are used at a product level, not just a project level.</p>
+      <p>I've been with my current organization for almost four years now, and it's been a great learning experience. I've had the opportunity to work on data engineering projects, interact with different stakeholders, and build strong skills in SQL, ETL, Azure, Databricks, and PySpark.</p>
+      <p>Since I've been working on the same project for quite a long time, I feel I've reached a stage where I want to challenge myself with something new. I'm looking for exposure to different business domains, larger-scale data platforms, and opportunities where I can take on more ownership and continue growing technically.</p>
+      <p>This move is mainly about career growth, learning new things, and working on more modern data engineering solutions. I feel this is the right time in my career to take that next step.</p>
       <p>What specifically drew me to your company is [mention something real — their tech stack, their data product, the scale of data they handle]. That's the environment I want to grow in next."</p>
       <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>Never mention salary, manager issues, or politics. <strong>Always end with something specific about the target company</strong> — generic "I like your culture" is weak. Research and personalize.</div></div>
     </div>
