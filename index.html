@@ -1738,19 +1738,40 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
   </div>
 
   <div style="padding:7px 12px;font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid #93C5FD;">
-    <strong>Control Plane:</strong> Lives in Databricks' cloud account. You never see this infrastructure.
+    <strong>Control Plane:</strong> Lives in Databricks' cloud account. You never see this infrastructure. <br>
+      <strong>Workspace UI:</strong> Interface used to create notebooks, clusters, jobs and manage workspace resources. <br>
+      <strong>Job Scheduler &amp; Orchestrator:</strong> Responsible for scheduling, triggering and monitoring workflows and jobs. <br>
+      <strong>Notebook &amp; IDE:</strong> Development environment used to write SQL, Python, PySpark, Scala and R code. <br>
+      <strong>Unity Catalog:</strong> Centralized governance layer used for managing data access, permissions and metadata. <br>
+      <strong>IAM &amp; Access Control:</strong> Handles authentication, authorization and workspace-level security.
     <br>
-    <strong>Data Plane:</strong> Lives in your Azure subscription. Your data never leaves this plane.
+    <hr> <hr>
+    <strong>Data Plane:</strong> Lives in your Azure subscription. Your data never leaves this plane. <br>
+      <strong>Spark Clusters (VMs):</strong> Compute resources where Spark jobs and notebooks execute. <br>
+      <strong>ADLS Gen2 / S3 / GCS:</strong> Cloud storage layer used for storing raw, processed and curated data. <br>
+      <strong>Delta Lake Tables:</strong> Transactional storage layer that provides ACID properties, versioning and optimized analytics.<br>
+      <strong>Virtual Network (VNet):</strong> Provides network isolation and secure communication between resources. <br>
+      <strong>Key Vault / Secrets:</strong> Stores credentials, connection strings, keys and sensitive configuration securely.
   </div>
 
 </div>
 
+
+    
+    
+     
+    
+    
+
+
     <ul>
+
       <li><strong>Cluster types:</strong> All-purpose clusters (interactive notebooks, development — always running, expensive) vs Job clusters (auto-created for a specific job run, auto-terminated after — cheaper, recommended for production).</li>
       <li><strong>Cluster modes:</strong> Standard (single-user), High Concurrency (multi-user, SQL focused), Single Node (driver only, no workers — for small local jobs).</li>
       <li><strong>Databricks Runtime (DBR):</strong> A packaged version of Spark + optimised libraries (Delta, MLflow, etc.). Each cluster picks a DBR version. Always use the latest LTS version in production for stability.</li>
       <li><strong>Repos:</strong> Native Git integration — connect notebooks directly to Azure DevOps or GitHub. Enables version control without leaving the workspace.</li>
       <li><strong>Workflows (Jobs):</strong> Multi-task job orchestration built into Databricks — chain notebooks, Python scripts, JAR files with dependencies. Alternative to ADF for Databricks-only pipelines.</li>
+    
     </ul>
 
     <div style="border:0.5px solid #9FE1CB;border-radius:var(--border-radius-lg);overflow:hidden;margin:16px 0 10px;">
@@ -1818,7 +1839,15 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
 
     <p><strong>How Delta solves the reliability challenges:</strong></p>
     <ul>
-      <li><strong>ACID transactions:</strong> Because every write is first recorded in the transaction log atomically, a reader either sees the complete write or nothing at all — never a half-written state. If a Spark job fails mid-write, the transaction log has no commit entry for that operation, so readers ignore those partial files completely.</li>
+      <li><strong>ACID transactions:</strong> Because every write is first recorded in the transaction log atomically, a reader either sees the complete write or nothing at all — never a half-written state. If a Spark job fails mid-write, the transaction log has no commit entry for that operation, so readers ignore those partial files completely.
+  <p><strong>Atomicity:</strong> Transaction either fully succeeds or fully fails. If a Spark job fails while writing, no commit entry is created in the transaction log. Table remains unchanged.</p>
+
+  <p><strong>Consistency:</strong> Table always stays in a valid state. Schema enforcement prevents corrupt writes.</p>
+
+  <p><strong>Isolation:</strong> Multiple jobs can write simultaneously. Delta uses Optimistic Concurrency Control. If a conflict is detected, the transaction fails and retry is required.</p>
+
+  <p><strong>Durability:</strong> Once a commit is written to <code>_delta_log</code>, data is permanent. Even if the cluster crashes.</p>
+</li>
       <li><strong>Schema enforcement:</strong> Delta rejects writes that don't match the table schema. If your pipeline suddenly sends a string into a column that expects an integer, it fails loudly at write time — not silently corrupting the data and causing a wrong report 3 days later.</li>
       <li><strong>Schema evolution:</strong> When you genuinely need to add a new column, Delta supports it with <code>mergeSchema=true</code> — it updates the schema definition in the transaction log without rewriting existing files.</li>
       <li><strong>Time travel:</strong> Since the transaction log records every version, you can query the table as it looked at any previous point: <code>SELECT * FROM orders VERSION AS OF 5</code> or <code>TIMESTAMP AS OF '2024-01-15'</code>. I've used this on the Citi project to recover a Gold table after a bad transformation run — just pointed the pipeline back to the last good version.</li>
