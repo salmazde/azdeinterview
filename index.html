@@ -708,7 +708,7 @@
     
     <ul class="nav-list">
       <li class="nav-item"><button onclick="show('intro')" class="active"><span class="nav-dot"></span>Intro<span class="nav-count">4</span></button></li>
-      <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy Set<span class="nav-count">13</span></button></li>
+      <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy Set<span class="nav-count">14</span></button></li>
       <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">16</span></button></li>
       <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count">11</span></button></li>
       <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">9</span></button></li>
@@ -2268,7 +2268,30 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 </div>
 
-  <div class="q-card">
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Catalyst Optimizer &amp; Tungsten Engine</div><div class="q-tags"><span class="q-tag tag-perf">Internals</span></div></div><div class="q-chevron">▼</div></div>
+  <div class="q-body">
+    <p><strong>Catalyst Optimizer</strong> is Spark's intelligent query optimizer — it automatically rewrites our PySpark code into the fastest possible execution plan. Catalyst decides how to execute it efficiently. It works in 4 phases:</p>
+    <ol>
+      <li><strong>Analysis (Unresolved → Analyzed Logical Plan):</strong> Spark first reads the code but doesn't yet know details about columns or tables — this is the unresolved logical plan. Example: <code>df.select("salary")</code> — Spark asks "does column salary exist?" Only structure is understood here. Then in the analyzed phase, Spark checks metadata — does the column exist, what data type is it, where is the table stored. This is where Spark catches "column not found" errors.</li>
+      <li><strong>Logical Optimization:</strong> This is the main intelligence of Catalyst. It applies rule-based optimizations — predicate pushdown (move filters as early as possible), projection pruning (drop unused columns early), constant folding (<code>1+1</code> → <code>2</code>), subquery elimination. For example, <code>df.filter(df.age>18).select("name")</code> gets internally rewritten as "select name AFTER filtering rows" instead of "select name from ALL rows THEN filter" — this reduces computation dramatically.</li>
+      <li><strong>Physical Planning:</strong> Spark generates several physical plans from the logical plan and picks the most efficient one based on cost — chooses join strategy (broadcast vs sort-merge vs hash), decides partition count, selects sort algorithms.</li>
+      <li><strong>Code Generation:</strong> Generates optimized JVM bytecode for each physical operator — eliminates virtual function calls, enables CPU-level optimizations.</li>
+    </ol>
+    <div class="callout info"><span class="callout-icon">⚡</span><div>Catalyst Optimizer is Spark SQL's query optimization engine that transforms logical query plans into efficient physical execution plans using rule-based and cost-based optimization techniques. We can view the execution plan anytime using <code>df.explain(True)</code>.</div></div>
+
+    <p><strong>Tungsten Engine</strong> is Spark's memory and CPU optimization layer, operating below Catalyst — Catalyst decides the best plan, Tungsten executes that plan extremely fast.</p>
+    <ul>
+      <li><strong>Off-heap memory management:</strong> Without Tungsten, Spark stores data as Row → Java Object → JVM memory. With Tungsten, it stores Row → Binary Format → off-heap memory, directly in system memory outside the JVM. This bypasses JVM garbage collection and is much faster to process.</li>
+      <li><strong>CPU optimization:</strong> Tungsten re-arranges data internally so the CPU reads faster — this improves cache locality, enables vectorised processing, and improves instruction efficiency.</li>
+      <li><strong>Whole-stage code generation:</strong> Normally Spark executes operations step by step — <code>filter() → select() → groupBy()</code> runs as Step 1 → Step 2 → Step 3 separately. With Tungsten, Spark combines everything into a single compiled machine code block — this is called Whole-Stage Code Generation. Instead of one function call per operator, it's one optimized loop for the entire pipeline.</li>
+      <li><strong>Binary row format:</strong> Stores data in compact binary format in memory — smaller footprint, faster serialization than Java objects.</li>
+    </ul>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>Catalyst makes our SQL/DataFrame code <strong>correct and logically optimal</strong> — Tungsten makes the physical execution <strong>fast at the memory/CPU level</strong>. Result: less waiting, faster execution. Together they're why Spark DataFrames are much faster than raw RDDs.</div></div>
+  </div>
+</div>
+
+  <!--<div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Catalyst Optimizer & Tungsten Engine</div><div class="q-tags"><span class="q-tag tag-perf">Internals</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Catalyst Optimizer</strong> is Spark's intelligent query optimizer that automatically rewrites the pyspark code into the fastest possible execution plan. It decides how to execute efficiently. It works in 4 phases:</p>
@@ -2290,7 +2313,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
       </ul>
       <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>Catalyst makes your SQL/DataFrame code <strong>correct and logically optimal</strong>. Tungsten makes the physical execution <strong>fast at the CPU/memory level</strong>. Together they make Spark DataFrames much faster than raw RDDs.</div></div>
     </div>
-  </div>
+  </div>-->
 
    <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">cache() vs persist()?</div><div class="q-tags"><span class="q-tag tag-perf">Memory</span></div></div><div class="q-chevron">▼</div></div>
@@ -2366,6 +2389,332 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
     <div class="callout tip"><span class="callout-icon">💡</span><div>I always compare Spark UI from the last good run vs the slow run side by side. The difference in stage timings and shuffle sizes usually points to the problem within 10 minutes — without guessing.</div></div>
   </div>
 </div>
+
+<!--
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">
+        You need to process 10 GB of data using Spark. How would you determine the number of partitions, executors, cores and memory required for maximum parallelism?
+      </div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+
+  <div class="q-body">
+
+    <h4>Step 1: Understand the Core Principle</h4>
+
+    <p>
+      Spark parallelism depends on the number of partitions, not directly on the data size.
+    </p>
+
+    <p>
+      One partition is processed by one task.
+    </p>
+
+    <div style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:8px;padding:10px;margin:10px 0;">
+      <strong>Number of Tasks = Number of Partitions</strong><br>
+      <strong>Maximum Parallelism = Number of Available Cores</strong>
+    </div>
+
+    <h4>Step 2: Decide Ideal Partition Size</h4>
+
+    <p>
+      A commonly recommended partition size is:
+    </p>
+
+    <div style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:8px;padding:10px;margin:10px 0;">
+      128 MB – 256 MB
+    </div>
+
+    <p>
+      Let's assume 128 MB.
+    </p>
+
+    <h4>Step 3: Calculate Number of Partitions</h4>
+
+<pre>
+Number of Partitions =
+Total Data Size (MB) / Partition Size (MB)
+
+10 × 1024 MB / 128 MB
+
+= 80 Partitions
+</pre>
+
+    <p>
+      Therefore:
+    </p>
+
+    <div style="background:var(--color-background-secondary);border-left:3px solid var(--color-accent);padding:8px 12px;border-radius:4px;">
+      80 Partitions = 80 Tasks = 80 Cores Required for Maximum Parallelism
+    </div>
+
+    <h4>Step 4: Decide Cores Per Executor</h4>
+
+    <p>
+      Best practice is to keep:
+    </p>
+
+    <div style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:8px;padding:10px;margin:10px 0;">
+      3 – 5 Cores Per Executor
+    </div>
+
+    <p>
+      Let's choose:
+    </p>
+
+    <div style="background:var(--color-background-secondary);border-left:3px solid var(--color-accent);padding:8px 12px;border-radius:4px;">
+      5 Cores Per Executor
+    </div>
+
+    <h4>Step 5: Calculate Number of Executors</h4>
+
+<pre>
+Executors =
+Total Cores / Cores Per Executor
+
+80 / 5
+
+= 16 Executors
+</pre>
+
+    <h4>Step 6: Estimate Memory Per Executor</h4>
+
+    <p>
+      Each executor processes 5 partitions simultaneously.
+    </p>
+
+<pre>
+5 × 128 MB
+
+= 640 MB
+</pre>
+
+    <p>
+      This is the memory required for active task execution.
+    </p>
+
+    <h4>Step 7: Consider Spark Unified Memory Model</h4>
+
+    <p>
+      Spark uses a Unified Memory Model where:
+    </p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;">
+
+      <div style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:6px;padding:8px 10px;">
+        <strong>Execution Memory</strong><br>
+        Used for shuffle, joins, sorts and aggregations.
+      </div>
+
+      <div style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:6px;padding:8px 10px;">
+        <strong>Storage Memory</strong><br>
+        Used for cache and persisted DataFrames.
+      </div>
+
+    </div>
+
+    <p>
+      To provide enough execution and storage space:
+    </p>
+
+<pre>
+640 MB × 3.5
+
+≈ 2240 MB
+
+≈ 2.6 GB Per Core
+</pre>
+
+    <h4>Step 8: Calculate Executor Memory</h4>
+
+<pre>
+2.6 GB × 5 Cores
+
+≈ 13 GB Per Executor
+</pre>
+
+    <h4>Final Cluster Design</h4>
+
+    <div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid #60A5FA;margin:12px 0;">
+
+      <div style="background:#DBEAFE;padding:7px 12px;">
+        <span style="font-size:13px;font-weight:500;color:#1E3A8A;">
+          Final Recommendation
+        </span>
+      </div>
+
+      <div style="padding:10px 12px;">
+
+<pre>
+Data Size            : 10 GB
+
+Partition Size       : 128 MB
+
+Total Partitions     : 80
+
+Total Parallel Tasks : 80
+
+Total Cores Needed   : 80
+
+Cores Per Executor   : 5
+
+Total Executors      : 16
+
+Executor Memory      : 13 GB
+</pre>
+
+      </div>
+
+    </div>
+
+    <h4>Interview Answer</h4>
+
+    <p>
+      Spark parallelism depends on partitions rather than data size. For a 10 GB dataset, assuming a partition size of 128 MB, we get around 80 partitions. Since one partition is processed by one task, we need approximately 80 cores for maximum parallelism. If we configure 5 cores per executor, we need 16 executors. Based on Spark's unified memory model and execution requirements, I would allocate approximately 13 GB memory per executor. Therefore, the cluster configuration would be 16 executors, 5 cores per executor and 13 GB executor memory.
+    </p>
+
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">You need to process 10 GB of data using Spark. How would you determine the number of partitions, executors, cores and memory required for maximum parallelism?</div>
+      <div class="q-tags"><span class="q-tag tag-scenario">Scenario</span><span class="q-tag tag-perf">Cluster Sizing</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+
+  <div class="q-body">
+    <p><strong>Step 1 — Understand the core principle:</strong> Spark parallelism depends on the number of partitions, not directly on the data size. One partition is processed by one task.</p>
+    <div class="schema-box">
+      <strong>Number of Tasks = Number of Partitions</strong><br>
+      <strong>Maximum Parallelism = Number of Available Cores</strong>
+    </div>
+
+    <p><strong>Step 2 — Decide ideal partition size:</strong> A commonly recommended partition size is 128 MB – 256 MB. Let's assume 128 MB.</p>
+
+    <p><strong>Step 3 — Calculate number of partitions:</strong></p>
+    <pre><code class="language-python"># Number of Partitions = Total Data Size (MB) / Partition Size (MB)
+# 10 * 1024 MB / 128 MB
+# = 80 Partitions</code></pre>
+    <div class="callout info"><span class="callout-icon">📌</span><div>80 Partitions = 80 Tasks = 80 Cores required for maximum parallelism.</div></div>
+
+    <p><strong>Step 4 — Decide cores per executor:</strong> Best practice is 3–5 cores per executor. Let's choose 5 cores per executor.</p>
+
+    <p><strong>Step 5 — Calculate number of executors:</strong></p>
+    <pre><code class="language-python"># Executors = Total Cores / Cores Per Executor
+# 80 / 5
+# = 16 Executors</code></pre>
+
+    <p><strong>Step 6 — Estimate memory per executor:</strong> Each executor processes 5 partitions simultaneously.</p>
+    <pre><code class="language-python"># 5 * 128 MB = 640 MB
+# This is the memory required for active task execution</code></pre>
+
+    <p><strong>Step 7 — Consider Spark's Unified Memory Model:</strong></p>
+    <ul class="ul-2col">
+      <li><strong>Execution Memory</strong> — used for shuffle, joins, sorts and aggregations</li>
+      <li><strong>Storage Memory</strong> — used for cache and persisted DataFrames</li>
+    </ul>
+    <p>To provide enough execution and storage space, I apply a buffer factor (~3.5x):</p>
+    <pre><code class="language-python"># 640 MB * 3.5
+# ≈ 2240 MB
+# ≈ 2.6 GB per core</code></pre>
+
+    <p><strong>Step 8 — Calculate executor memory:</strong></p>
+    <pre><code class="language-python"># 2.6 GB * 5 cores
+# ≈ 13 GB per executor</code></pre>
+
+    <p><strong>Final cluster configuration:</strong></p>
+    <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
+      <div style="padding:9px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-sec);">
+        <i class="ti ti-server" style="font-size:13px;margin-right:5px;" aria-hidden="true"></i>Final cluster configuration
+      </div>
+      <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:2px;">Total partitions</div>
+          <div style="font-size:19px;font-weight:700;color:var(--text);">80</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:2px;">Cores per executor</div>
+          <div style="font-size:19px;font-weight:700;color:var(--text);">5</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:2px;">No. of executors</div>
+          <div style="font-size:19px;font-weight:700;color:var(--text);">16</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:2px;">Memory per executor</div>
+          <div style="font-size:19px;font-weight:700;color:var(--text);">~13 GB</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div><strong>Interview answer:</strong> "Spark parallelism depends on partitions rather than data size. For a 10GB dataset, assuming a partition size of 128MB, we get around 80 partitions. Since one partition is processed by one task, we need approximately 80 cores for maximum parallelism. If we configure 5 cores per executor, we need 16 executors. Based on Spark's unified memory model and execution requirements, I'd allocate approximately 13GB memory per executor. So the final config is: 16 executors, 5 cores per executor, 13GB executor memory."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)"><div class="q-num">X</div><div class="q-title-wrap"><div class="q-title">You need to process 10GB of data using Spark — how many executors, cores, and how much memory per executor would you allocate for maximum parallelism?</div><div class="q-tags"><span class="q-tag tag-scenario">Scenario</span><span class="q-tag tag-perf">Cluster Sizing</span></div></div><div class="q-chevron">▼</div></div>
+  <div class="q-body">
+    <p>"This is a cluster sizing question, and the key thing I always say first is — <strong>Spark parallelism depends on the number of partitions, not the raw data size</strong>. So my first job is to figure out how many partitions I need, then work backwards to executors and memory."</p>
+
+    <p><strong>Step 1 — Decide ideal partition size:</strong> I target 128MB–256MB per partition — that's the sweet spot Spark works best with. Let's take 128MB.</p>
+
+    <p><strong>Step 2 — Calculate total number of partitions:</strong></p>
+    <pre><code class="language-python"># No. of Partitions = Total Data Size (MB) / Partition Size
+# = (10 * 1024 MB) / 128
+# = 80 partitions</code></pre>
+    <p>Since one partition maps to one task, and ideally one task runs on one core — <strong>80 partitions means I need 80 cores for full parallelism.</strong></p>
+
+    <p><strong>Step 3 — Decide cores per executor:</strong> Best practice is 3–5 cores per executor — going beyond 5 hurts HDFS/ADLS throughput due to too many concurrent connections from one JVM. I'll take 5 cores per executor.</p>
+
+    <p><strong>Step 4 — Calculate number of executors:</strong></p>
+    <pre><code class="language-python"># Total No. of Executors = Total Cores / Cores per Executor
+# = 80 / 5
+# = 16 executors</code></pre>
+
+    <p><strong>Step 5 — Calculate memory per executor:</strong></p>
+    <pre><code class="language-python"># 5 cores * 128 MB (partition size) = 640 MB for executing tasks
+# Multiply by a buffer factor (~3.5x) to account for overhead, shuffle, storage
+# 640 * 3.5 = 2240 MB ≈ 2.6 GB per core
+# 2.6 GB * 5 cores = 13 GB for executor memory</code></pre>
+
+    <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
+  <div style="padding:9px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-sec);">
+    <i class="ti ti-server" style="font-size:13px;margin-right:5px;" aria-hidden="true"></i>Final cluster configuration
+  </div>
+  <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+      <div style="font-size:12px;color:var(--text-sec);margin-bottom:2px;">Total partitions</div>
+      <div style="font-size:19px;font-weight:700;color:var(--text);">80</div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+      <div style="font-size:12px;color:var(--text-sec);margin-bottom:2px;">Cores per executor</div>
+      <div style="font-size:19px;font-weight:700;color:var(--text);">5</div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+      <div style="font-size:12px;color:var(--text-sec);margin-bottom:2px;">No. of executors</div>
+      <div style="font-size:19px;font-weight:700;color:var(--text);">16</div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+      <div style="font-size:12px;color:var(--text-sec);margin-bottom:2px;">Memory per executor</div>
+      <div style="font-size:19px;font-weight:700;color:var(--text);">~13 GB</div>
+    </div>
+  </div>
+</div>
+
+    <p>"Within that 13GB, Spark's unified memory model splits the spark.memory.fraction roughly 50/50 between storage (caching) and execution (shuffles, joins, aggregations) — and they can borrow from each other dynamically. Spark memory itself is typically around 60% of total executor memory, the rest goes to user memory and reserved memory."</p>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"This is a starting calculation, not a final answer — in practice I'd also profile the actual job in Spark UI, check for skew and spill, and adjust from there. Static formulas get you a good baseline; the real tuning happens by observing the job run."</div></div>
+  </div>
+</div>-->
+
 
 
 <div class="q-card">
@@ -6708,6 +7057,148 @@ SET TBLPROPERTIES (
   </div>
 </div>
   
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">14</div>
+    <div class="q-title-wrap">
+      <div class="q-title">You need to process 10 GB of data using Spark. How would you determine the number of partitions, executors, cores and memory required for maximum parallelism?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+
+  <div class="q-body">
+    <p>"This is a cluster sizing question, and the key thing I always say first is — <strong>Spark parallelism depends on the number of partitions, not the raw data size</strong>. So my first job is to figure out how many partitions I need, then work backwards to executors and memory. One partition is processed by one task, and ideally one task runs on one core."</p>
+
+    <div class="schema-box">
+      <strong>Number of Tasks = Number of Partitions</strong><br>
+      <strong>Maximum Parallelism = Number of Available Cores</strong>
+    </div>
+
+    <p><strong>Step 1 — Decide ideal partition size:</strong> I target 128MB–256MB per partition — that's the sweet spot Spark works best with. Let's take 128MB.</p>
+
+    <p><strong>Step 2 — Calculate total number of partitions:</strong></p>
+    <div class="split-pane sql-pane-card">
+    <pre><code class="language-sql">Number of Partitions = Total Data Size (MB) / Partition Size (MB)
+(10 * 1024 MB) / 128 = 80 Partitions</code></pre></div>
+    <div class="callout info"><span class="callout-icon">📌</span><div>80 Partitions = 80 Tasks = 80 Cores required for maximum parallelism.</div></div>
+
+    <p><strong>Step 3 — Decide cores per executor:</strong> Best practice is 3–5 cores per executor — going beyond 5 hurts HDFS/ADLS throughput due to too many concurrent connections from one JVM. I'll take 5 cores per executor.</p>
+
+    <p><strong>Step 4 — Calculate number of executors:</strong></p>
+    <div class="split-pane sql-pane-card">
+    <pre><code class="language-sql">Executors = Total Cores / Cores Per Executor
+80 / 5 = 16 Executors</code></pre></div>
+
+    <p><strong>Step 5 — Estimate memory per executor:</strong> Each executor processes 5 partitions simultaneously.</p>
+    <div class="split-pane sql-pane-card">
+    <pre><code class="language-sql">5 cores * 128 MB (partition size) = 640 MB
+-- This is the memory required for active task execution</code></pre></div>
+
+    <p><strong>Step 6 — Consider Spark's Unified Memory Model:</strong></p>
+    <ul class="ul-2col">
+      <li><strong>Execution Memory</strong> — used for shuffle, joins, sorts and aggregations</li>
+      <li><strong>Storage Memory</strong> — used for cache and persisted DataFrames</li>
+    </ul>
+    <p>To provide enough execution and storage space, I apply a buffer factor (~3.5x) to account for overhead, shuffle, and storage:</p>
+    <div class="split-pane sql-pane-card">
+    <pre><code class="language-sql">640 MB * 3.5 ≈ 2240 MB
+≈ 2.6 GB per core</code></pre></div>
+
+    <p><strong>Step 7 — Calculate executor memory:</strong></p>
+    <div class="split-pane sql-pane-card">
+    <pre><code class="language-sql">2.6 GB * 5 cores
+≈ 13 GB per executor</code></pre>
+    </div>
+   <!-- <p><strong>Final cluster configuration:</strong></p>
+    <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
+      <div style="padding:9px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-sec);">
+        <i class="ti ti-server" style="font-size:13px;margin-right:5px;" aria-hidden="true"></i>Final cluster configuration
+      </div>
+      <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:2px;">Total partitions</div>
+          <div style="font-size:19px;font-weight:700;color:var(--text);">80</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:2px;">Cores per executor</div>
+          <div style="font-size:19px;font-weight:700;color:var(--text);">5</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:2px;">No. of executors</div>
+          <div style="font-size:19px;font-weight:700;color:var(--text);">16</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:2px;">Memory per executor</div>
+          <div style="font-size:19px;font-weight:700;color:var(--text);">~13 GB</div>
+        </div>
+      </div>
+    </div>
+
+
+<div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
+  <div style="padding:9px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-sec);">
+    <i class="ti ti-server" style="font-size:13px;margin-right:5px;" aria-hidden="true"></i>Final cluster configuration
+  </div>
+  <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <div style="background:#E6F1FB;border:1px solid #B5D4F4;border-radius:8px;padding:10px 12px;">
+      <div style="font-size:12px;color:#0C447C;margin-bottom:2px;">Total partitions</div>
+      <div style="font-size:19px;font-weight:700;color:#042C53;">80</div>
+    </div>
+    <div style="background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;padding:10px 12px;">
+      <div style="font-size:12px;color:#854F0B;margin-bottom:2px;">Cores per executor</div>
+      <div style="font-size:19px;font-weight:700;color:#412402;">5</div>
+    </div>
+    <div style="background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 12px;">
+      <div style="font-size:12px;color:#0F6E56;margin-bottom:2px;">No. of executors</div>
+      <div style="font-size:19px;font-weight:700;color:#04342C;">16</div>
+    </div>
+    <div style="background:#FBEAF0;border:1px solid #F4C0D1;border-radius:8px;padding:10px 12px;">
+      <div style="font-size:12px;color:#993556;margin-bottom:2px;">Memory per executor</div>
+      <div style="font-size:19px;font-weight:700;color:#4B1528;">~13 GB</div>
+    </div>
+  </div>
+</div>
+-->
+<div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
+
+  <div style="padding:9px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-sec);">
+    <i class="ti ti-server" style="font-size:13px;margin-right:5px;" aria-hidden="true"></i>
+    Final Cluster Configuration
+  </div>
+
+  <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+
+    <div style="background:#dbeafe20;border:1px solid #60a5fa;border-radius:8px;padding:10px 12px;">
+      <div style="font-size:12px;color:#93c5fd;margin-bottom:2px;">Total Partitions</div>
+      <div style="font-size:20px;font-weight:700;color:#dbeafe;">80</div>
+    </div>
+
+    <div style="background:#dcfce720;border:1px solid #4ade80;border-radius:8px;padding:10px 12px;">
+      <div style="font-size:12px;color:#86efac;margin-bottom:2px;">Cores Per Executor</div>
+      <div style="font-size:20px;font-weight:700;color:#dcfce7;">5</div>
+    </div>
+
+    <div style="background:#fef3c720;border:1px solid #fbbf24;border-radius:8px;padding:10px 12px;">
+      <div style="font-size:12px;color:#fde68a;margin-bottom:2px;">No. of Executors</div>
+      <div style="font-size:20px;font-weight:700;color:#fef3c7;">16</div>
+    </div>
+
+    <div style="background:#f3e8ff20;border:1px solid #c084fc;border-radius:8px;padding:10px 12px;">
+      <div style="font-size:12px;color:#d8b4fe;margin-bottom:2px;">Memory Per Executor</div>
+      <div style="font-size:20px;font-weight:700;color:#f3e8ff;">~13 GB</div>
+    </div>
+
+  </div>
+
+</div>
+
+
+    <p>"Within that 13GB, Spark's unified memory model splits the <code>spark.memory.fraction</code> roughly 50/50 between storage (caching) and execution (shuffles, joins, aggregations) — and they can borrow from each other dynamically. Spark memory itself is typically around 60% of total executor memory, with the rest going to user memory and reserved memory."</p>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Spark parallelism depends on partitions rather than data size. For a 10GB dataset, assuming a partition size of 128MB, we get around 80 partitions. Since one partition is processed by one task, we need approximately 80 cores for maximum parallelism. If we configure 5 cores per executor, we need 16 executors. Based on Spark's unified memory model and execution requirements, I'd allocate approximately 13GB memory per executor — so the final config is 16 executors, 5 cores per executor, 13GB executor memory. That said, this is a starting calculation — in practice I'd profile the actual job in Spark UI, check for skew and spill, and adjust from there. Static formulas give a good baseline; the real tuning happens by observing how the job actually runs."</div></div>
+  </div>
+</div>
 
 
 </div><!-- /handy -->
