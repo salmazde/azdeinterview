@@ -315,7 +315,7 @@
     line-height: 1.45;
   }
   .q-card.open .q-title { color: var(--blue); }
-  .q-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .q-tags { display: none; flex-wrap: wrap; gap: 5px; margin-top: 6px; } /* changed from flex to none */
   .q-tag {
     font-size: 10.5px;
     font-weight: 600;
@@ -710,10 +710,10 @@
       <li class="nav-item"><button onclick="show('intro')" class="active"><span class="nav-dot"></span>Intro<span class="nav-count">4</span></button></li>
       <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy Set<span class="nav-count">14</span></button></li>
       <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">16</span></button></li>
-      <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count">11</span></button></li>
+      <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count">13</span></button></li>
       <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">9</span></button></li>
-      <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">13</span></button></li>
-      <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta Lake<span class="nav-count">5</span></button></li>
+      <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">12</span></button></li>
+      <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta Lake<span class="nav-count">7</span></button></li>
       <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>ADF<span class="nav-count">13</span></button></li>
       <li class="nav-item"><button onclick="show('synapse')"><span class="nav-dot"></span>Synapse<span class="nav-count">12</span></button></li>
       <li class="nav-item"><button onclick="show('security')"><span class="nav-dot"></span>Security<span class="nav-count">5</span></button></li>
@@ -1243,7 +1243,68 @@ df.writeStream \
 </div>
 
 
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">12</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Explain the difference between batch processing, micro-batch processing, and continuous streaming in Spark.</div>
+      <div class="q-tags"><span class="q-tag tag-fund">Spark Internals</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"These three represent different points on the latency-vs-throughput spectrum, and Spark actually supports all three, though in different ways."</p>
 
+    <ul>
+      <li><strong>Batch processing:</strong> The traditional model — you process a finite, complete dataset all at once. The job has a clear start and end. On the Citi project, our weekly SAS-to-Databricks pipeline is batch — it runs every Monday at 6 PM, processes that week's data, and finishes. Latency doesn't matter here; throughput and correctness do. We use regular DataFrame reads and writes for this.</li>
+
+      <li><strong>Micro-batch processing (Structured Streaming default mode):</strong> This is Spark's main streaming model. Instead of processing one record at a time, Spark waits a small interval, then processes whatever arrived as a small batch — typically every few seconds. Each micro-batch goes through the full Spark engine: Catalyst optimization, task scheduling, the works. Latency is in the seconds range, not milliseconds, but you get all the reliability guarantees — exactly-once processing, fault tolerance through checkpointing, and the same DataFrame API as batch.</li>
+      <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">df.writeStream \
+  .format("delta") \
+  .trigger(processingTime="10 seconds") \
+  .option("checkpointLocation", "/mnt/checkpoints/stream") \
+  .start("/mnt/delta/events")</code></pre></div>
+
+      <li><strong>Continuous processing (experimental in Spark):</strong> This is true record-by-record streaming — sub-millisecond latency, no micro-batching at all. It's still marked experimental in Spark and has significant limitations — only certain sources/sinks are supported, and it sacrifices some of the exactly-once guarantees that micro-batch gives you. I haven't used this in production; for genuinely low-latency needs, most teams reach for something like Kafka Streams or Flink instead.</li>
+    </ul>
+
+    <p><strong>How I'd decide which to use:</strong></p>
+    <ul>
+      <li>Daily/weekly reports, large historical reprocessing → <strong>Batch</strong></li>
+      <li>Near-real-time dashboards, fraud alerts within seconds, event-driven pipelines → <strong>Micro-batch (Structured Streaming)</strong> — this covers 95% of "real-time" use cases I've actually needed</li>
+      <li>True sub-second latency requirements (rare) → look outside Spark, or accept the experimental risk of Continuous Processing</li>
+    </ul>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"In practice, when people say they need 'real-time' in a Spark context, micro-batch with a short trigger interval — like every few seconds — almost always meets the actual business need. True millisecond-level continuous processing is rarely what the business actually requires once you dig into the SLA."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">13</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Your pipeline is stuck in "Queued" state. What are the first 3 things you check?</div>
+      <div class="q-tags"><span class="q-tag tag-debug">Debugging</span><span class="q-tag tag-scenario">Scenario</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Queued usually means the pipeline is waiting for resources or permission to run, not that it's actually failing. I check these three things, in this order."</p>
+
+    <p><strong>1. Cluster / compute availability:</strong> If this is a Databricks job, I check whether the job cluster is still spinning up, or whether the cluster pool has hit its capacity limit. On Azure, sometimes the VM family we requested has a regional quota limit or is temporarily out of capacity — Databricks will queue the job until a node becomes available. I check the cluster event log for messages like "waiting for instance" or "pool exhausted."</p>
+
+    <p><strong>2. Integration Runtime status (for ADF):</strong> If it's an ADF pipeline using a Self-Hosted IR, I check whether the SHIR machine is online and has free capacity. SHIR has a limited number of concurrent jobs it can run — if too many pipelines are queued on the same SHIR, new ones wait in line. I check the IR's node status in the ADF Studio Manage tab.</p>
+
+    <p><strong>3. Concurrency limits:</strong> Both ADF and Databricks have concurrency caps — ADF has a limit on concurrent pipeline runs per subscription/factory, and Databricks workspaces have job concurrency limits. If too many other pipelines are running simultaneously, new ones queue until a slot frees up. I check how many other pipelines or jobs are currently active.</p>
+
+    <ul>
+      <li>If it's none of these — I also check for a <strong>circular or unresolved dependency</strong> in the trigger or pipeline dependency chain, which can cause a pipeline to wait indefinitely for a condition that will never be satisfied.</li>
+    </ul>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"My mental shortcut: Queued = waiting for something, not broken. I check compute capacity, IR/connector capacity, then concurrency limits — in that order, because that's roughly the order of how often each one is actually the cause."</div></div>
+  </div>
+</div>
 
 
 </div><!-- /general -->
@@ -1887,66 +1948,6 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">2</div>
     <div class="q-title-wrap">
-      <div class="q-title">Explain the architecture of Delta Lake and how it solves data lake reliability challenges.</div>
-      <div class="q-tags"><span class="q-tag tag-arch">Delta Lake</span><span class="q-tag tag-fund">Core Concept</span></div>
-    </div>
-    <div class="q-chevron">▼</div>
-  </div>
-  <div class="q-body">
-    <p>Before Delta Lake, a regular data lake (just Parquet files on ADLS) had serious problems — no ACID transactions, no schema enforcement, and no way to update or delete individual records. If your pipeline failed mid-write, you'd have partial corrupted data with no way to recover cleanly. Delta Lake was built specifically to fix these problems.</p>
-
-    <p><strong>What Delta Lake actually is:</strong> It's a storage layer that sits on top of your existing cloud storage (ADLS, S3). Your data is still stored as Parquet files — Delta doesn't change that. What Delta adds is a <strong>transaction log</strong> called the <code>_delta_log</code> folder, which is the key to everything.</p>
-
-    <div class="schema-box">
-      <strong>Delta table structure on ADLS:</strong><br>
-      <code>/mnt/delta/orders/</code><br>
-      &nbsp;&nbsp;&nbsp;<code>_delta_log/</code> ← transaction log (JSON + checkpoint files)<br>
-      &nbsp;&nbsp;&nbsp;<code>part-0001.parquet</code><br>
-      &nbsp;&nbsp;&nbsp;<code>part-0002.parquet</code><br>
-      &nbsp;&nbsp;&nbsp;<code>part-0003.parquet</code>
-    </div>
-
-    <p><strong>The transaction log (_delta_log):</strong> Every operation — write, update, delete, schema change — is recorded as a JSON entry in the transaction log. The log says which files were added, which were removed, and what the operation was. This is how Delta provides all its guarantees.</p>
-
-    <p><strong>How Delta solves the reliability challenges:</strong></p>
-    <ul>
-      <li><strong>ACID transactions:</strong> Because every write is first recorded in the transaction log atomically, a reader either sees the complete write or nothing at all — never a half-written state. If a Spark job fails mid-write, the transaction log has no commit entry for that operation, so readers ignore those partial files completely.
-  <p><strong>Atomicity:</strong> Transaction either fully succeeds or fully fails. If a Spark job fails while writing, no commit entry is created in the transaction log. Table remains unchanged.</p>
-
-  <p><strong>Consistency:</strong> Table always stays in a valid state. Schema enforcement prevents corrupt writes.</p>
-
-  <p><strong>Isolation:</strong> Multiple jobs can write simultaneously. Delta uses Optimistic Concurrency Control. If a conflict is detected, the transaction fails and retry is required.</p>
-
-  <p><strong>Durability:</strong> Once a commit is written to <code>_delta_log</code>, data is permanent. Even if the cluster crashes.</p>
-</li>
-      <li><strong>Schema enforcement:</strong> Delta rejects writes that don't match the table schema. If your pipeline suddenly sends a string into a column that expects an integer, it fails loudly at write time — not silently corrupting the data and causing a wrong report 3 days later.</li>
-      <li><strong>Schema evolution:</strong> When you genuinely need to add a new column, Delta supports it with <code>mergeSchema=true</code> — it updates the schema definition in the transaction log without rewriting existing files.</li>
-      <li><strong>Time travel:</strong> Since the transaction log records every version, you can query the table as it looked at any previous point: <code>SELECT * FROM orders VERSION AS OF 5</code> or <code>TIMESTAMP AS OF '2024-01-15'</code>. I've used this on the Citi project to recover a Gold table after a bad transformation run — just pointed the pipeline back to the last good version.</li>
-      <li><strong>Upserts with MERGE:</strong> Plain Parquet has no concept of update or delete — you'd have to rewrite entire partitions. Delta supports <code>MERGE INTO</code> natively — match on a key, update if found, insert if not. This makes SCD Type 2 and incremental loads much cleaner.</li>
-      <li><strong>Data skipping:</strong> Delta automatically stores min/max statistics per column for each file in the transaction log. When you run a filtered query, Delta checks these stats and skips files that can't possibly contain matching rows — without opening them. Z-ORDER further improves this by physically co-locating related rows in the same files.</li>
-    </ul>
-    <div class="split-pane py-pane-card">
-    <div class="split-pane-header">&#x1F40D; PySpark</div>
-    <pre><code class="language-python"># MERGE example — upsert pattern
-from delta.tables import DeltaTable
-
-delta_table = DeltaTable.forPath(spark, "/mnt/delta/orders")
-
-delta_table.alias("target").merge(
-    updates_df.alias("source"),
-    "target.order_id = source.order_id"
-).whenMatchedUpdateAll() \
- .whenNotMatchedInsertAll() \
- .execute()</code></pre></div>
-
-    <div class="callout tip"><span class="callout-icon">💡</span><div>Delta Lake turns your data lake into a data lakehouse — you get the scalability and low cost of cloud object storage, but with the reliability and consistency guarantees you'd normally only get from a data warehouse. The transaction log is what makes all of it possible.</div></div>
-  </div>
-</div>
-
-<div class="q-card">
-  <div class="q-header" onclick="toggle(this)">
-    <div class="q-num">3</div>
-    <div class="q-title-wrap">
       <div class="q-title">Explain the Small File Problem. How does Auto-Compaction in Databricks solve this?</div>
       <div class="q-tags"><span class="q-tag tag-perf">Performance</span><span class="q-tag tag-arch">Delta Lake</span></div>
     </div>
@@ -1988,7 +1989,7 @@ SET spark.databricks.delta.autoCompact.enabled = true</code></pre></div>
 
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">A Databricks job is failing with Out-of-Memory (OOM) errors. How would you troubleshoot it?</div><div class="q-tags"><span class="q-tag tag-debug">Troubleshooting</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">A Databricks job is failing with Out-of-Memory (OOM) errors. How would you troubleshoot it?</div><div class="q-tags"><span class="q-tag tag-debug">Troubleshooting</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ol>
         <li><strong>Identify where OOM occurs:</strong> Driver OOM → you're collecting too much data to the driver (<code>collect()</code>, <code>toPandas()</code>, large broadcast). Executor OOM → individual tasks are too memory-heavy.</li>
@@ -2004,7 +2005,7 @@ SET spark.databricks.delta.autoCompact.enabled = true</code></pre></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">How do you monitor and troubleshoot failed jobs in Azure Databricks?</div><div class="q-tags"><span class="q-tag tag-debug">Monitoring</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How do you monitor and troubleshoot failed jobs in Azure Databricks?</div><div class="q-tags"><span class="q-tag tag-debug">Monitoring</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ul>
         <li><strong>Databricks Jobs UI:</strong> Workflows → Jobs → click the failed run to see task-level status and error messages.</li>
@@ -2017,7 +2018,7 @@ SET spark.databricks.delta.autoCompact.enabled = true</code></pre></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">What is the difference between schema inference and predefined schema in PySpark? Which is better in production?</div><div class="q-tags"><span class="q-tag tag-pattern">Schema</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">What is the difference between schema inference and predefined schema in PySpark? Which is better in production?</div><div class="q-tags"><span class="q-tag tag-pattern">Schema</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Schema inference</strong> means Spark reads a sample of the data and auto-detects column names and types. Convenient in development, but problematic in production:</p>
       <ul>
@@ -2037,7 +2038,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How would you build a reusable Python ETL framework in Databricks?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How would you build a reusable Python ETL framework in Databricks?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ul>
         <li><strong>Config-driven:</strong> Store pipeline configs in JSON, YAML, or a control SQL table. Code reads config at runtime — add a new pipeline by adding a config row, not writing new code.</li>
@@ -2051,7 +2052,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How do you handle Schema Drift using ADF and Databricks?</div><div class="q-tags"><span class="q-tag tag-debug">Schema Management</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How do you handle Schema Drift using ADF and Databricks?</div><div class="q-tags"><span class="q-tag tag-debug">Schema Management</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Schema drift = source adds/removes/renames columns unexpectedly, breaking your pipeline.</p>
       <p><strong>In ADF Data Flow:</strong> Enable "Allow schema drift" on the source transformation. ADF will pass through unknown columns. Use "Auto mapping" in the sink.</p>
@@ -2067,7 +2068,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
 
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">How do you optimize a slow Databricks job? End-to-end approach.</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span><span class="q-tag tag-debug">Tuning</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How do you optimize a slow Databricks job? End-to-end approach.</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span><span class="q-tag tag-debug">Tuning</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Work through these layers in order — fix the cheapest issue first:</p>
       <ol>
@@ -2084,7 +2085,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">How do you control Azure costs across your data platform?</div><div class="q-tags"><span class="q-tag tag-cost">Cost Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">How do you control Azure costs across your data platform?</div><div class="q-tags"><span class="q-tag tag-cost">Cost Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ul>
         <li><strong>Databricks:</strong> Use spot instances for batch (90% cheaper). Use job clusters (auto-terminate) not all-purpose clusters (idle billing). Enable auto-termination (15–30 min idle). Use cluster pools for faster spin-up without idle cost. Right-size — profile job metrics and pick smallest fitting cluster.</li>
@@ -2098,7 +2099,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">How do you ensure data quality and monitoring in production pipelines?</div><div class="q-tags"><span class="q-tag tag-pattern">Data Quality</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">How do you ensure data quality and monitoring in production pipelines?</div><div class="q-tags"><span class="q-tag tag-pattern">Data Quality</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Data Quality Checks (at each layer):</strong></p>
       <ul>
@@ -2120,7 +2121,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">Describe a production issue you handled end-to-end.</div><div class="q-tags"><span class="q-tag tag-debug">Scenario</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">Describe a production issue you handled end-to-end.</div><div class="q-tags"><span class="q-tag tag-debug">Scenario</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>"Our nightly ADF pipeline that loaded source tables from on-prem SQL Server into ADLS Gen2 started failing intermittently — specifically on some Mondays. Other days it ran fine, which made it harder to diagnose.</p>
       <p>I checked ADF Monitor and found the Copy Activity was timing out on the SHIR connection. I SSH'd into the SHIR machine and found the disk was at 98% capacity — weeks of ADF diagnostic logs had accumulated with no rotation policy in place. I cleared the logs, freed the disk, and manually re-triggered the pipeline. It completed in 35 minutes.</p>
@@ -2131,7 +2132,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">A job works in Dev but fails in Production — how would you debug it?</div><div class="q-tags"><span class="q-tag tag-debug">Debugging</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">A job works in Dev but fails in Production — how would you debug it?</div><div class="q-tags"><span class="q-tag tag-debug">Debugging</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>This is one of the most common real-world scenarios. Check these differences between Dev and Prod:</p>
       <ol>
@@ -2959,6 +2960,66 @@ with ThreadPoolExecutor(max_workers=4) as executor:
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">1</div>
     <div class="q-title-wrap">
+      <div class="q-title">Explain the architecture of Delta Lake and how it solves data lake reliability challenges.</div>
+      <div class="q-tags"><span class="q-tag tag-arch">Delta Lake</span><span class="q-tag tag-fund">Core Concept</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>Before Delta Lake, a regular data lake (just Parquet files on ADLS) had serious problems — no ACID transactions, no schema enforcement, and no way to update or delete individual records. If your pipeline failed mid-write, you'd have partial corrupted data with no way to recover cleanly. Delta Lake was built specifically to fix these problems.</p>
+
+    <p><strong>What Delta Lake actually is:</strong> It's a storage layer that sits on top of your existing cloud storage (ADLS, S3). Your data is still stored as Parquet files — Delta doesn't change that. What Delta adds is a <strong>transaction log</strong> called the <code>_delta_log</code> folder, which is the key to everything.</p>
+
+    <div class="schema-box">
+      <strong>Delta table structure on ADLS:</strong><br>
+      <code>/mnt/delta/orders/</code><br>
+      &nbsp;&nbsp;&nbsp;<code>_delta_log/</code> ← transaction log (JSON + checkpoint files)<br>
+      &nbsp;&nbsp;&nbsp;<code>part-0001.parquet</code><br>
+      &nbsp;&nbsp;&nbsp;<code>part-0002.parquet</code><br>
+      &nbsp;&nbsp;&nbsp;<code>part-0003.parquet</code>
+    </div>
+
+    <p><strong>The transaction log (_delta_log):</strong> Every operation — write, update, delete, schema change — is recorded as a JSON entry in the transaction log. The log says which files were added, which were removed, and what the operation was. This is how Delta provides all its guarantees.</p>
+
+    <p><strong>How Delta solves the reliability challenges:</strong></p>
+    <ul>
+      <li><strong>ACID transactions:</strong> Because every write is first recorded in the transaction log atomically, a reader either sees the complete write or nothing at all — never a half-written state. If a Spark job fails mid-write, the transaction log has no commit entry for that operation, so readers ignore those partial files completely.
+  <p><strong>Atomicity:</strong> Transaction either fully succeeds or fully fails. If a Spark job fails while writing, no commit entry is created in the transaction log. Table remains unchanged.</p>
+
+  <p><strong>Consistency:</strong> Table always stays in a valid state. Schema enforcement prevents corrupt writes.</p>
+
+  <p><strong>Isolation:</strong> Multiple jobs can write simultaneously. Delta uses Optimistic Concurrency Control. If a conflict is detected, the transaction fails and retry is required.</p>
+
+  <p><strong>Durability:</strong> Once a commit is written to <code>_delta_log</code>, data is permanent. Even if the cluster crashes.</p>
+</li>
+      <li><strong>Schema enforcement:</strong> Delta rejects writes that don't match the table schema. If your pipeline suddenly sends a string into a column that expects an integer, it fails loudly at write time — not silently corrupting the data and causing a wrong report 3 days later.</li>
+      <li><strong>Schema evolution:</strong> When you genuinely need to add a new column, Delta supports it with <code>mergeSchema=true</code> — it updates the schema definition in the transaction log without rewriting existing files.</li>
+      <li><strong>Time travel:</strong> Since the transaction log records every version, you can query the table as it looked at any previous point: <code>SELECT * FROM orders VERSION AS OF 5</code> or <code>TIMESTAMP AS OF '2024-01-15'</code>. I've used this on the Citi project to recover a Gold table after a bad transformation run — just pointed the pipeline back to the last good version.</li>
+      <li><strong>Upserts with MERGE:</strong> Plain Parquet has no concept of update or delete — you'd have to rewrite entire partitions. Delta supports <code>MERGE INTO</code> natively — match on a key, update if found, insert if not. This makes SCD Type 2 and incremental loads much cleaner.</li>
+      <li><strong>Data skipping:</strong> Delta automatically stores min/max statistics per column for each file in the transaction log. When you run a filtered query, Delta checks these stats and skips files that can't possibly contain matching rows — without opening them. Z-ORDER further improves this by physically co-locating related rows in the same files.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+    <div class="split-pane-header">&#x1F40D; PySpark</div>
+    <pre><code class="language-python"># MERGE example — upsert pattern
+from delta.tables import DeltaTable
+
+delta_table = DeltaTable.forPath(spark, "/mnt/delta/orders")
+
+delta_table.alias("target").merge(
+    updates_df.alias("source"),
+    "target.order_id = source.order_id") \
+    .whenMatchedUpdateAll() \
+    .whenNotMatchedInsertAll() \
+    .execute()</code></pre></div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>Delta Lake turns your data lake into a data lakehouse — you get the scalability and low cost of cloud object storage, but with the reliability and consistency guarantees you'd normally only get from a data warehouse. The transaction log is what makes all of it possible.</div></div>
+  </div>
+</div>
+
+  <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">2</div>
+    <div class="q-title-wrap">
       <div class="q-title">How do you implement Row-Level Deletions in Delta Lake without rewriting the entire partition?</div>
       <div class="q-tags"><span class="q-tag tag-arch">Delta Lake</span><span class="q-tag tag-pattern">Best Practice</span></div>
     </div>
@@ -3011,7 +3072,7 @@ spark.sql("DELETE FROM orders WHERE order_id = 12345")</code></pre></div>
       <div class="callout tip"><span class="callout-icon">&#x1F512;</span><div>Critical for <strong>GDPR right-to-be-forgotten</strong>: delete a user's PII with DELETE, then after your retention window run VACUUM to physically remove the underlying file. Time travel to before the delete also becomes unavailable post-VACUUM.</div></div>
     </div>
   </div> -->
-
+<!--
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Explain the Small File Problem and how Auto-Compaction in Databricks solves it.</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
@@ -3024,10 +3085,99 @@ spark.sql("DELETE FROM orders WHERE order_id = 12345")</code></pre></div>
   'delta.autoOptimize.optimizeWrite' = 'true')</code></pre></div>
       <p><strong>Optimized Write</strong> (companion feature): Instead of writing one file per partition per task, Databricks shuffles data before writing so each output file is ~128MB — reducing the file count from the write itself.</p>
     </div>
+  </div>-->
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">3</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How does the Medallion Architecture work, and what are its advantages?</div>
+      <div class="q-tags"><span class="q-tag tag-arch">Architecture</span><span class="q-tag tag-fund">Core Concept</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
   </div>
+  <div class="q-body">
+    <p>"Medallion Architecture is a layered approach to organizing data in a lakehouse — I've used it both on my NYC Taxi project and conceptually on the Citi project. It splits the pipeline into three progressively cleaner layers."</p>
+
+    <ul>
+      <li><strong>Bronze layer — raw, as-is:</strong> Data lands here exactly as it arrived from the source — no transformations, no cleaning. On my NYC Taxi project, this was raw parquet files ingested directly from the public dataset via ADF. We preserve source fidelity here — if something breaks downstream, we can always reprocess from Bronze without touching the source again.</li>
+      <li><strong>Silver layer — cleaned and curated:</strong> Here I apply schema normalization, deduplication, null handling, type casting, and business rule validation. This is where I handled schema drift across NYC Taxi parquet files — different files had inconsistent INT32/INT64/DOUBLE types for the same column, so I normalized each file individually before unioning. Output is partitioned for performance — I partitioned by pickup year and month.</li>
+      <li><strong>Gold layer — business-ready aggregates:</strong> This is where I build the final marts for reporting — daily KPI summaries, borough-level analytics, hourly trip patterns. Stored as Delta tables for ACID guarantees, and this is what Power BI connects to directly.</li>
+    </ul>
+
+    <p><strong>Advantages of this approach:</strong></p>
+    <ul>
+      <li><strong>Incremental quality improvement:</strong> Each layer adds more structure and trust. You're never debugging "is this raw or processed" — the layer name tells you.</li>
+      <li><strong>Reprocessing without re-ingestion:</strong> If my Silver transformation logic has a bug, I fix it and reprocess from Bronze — I don't need to hit the source system again, which is often slow or rate-limited.</li>
+      <li><strong>Different audiences, different layers:</strong> Data engineers and auditors can go to Bronze for raw fidelity. Analysts work with Silver for ad-hoc exploration. BI tools and business users only touch Gold — fast, clean, pre-aggregated.</li>
+      <li><strong>Cost and performance separation:</strong> Bronze can be cheap, infrequently-queried storage. Gold can be highly optimized — partitioned, Z-ordered, small number of large files — specifically for fast BI reads.</li>
+      <li><strong>Clear audit trail:</strong> Since Bronze is untouched raw data, it acts as a natural point of reconciliation — I can always check Gold-layer totals against Bronze-layer raw counts to catch transformation bugs.</li>
+    </ul>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Medallion Architecture isn't a tool, it's a pattern — Bronze is your safety net, Silver is your trust layer, Gold is your business interface. I use it as the default structure for almost any lakehouse design."</div></div>
+  </div>
+</div>
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">4</div>
+    <div class="q-title-wrap">
+      <div class="q-title">A streaming job is writing duplicate records to a Delta table. How would you prevent and resolve the issue?</div>
+      <div class="q-tags"><span class="q-tag tag-debug">Scenario</span><span class="q-tag tag-pattern">Streaming</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"First, I'd figure out why duplicates are happening before jumping to a fix — usually it's one of three causes: the job restarted and reprocessed already-written data, the checkpoint location was deleted or corrupted, or the source itself is sending duplicate events due to at-least-once delivery."</p>
+
+    <p><strong>Step 1 — Check the checkpoint:</strong> Structured Streaming relies on a checkpoint location to track which offsets it has already processed. If the checkpoint is missing, pointed to the wrong path, or was manually deleted, Spark has no memory of what it already wrote — and reprocesses from the beginning, creating duplicates.</p>
+    <div class="split-pane py-pane-card">
+    <div class="split-pane-header">&#x1F40D; PySpark</div>
+    <pre><code class="language-python">df.writeStream \
+  .format("delta") \
+  .option("checkpointLocation", "/mnt/checkpoints/orders_stream") \
+  .start("/mnt/delta/orders")</code></pre></div>
+
+    <p><strong>Step 2 — Resolve existing duplicates in the table:</strong> If duplicates already exist, I clean them up first — keep the latest version per natural key using a window function, then overwrite the table or the affected partitions.</p>
+    <div class="split-pane py-pane-card">
+    <div class="split-pane-header">&#x1F40D; PySpark</div>
+    <pre><code class="language-python">from pyspark.sql.window import Window
+from pyspark.sql.functions import row_number, col
+
+window = Window.partitionBy("order_id").orderBy(col("event_time").desc())
+
+deduped = (df.withColumn("rn", row_number().over(window))
+             .filter(col("rn") == 1).drop("rn"))
+deduped.write.format("delta").mode("overwrite").save("/mnt/delta/orders")</code></pre></div>
+
+    <p><strong>Step 3 — Prevent it going forward:</strong></p>
+    <ul>
+      <li><strong>MERGE in foreachBatch:</strong> Instead of plain append, I switch to a MERGE pattern per micro-batch — match on the natural key, update if found, insert if not. This makes the write idempotent — even if the same batch runs twice, the result is identical.</li>
+      <li><strong>Watermark + dropDuplicates:</strong> For dedup within a time window, I add <code>withWatermark("event_time", "10 minutes").dropDuplicates(["event_id"])</code> — Spark maintains a state store of seen IDs within that window.</li>
+      <li><strong>Never delete the checkpoint manually:</strong> If schema changes force a checkpoint reset, I always run a one-time deduplication pass immediately after restart to clean up the reprocessing overlap.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+    <div class="split-pane-header">&#x1F40D; PySpark</div>
+    <pre><code class="language-python">def upsert_batch(batch_df, batch_id):
+    batch_df.createOrReplaceTempView("updates")
+    spark.sql("""
+        MERGE INTO orders t
+        USING updates s ON t.order_id = s.order_id
+        WHEN MATCHED THEN UPDATE SET *
+        WHEN NOT MATCHED THEN INSERT *
+    """)
+
+df.writeStream.foreachBatch(upsert_batch) \
+  .option("checkpointLocation", "/mnt/checkpoints/orders_stream") \
+  .start()</code></pre></div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"My rule with streaming pipelines — never use plain append for anything that can restart or reprocess. MERGE is slightly more expensive per batch, but it makes the entire pipeline idempotent, which means I sleep better at night."</div></div>
+  </div>
+</div>
+
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Explain the Data Skipping mechanism in Delta Lake. How does it differ from traditional SQL indexing?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Explain the Data Skipping mechanism in Delta Lake. How does it differ from traditional SQL indexing?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>When you read from a Delta table with a filter (e.g., <code>WHERE event_date = '2024-01-15'</code>), Delta reads the transaction log's <strong>file-level statistics</strong> before scanning any data. For each Parquet file, the log stores: min value, max value, and null count per column.</p>
       <p>If a file's <code>event_date</code> range is 2024-01-10 to 2024-01-12, Delta knows it cannot possibly contain 2024-01-15 and <strong>skips it entirely</strong> — no I/O, no task created.</p>
@@ -3037,7 +3187,7 @@ spark.sql("DELETE FROM orders WHERE order_id = 12345")</code></pre></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How do you choose between Partitioning and Z-Ordering for a 10TB dataset?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture Decision</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How do you choose between Partitioning and Z-Ordering for a 10TB dataset?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture Decision</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>These solve different problems and work best together:</p>
       <p><strong>Partitioning</strong> creates physical directory splits. A query with <code>WHERE year=2024</code> reads only that folder — extremely effective for the partition column. Problem: high-cardinality columns (user_id with millions of values) → millions of tiny directories.</p>
@@ -3051,7 +3201,7 @@ spark.sql("DELETE FROM orders WHERE order_id = 12345")</code></pre></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Explain Skew Join optimization in Spark 3.x and how to handle it manually when AQE is disabled.</div><div class="q-tags"><span class="q-tag tag-perf">Advanced</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Explain Skew Join optimization in Spark 3.x and how to handle it manually when AQE is disabled.</div><div class="q-tags"><span class="q-tag tag-perf">Advanced</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>With AQE enabled:</strong> AQE monitors shuffle statistics mid-query. If a partition is more than 5x the median size (and larger than 256MB), AQE splits that partition into sub-partitions and processes them in parallel. Completely transparent — no code changes needed.</p>
       <p><strong>Manually without AQE (Salting):</strong></p>
@@ -3694,6 +3844,7 @@ df.select(
       </div>
   </div>
 
+<!--
 <div class="q-card">
       <div class="q-header" onclick="toggle(this)">
         <div class="q-num">8</div>
@@ -3713,7 +3864,39 @@ df.select(
         </ul>
         <div class="callout info"><span class="callout-icon">&#x1F4CC;</span><div>In most modern data lakehouses: <strong>Normalize for correctness</strong> (Bronze/Silver) → <strong>Denormalize for performance</strong> (Gold/Serving layer).</div></div>
       </div>
+    </div>-->
+
+    <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">8</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Normalization vs Denormalization — what's the difference and when do you use each?</div>
+      <div class="q-tags"><span class="q-tag tag-model">Data Modelling</span><span class="q-tag tag-fund">Fundamentals</span></div>
     </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"These are opposite design philosophies, and the right choice depends entirely on what the table is used for — transactional writes or analytical reads."</p>
+
+    <p><strong>Normalization:</strong> Breaking data into multiple related tables to eliminate redundancy. Each piece of information is stored in exactly one place. Following 1NF, 2NF, 3NF rules — atomic columns, no partial dependencies, no transitive dependencies.</p>
+    <ul>
+      <li><strong>Example:</strong> Instead of storing customer name and address directly in every order row, you store a <code>customer_id</code> in the orders table and keep name/address in a separate <code>customers</code> table.</li>
+      <li><strong>Advantages:</strong> No data duplication, smaller storage footprint, no update anomalies — change a customer's address once, it's correct everywhere. Strong data integrity through foreign keys.</li>
+      <li><strong>Disadvantages:</strong> Requires JOINs to get a complete picture — more joins means more query complexity and slower reads on large datasets.</li>
+      <li><strong>Best for:</strong> OLTP systems — banking, order management, CRM — where you're doing frequent small writes and need strict consistency.</li>
+    </ul>
+
+    <p><strong>Denormalization:</strong> Intentionally introducing redundancy by combining related data into fewer, wider tables — to avoid joins and speed up reads.</p>
+    <ul>
+      <li><strong>Example:</strong> A Gold layer reporting table that includes customer name and address directly alongside every order row, even though that duplicates the same name/address across thousands of orders.</li>
+      <li><strong>Advantages:</strong> Much faster reads — no joins needed, which matters a lot when scanning billions of rows for a dashboard. Simpler queries for BI tools and analysts.</li>
+      <li><strong>Disadvantages:</strong> Storage redundancy, and update anomalies — if a customer's address changes, you'd need to update it across every duplicated row. Harder to maintain consistency.</li>
+      <li><strong>Best for:</strong> OLAP/analytical systems — data warehouses, BI dashboards, Star Schema fact/dimension tables, Gold layer in a lakehouse.</li>
+    </ul>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>In my lakehouse projects, this maps directly to layers: <strong>Silver layer is normalized</strong> — clean, structured, source-of-truth, minimal redundancy. <strong>Gold layer is denormalized</strong> — pre-joined, flattened, optimized for fast BI reads. I normalize where I write, and denormalize where I read.</div></div>
+  </div>
+</div>
 
     <div class="q-card">
       <div class="q-header" onclick="toggle(this)">
@@ -7203,6 +7386,7 @@ SET TBLPROPERTIES (
 
 </div><!-- /handy -->
 
+
   </main>
 </div><!-- /layout -->
 
@@ -7245,5 +7429,6 @@ function switchTab(btn, paneId) {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+
 </body>
 </html>
