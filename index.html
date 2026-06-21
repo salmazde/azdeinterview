@@ -17,6 +17,50 @@
   /* ── Reset & Base ─────────────────────────────────────── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  .font-size-toggle {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 999;
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(8px);
+}
+.font-size-toggle button {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--text-sec);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s, color .15s;
+}
+.font-size-toggle button:hover {
+  background: var(--surface2);
+}
+.font-size-toggle button.active {
+  background: #3f88ac;
+  color: #1A1A1A;
+}
+.font-size-toggle .fs-small { font-size: 11px; }
+.font-size-toggle .fs-medium { font-size: 14px; }
+.font-size-toggle .fs-large { font-size: 17px; }
+
+[data-fontsize="small"] .q-body  { font-size: 12.5px !important; }
+[data-fontsize="small"] .q-title { font-size: 13px !important; }
+[data-fontsize="large"] .q-body  { font-size: 16px !important; }
+[data-fontsize="large"] .q-title { font-size: 16.5px !important; }
+
   :root {
     --navy:       #0F2D4E;
     --blue:       #1565C0;
@@ -690,6 +734,11 @@
 
 <!-- ── HERO ── -->
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️ Light</button>
+<div class="font-size-toggle" id="fontSizeToggle">
+  <button class="fs-small" onclick="setFontSize('small')" title="Smaller text">A⁻</button>
+  <button class="fs-medium active" onclick="setFontSize('medium')" title="Default text">A</button>
+  <button class="fs-large" onclick="setFontSize('large')" title="Larger text">A⁺</button>
+</div>
 <header class="hero">
   <div class="hero-inner">
     <div class="hero-badge">&#x1F4CB; Interview Prep</div>
@@ -733,6 +782,7 @@
     <div class="sec-icon" style="background:#E8F5E9">👤</div>
     <div><div class="sec-title">Self Introduction & Work Experience</div><div class="sec-desc">Salman's profile, work narrative, project details, and challenges</div></div>
   </div>
+
 
 <!-- SELF INTRO -->
 <div class="q-card">
@@ -858,7 +908,7 @@
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">4</div>
     <div class="q-title-wrap">
-      <div class="q-title">Explain the architecture of an end-to-end ETL pipeline you have worked on.</div>
+      <div class="q-title">𖣑 Explain the architecture of an end-to-end ETL pipeline you have worked on.</div>
     </div>
     <div class="q-chevron">▼</div>
   </div>
@@ -7424,11 +7474,25 @@ function switchTab(btn, paneId) {
   tabs.querySelectorAll('.code-pane').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   tabs.querySelector('#' + paneId).classList.add('active');
+
+  
+}
+
+function setFontSize(size) {
+  const html = document.documentElement;
+  if (size === 'medium') {
+    html.removeAttribute('data-fontsize');
+  } else {
+    html.setAttribute('data-fontsize', size);
+  }
+  document.querySelectorAll('.font-size-toggle button').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.font-size-toggle .fs-${size}`).classList.add('active');
 }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+
 
 </body>
 </html>
