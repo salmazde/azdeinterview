@@ -786,7 +786,7 @@
       <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy Set<span class="nav-count">14</span></button></li>
       <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">16</span></button></li>
       <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count">13</span></button></li>
-      <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">9</span></button></li>
+      <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">11</span></button></li>
       <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">12</span></button></li>
       <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta Lake<span class="nav-count">7</span></button></li>
       <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>ADF<span class="nav-count">13</span></button></li>
@@ -3974,11 +3974,228 @@ df.select(
   </div>
 </div>
 
-    <div class="q-card">
+    
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">9</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Explain LEAD, LAG, ROW_NUMBER, RANK &amp; DENSE_RANK</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"All five of these are window functions — they run a calculation across a set of rows related to the current row, without collapsing rows like GROUP BY does. Each row keeps its own identity in the result."</p>
+
+    <p><strong>1. ROW_NUMBER()</strong></p>
+    <p>Assigns a unique sequential number to every row — no ties, no gaps. Even if two rows have identical values, they get different numbers. The order is determined by the ORDER BY inside the window.</p>
+    <div class="split-pane sql-pane-card">
+    <div class="split-pane-header">&#x1F5C4; SQL — Window Function Examples</div>
+    <pre><code class="language-sql">SELECT
+  employee_id, name, salary, department_id,
+  ROW_NUMBER() OVER (PARTITION BY department_id ORDER BY salary DESC) AS row_num
+FROM employees;</code></pre></div>
+    <p><em>Use case:</em> Picking exactly the top 1 row per group — like the highest paid employee per department. Since it never ties, you're always guaranteed one row per rank position.</p>
+
+    <p><strong>2. RANK()</strong></p>
+    <p>Assigns a rank based on ORDER BY — but if two rows tie, they get the same rank, and the next rank <strong>skips</strong> accordingly. So if two people are both rank 1, the next rank is 3 (not 2) — rank 2 is skipped.</p>
+    <div class="split-pane sql-pane-card">
+    <div class="split-pane-header">&#x1F5C4; SQL — Window Function Examples</div>
+    <pre><code class="language-sql">SELECT
+  employee_id, name, salary,
+  RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS rnk
+FROM employees;
+
+-- Result example:
+-- Salary 9000 → Rank 1
+-- Salary 9000 → Rank 1  (tie)
+-- Salary 8000 → Rank 3  (rank 2 is SKIPPED)</code></pre></div>
+    <p><em>Use case:</em> Competition-style ranking where tied positions leave a gap — like sports standings. "There were two 1st place finishers, so there's no 2nd place."</p>
+
+    <p><strong>3. DENSE_RANK()</strong></p>
+    <p>Same as RANK but <strong>no gaps</strong>. Tied rows get the same rank, and the next rank is always consecutive — rank 1, 1, 2, 3 (not 1, 1, 3).</p>
+    <div class="split-pane sql-pane-card">
+    <div class="split-pane-header">&#x1F5C4; SQL — Window Function Examples</div>
+    <pre><code class="language-sql">SELECT
+  employee_id, name, salary,
+  DENSE_RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS dense_rnk
+FROM employees;
+
+-- Result example:
+-- Salary 9000 → Dense Rank 1
+-- Salary 9000 → Dense Rank 1  (tie)
+-- Salary 8000 → Dense Rank 2  (NO gap — continues from 1)</code></pre></div>
+    <p><em>Use case:</em> When you need true rank levels without gaps — like "show me all employees at rank 2 salary level." With RANK, rank 2 might not exist; with DENSE_RANK, rank 2 always means "the second distinct salary value."</p>
+
+    <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
+      <div style="padding:9px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-sec);">Comparison — salary 9000, 9000, 8000, 7000</div>
+      <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div style="background:#E6F1FB;border:1px solid #B5D4F4;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:#0C447C;margin-bottom:6px;font-weight:600;">ROW_NUMBER()</div>
+          <div style="font-size:13px;color:#042C53;line-height:2;">9000 → 1<br>9000 → 2<br>8000 → 3<br>7000 → 4</div>
+          <div style="font-size:11px;color:#0C447C;margin-top:6px;">Always unique, no ties</div>
+        </div>
+        <div style="background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:#854F0B;margin-bottom:6px;font-weight:600;">RANK()</div>
+          <div style="font-size:13px;color:#412402;line-height:2;">9000 → 1<br>9000 → 1<br>8000 → 3<br>7000 → 4</div>
+          <div style="font-size:11px;color:#854F0B;margin-top:6px;">Ties allowed, gaps after tie</div>
+        </div>
+        <div style="background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:#0F6E56;margin-bottom:6px;font-weight:600;">DENSE_RANK()</div>
+          <div style="font-size:13px;color:#04342C;line-height:2;">9000 → 1<br>9000 → 1<br>8000 → 2<br>7000 → 3</div>
+          <div style="font-size:11px;color:#0F6E56;margin-top:6px;">Ties allowed, no gaps</div>
+        </div>
+      </div>
+    </div>
+
+    <p><strong>4. LAG()</strong></p>
+    <p>Looks <strong>backwards</strong> — fetches the value from a previous row in the window. By default it looks 1 row back, but you can specify any offset.</p>
+    <div class="split-pane sql-pane-card">
+    <div class="split-pane-header">&#x1F5C4; SQL — Window Function Examples</div>
+    <pre><code class="language-sql">SELECT
+  sale_date, product_id, revenue,
+  LAG(revenue, 1, 0) OVER (PARTITION BY product_id ORDER BY sale_date) AS prev_day_revenue,
+  revenue - LAG(revenue, 1, 0) OVER (PARTITION BY product_id ORDER BY sale_date) AS revenue_change
+FROM daily_sales;
+-- LAG(column, offset, default_if_null)</code></pre></div>
+    <p><em>Use case:</em> Day-over-day comparisons, calculating the difference between current and previous value, detecting when a value changed from the last row. I've used this to calculate month-over-month revenue growth per product.</p>
+
+    <p><strong>5. LEAD()</strong></p>
+    <p>The opposite of LAG — looks <strong>forward</strong> and fetches the value from a future row. Same syntax, just looks ahead instead of behind.</p>
+    <div class="split-pane sql-pane-card">
+    <div class="split-pane-header">&#x1F5C4; SQL — Window Function Examples</div>
+    <pre><code class="language-sql">SELECT
+  employee_id, name, salary,
+  LEAD(salary, 1) OVER (PARTITION BY department_id ORDER BY salary DESC) AS next_lower_salary,
+  salary - LEAD(salary, 1, 0) OVER (PARTITION BY department_id ORDER BY salary DESC) AS salary_gap
+FROM employees;</code></pre></div>
+    <p><em>Use case:</em> Calculating how far ahead the current row is from the next — like salary gap analysis, predicting next period's value, or finding the next event's timestamp in a sequence. Also useful for consecutive record analysis — comparing current login date against the next login date to find gaps.</p>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div><strong>Quick way to remember:</strong> LAG = look back (previous row). LEAD = look ahead (next row). ROW_NUMBER = always 1,2,3,4 no matter what. RANK = gives same number to ties, then skips. DENSE_RANK = gives same number to ties, never skips. In interviews, the most commonly tested combination is ROW_NUMBER vs RANK vs DENSE_RANK — the colour table above is the fastest way to explain the difference.</div></div>
+  </div>
+</div>
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">10</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you handle NULL values in SQL and PySpark?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"NULL means the absence of a value — not zero, not empty string, just unknown. That distinction matters a lot because NULL behaves differently from any other value in comparisons and aggregations, and if you don't handle it explicitly, it can silently corrupt results."</p>
+
+    <p><strong>Key things to understand about NULL first:</strong></p>
+    <ul>
+      <li><code>NULL = NULL</code> returns NULL (not true) — you can never equality-check a NULL. Always use <code>IS NULL</code> or <code>IS NOT NULL</code>.</li>
+      <li>Any arithmetic with NULL returns NULL — <code>100 + NULL = NULL</code>. So if a revenue column has NULLs and you SUM it, those rows are silently skipped.</li>
+      <li>NULL in a GROUP BY is treated as its own group — all NULL values get grouped together.</li>
+      <li>NULLs are excluded from aggregate functions like COUNT(column), SUM, AVG — but COUNT(*) counts them.</li>
+    </ul>
+    <p><strong>In SQL — key functions:</strong></p>
+    <div class="split-pane sql-pane-card">
+    <div class="split-pane-header">&#x1F5C4; SQL — Window Function Examples</div>
+    <pre><code class="language-sql">-- 1. Check for NULLs
+SELECT * FROM orders WHERE amount IS NULL;
+SELECT * FROM orders WHERE amount IS NOT NULL;
+
+-- 2. COALESCE — returns first non-NULL value
+-- Most used. Replace NULL with a default.
+SELECT
+  customer_id,
+  COALESCE(phone, email, 'No contact') AS contact
+FROM customers;
+
+-- 3. ISNULL (SQL Server / Synapse) — simpler 2-arg version of COALESCE
+SELECT ISNULL(amount, 0) AS amount FROM orders;
+
+-- 4. NULLIF — returns NULL if two values are equal
+-- Useful to avoid division by zero
+SELECT
+  total_revenue / NULLIF(total_units, 0) AS avg_price
+FROM sales;
+-- If total_units = 0, NULLIF returns NULL
+-- so we get NULL instead of a division-by-zero error
+
+-- 5. CASE WHEN for complex logic
+SELECT
+  order_id,
+  CASE
+    WHEN discount IS NULL THEN 'No discount applied'
+    WHEN discount = 0    THEN 'Zero discount'
+    ELSE CAST(discount AS VARCHAR)
+  END AS discount_label
+FROM orders;
+
+-- 6. NULL in aggregations
+SELECT
+  COUNT(*)          AS total_rows,       -- counts NULLs
+  COUNT(phone)      AS rows_with_phone,  -- skips NULLs
+  AVG(salary)       AS avg_salary,       -- skips NULLs in avg calc
+  SUM(COALESCE(amount, 0)) AS total_amount  -- treat NULL as 0
+FROM employees;</code></pre></div>
+
+    <p><strong>In PySpark — key functions:</strong></p>
+    <div class="split-pane py-pane-card">
+    <div class="split-pane-header">&#x1F40D; PySpark</div>
+    <pre><code class="language-python">from pyspark.sql.functions import (
+  col, isnull, isnan, coalesce, lit, when, count, sum as _sum)
+
+# 1. Check for NULLs
+df.filter(col("amount").isNull()).show()
+df.filter(col("amount").isNotNull()).show()
+
+# 2. Count NULLs per column — quality check
+from pyspark.sql.functions import count, when
+df.select([
+  count(when(col(c).isNull(), c)).alias(c)
+  for c in df.columns]).show()
+
+# 3. Fill NULLs — fillna
+df.fillna(0)                          # fill ALL numeric NULLs with 0
+df.fillna({"amount": 0, "name": "Unknown"})  # per column
+
+# 4. COALESCE — first non-null across multiple columns
+df.withColumn("contact", coalesce(col("phone"), col("email"), lit("No contact")))
+
+# 5. Drop rows with NULLs
+df.dropna()                        # drop if ANY column is NULL
+df.dropna(subset=["customer_id"])  # drop only if this column is NULL
+df.dropna(thresh=3)                # drop if fewer than 3 non-null values
+
+# 6. Replace with WHEN / OTHERWISE — conditional null handling
+df.withColumn(
+  "discount_label",
+  when(col("discount").isNull(), "No discount")
+  .when(col("discount") == 0, "Zero discount")
+  .otherwise(col("discount").cast("string"))
+)
+
+# 7. Avoid division by zero (equivalent of NULLIF)
+df.withColumn("avg_price",
+  when(col("total_units") == 0, None)
+  .otherwise(col("total_revenue") / col("total_units")))</code></pre></div>
+
+    <p><strong>In production pipelines — how I handle NULLs:</strong></p>
+    <ul>
+      <li><strong>At Bronze layer:</strong> Accept NULLs as-is — don't change raw data. Just log null counts per column as a quality metric so we can track if NULL rates change over time (a spike in NULLs usually means a source system issue).</li>
+      <li><strong>At Silver layer:</strong> Enforce NULL rules based on business requirements. Primary keys and join keys must be non-null — I assert this and fail the pipeline loudly if violated. For optional fields, I fill NULLs with sensible defaults (0 for amounts, "Unknown" for categories) or leave them as NULL if "no value" is genuinely meaningful.</li>
+      <li><strong>At Gold layer:</strong> All NULLs should be resolved before serving to BI. Reports with NULL amounts or NULL dimension values confuse analysts and break aggregations silently.</li>
+    </ul>
+
+    <div class="callout warn"><span class="callout-icon">⚠️</span><div><strong>Most common NULL trap:</strong> <code>AVG(salary)</code> silently skips NULL rows — so if 20% of salaries are NULL, your average is calculated on only 80% of employees and looks artificially high. Always check null counts before trusting any aggregate result.</div></div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>Good line for interviews: "I treat NULLs as a data quality signal, not just a value to replace. Before I fill or drop NULLs, I ask — why is this NULL? Is it missing data, optional field, or a source system bug? The answer changes what the right handling is."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
       <div class="q-header" onclick="toggle(this)">
-        <div class="q-num">9</div>
+        <div class="q-num">11</div>
         <div class="q-title-wrap">
-          <div class="q-title">A SQL query is running very slow on a large table. How would you troubleshoot and optimize it? You receive duplicate data from a source system — how do you handle it in your pipeline?</div>
+          <div class="q-title">Slow query — troubleshooting & Handling duplicate data from source in a pipeline</div>
           <div class="q-tags"><span class="q-tag tag-debug">Optimization</span><span class="q-tag tag-pattern">Pipeline Design</span></div>
         </div>
         <div class="q-chevron">▼</div>
