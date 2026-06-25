@@ -796,6 +796,7 @@
       <li class="nav-item"><button onclick="show('airflow')"><span class="nav-dot"></span>Airflow<span class="nav-count">8</span></button></li>
       <li class="nav-item"><button onclick="show('datamodel')"><span class="nav-dot"></span>Data Modelling<span class="nav-count">16</span></button></li>
       <li class="nav-item"><button onclick="show('hr')"><span class="nav-dot"></span>HR<span class="nav-count">20</span></button></li>
+      <li class="nav-item"><button onclick="show('python')"><span class="nav-dot"></span>Python<span class="nav-count">20</span></button></li>
     </ul>
   </aside>
 
@@ -7678,6 +7679,1271 @@ SET TBLPROPERTIES (
 
 
 </div><!-- /handy -->
+
+
+<!-- ════════════════════════════════════════════════════════
+     Python Core
+═══════════════════════════════════════════════════════════ -->
+
+<!-- ════════════════════════════════════════════════════════
+     PYTHON
+═══════════════════════════════════════════════════════════ -->
+<div id="python" class="section">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#E8F5E9">🐍</div>
+    <div>
+      <div class="sec-title">Python</div>
+      <div class="sec-desc">Python fundamentals, OOP, decorators, generators, ETL patterns & data engineering-specific usage</div>
+    </div>
+  </div>
+
+  <!-- Q1 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">1</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What are the key Python data structures? Which ones do you use most in data engineering?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"In day-to-day data engineering work, I use a handful of Python structures constantly — the choice depends on what I'm doing with the data."</p>
+      <ul>
+        <li><strong>List:</strong> Ordered, mutable, allows duplicates. I use lists for sequences of items I need to iterate or transform — like a list of table names to loop through in a metadata-driven pipeline.</li>
+        <li><strong>Dictionary:</strong> Key-value pairs. Probably my most-used structure in data engineering — config maps, schema definitions, column mappings, API responses (JSON), lookup tables for code-to-description translation.</li>
+        <li><strong>Set:</strong> Unordered, unique values. I use sets for fast membership checks and deduplication — checking if a record ID has already been processed, finding the difference between two sets of column names (schema drift detection).</li>
+        <li><strong>Tuple:</strong> Ordered, immutable. I use tuples for fixed data that shouldn't change — like coordinate pairs, column name + data type pairs, or return values from functions where I want to unpack multiple values.</li>
+        <li><strong>List comprehension:</strong> Not a structure itself but a pattern I use constantly — cleaner and faster than a for loop for simple transformations.</li>
+      </ul>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Dictionary — most common in ETL config
+table_config = {
+    "orders":    {"watermark_col": "updated_at", "pk": "order_id"},
+    "customers": {"watermark_col": "modified_date", "pk": "cust_id"},
+}
+
+# Set — schema drift detection
+expected_cols = {"id", "name", "amount", "date"}
+actual_cols   = {"id", "name", "amount", "date", "new_col"}
+new_cols      = actual_cols - expected_cols
+print(f"New columns detected: {new_cols}")  # {'new_col'}
+
+# List comprehension — filter tables to process
+tables_to_load = [t for t in table_config if t != "audit"]
+
+# Tuple unpacking — return multiple values cleanly
+def get_bounds(df):
+    return df["id"].min(), df["id"].max()
+
+min_id, max_id = get_bounds(df)</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">2</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What is the difference between a list and a tuple? When would you use each?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <ul>
+        <li><strong>List</strong> — mutable (can change after creation), uses square brackets <code>[]</code>, slightly more memory. Use when the collection will be modified — appending rows, removing items, updating values.</li>
+        <li><strong>Tuple</strong> — immutable (cannot change after creation), uses parentheses <code>()</code>, slightly faster and less memory. Use for fixed data that should never be modified — like column schema definitions, coordinate pairs, or dictionary keys (lists can't be dict keys, tuples can).</li>
+      </ul>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># List — mutable, use when data changes
+pipeline_stages = ["ingest", "validate", "transform"]
+pipeline_stages.append("load")   # works fine
+
+# Tuple — immutable, use for fixed data
+schema = ("customer_id", "INT", "NOT NULL")
+# schema.append("something")  # would raise AttributeError
+
+# Tuple as dictionary key (lists can't do this)
+location_data = {
+    (28.6139, 77.2090): "Delhi",
+    (19.0760, 72.8777): "Mumbai"
+}
+
+# Function returning multiple values uses tuple under the hood
+def min_max(values):
+    return min(values), max(values)
+
+lo, hi = min_max([10, 5, 8, 3, 15])</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">3</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What are decorators in Python? Have you used them in your work?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"A decorator is a function that wraps another function to add behaviour before or after it runs — without modifying the original function's code. It's Python's way of saying 'do this extra thing every time this function is called.'"</p>
+      <p>In data engineering, decorators are useful for: retry logic, logging execution time, validating inputs before a function runs, and catching exceptions consistently across multiple functions without repeating the same try/except block everywhere.</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import time
+import functools
+
+# 1. Simple timing decorator — useful for profiling ETL steps
+def timer(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        end = time.time()
+        print(f"{func.__name__} took {end - start:.2f}s")
+        return result
+    return wrapper
+
+@timer
+def load_table(table_name):
+    # simulate loading
+    time.sleep(1)
+    return f"{table_name} loaded"
+
+load_table("orders")  # prints: load_table took 1.00s
+
+# 2. Retry decorator — for flaky API calls or DB connections
+def retry(max_attempts=3, delay=2):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    print(f"Attempt {attempt} failed: {e}")
+                    if attempt < max_attempts:
+                        time.sleep(delay)
+            raise Exception(f"{func.__name__} failed after {max_attempts} attempts")
+        return wrapper
+    return decorator
+
+@retry(max_attempts=3, delay=2)
+def fetch_api_data(url):
+    # if this raises, it will retry 3 times
+    import requests
+    return requests.get(url).json()</code></pre>
+      </div>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>The <code>@functools.wraps(func)</code> line is important — without it, the wrapped function loses its original name and docstring, which makes debugging harder.</div></div>
+    </div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">4</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What are generators in Python? How are they different from regular functions?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"A generator is a function that uses <code>yield</code> instead of <code>return</code>. The key difference is — a regular function computes the entire result and returns it all at once. A generator produces values one at a time, on demand, and pauses between each one. It doesn't hold the entire result in memory."</p>
+      <p>This is extremely useful in data engineering when processing large files or datasets — you don't want to load 10 million rows into a Python list at once. A generator lets you process one chunk at a time.</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Regular function — loads ALL rows into memory at once
+def read_all_rows(filepath):
+    rows = []
+    with open(filepath) as f:
+        for line in f:
+            rows.append(line.strip())
+    return rows  # entire file in memory
+
+# Generator — yields one row at a time, memory efficient
+def read_rows_lazily(filepath):
+    with open(filepath) as f:
+        for line in f:
+            yield line.strip()  # pauses here, resumes on next()
+
+# Usage — same interface, 1000x less memory for large files
+for row in read_rows_lazily("large_file.csv"):
+    process(row)
+
+# Chunk-based reading for ETL — process 10k rows at a time
+def read_in_chunks(filepath, chunk_size=10000):
+    chunk = []
+    with open(filepath) as f:
+        for line in f:
+            chunk.append(line.strip())
+            if len(chunk) == chunk_size:
+                yield chunk
+                chunk = []
+    if chunk:
+        yield chunk  # last partial chunk
+
+for chunk in read_in_chunks("orders.csv"):
+    df = spark.createDataFrame(chunk)
+    df.write.format("delta").mode("append").save("/mnt/delta/orders")</code></pre>
+      </div>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>Generator expressions also exist — like list comprehensions but lazy: <code>(x*2 for x in range(1000000))</code> uses almost no memory, while <code>[x*2 for x in range(1000000)]</code> creates the full list in RAM immediately.</div></div>
+    </div>
+  </div>
+
+
+  <!-- Q5 -->
+  <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">5</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Explain OOP in Python — the 4 pillars: Encapsulation, Abstraction, Inheritance &amp; Polymorphism</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"OOP has 4 pillars — and each one solves a specific design problem. Let me explain each with a data engineering angle."</p>
+
+    <p><strong>1. Encapsulation</strong></p>
+    <p>Bundling data (attributes) and the methods that work on that data together inside a class, and restricting direct access to internals. The idea is — hide the implementation details, expose only what's needed. In Python, we use a single underscore <code>_</code> for "internal use" and double underscore <code>__</code> for name-mangled private attributes.</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python">class PipelineConfig:
+    def __init__(self, table_name, mode):
+        self.table_name  = table_name   # public
+        self._mode       = mode         # internal — don't access directly
+        self.__secret_key = "abc123"    # private — name mangled
+
+    # Controlled access via property
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, value):
+        allowed = ["append", "overwrite", "merge"]
+        if value not in allowed:
+            raise ValueError(f"Mode must be one of {allowed}")
+        self._mode = value
+
+config = PipelineConfig("orders", "append")
+config.mode = "overwrite"   # goes through setter — validated
+# config.mode = "delete"   # raises ValueError
+print(config.mode)          # "overwrite"</code></pre>
+    </div>
+
+    <p><strong>2. Abstraction</strong></p>
+    <p>Hiding complex implementation details and exposing only a clean, simple interface. The user of a class shouldn't need to know HOW something works internally — just WHAT it does. In Python, abstraction is achieved using abstract base classes (ABC).</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python">from abc import ABC, abstractmethod
+
+# Abstract class — defines WHAT must be done, not HOW
+class BaseWriter(ABC):
+
+    @abstractmethod
+    def write(self, df, path):
+        """Every writer must implement this"""
+        pass
+
+    @abstractmethod
+    def validate(self, df):
+        """Every writer must validate before writing"""
+        pass
+
+    # Concrete method — shared logic, no override needed
+    def log(self, path, count):
+        print(f"Written {count} rows to {path}")
+
+# Cannot instantiate abstract class directly
+# writer = BaseWriter()  # raises TypeError
+
+# Must implement all abstract methods
+class DeltaWriter(BaseWriter):
+    def write(self, df, path):
+        df.write.format("delta").mode("overwrite").save(path)
+        self.log(path, df.count())
+
+    def validate(self, df):
+        if df.count() == 0:
+            raise ValueError("Cannot write empty DataFrame")
+
+class ParquetWriter(BaseWriter):
+    def write(self, df, path):
+        df.write.format("parquet").save(path)
+        self.log(path, df.count())
+
+    def validate(self, df):
+        if df.count() == 0:
+            raise ValueError("Cannot write empty DataFrame")</code></pre>
+    </div>
+
+    <p><strong>3. Inheritance</strong></p>
+    <p>A child class inherits attributes and methods from a parent class, and can extend or override them. Avoids code duplication — common logic goes in the parent, specific logic in the child.</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python">class BaseReader:
+    def __init__(self, source_name):
+        self.source_name = source_name
+
+    def validate(self, df):
+        if df.count() == 0:
+            raise ValueError(f"{self.source_name} returned 0 rows")
+        return df
+
+    def read(self):
+        raise NotImplementedError
+
+# SqlReader inherits validate() from BaseReader for free
+class SqlReader(BaseReader):
+    def __init__(self, table_name, jdbc_url):
+        super().__init__(source_name=table_name)
+        self.jdbc_url = jdbc_url
+
+    def read(self):
+        df = spark.read.jdbc(self.jdbc_url, self.table_name)
+        return self.validate(df)   # inherited from BaseReader
+
+class AdlsReader(BaseReader):
+    def __init__(self, path):
+        super().__init__(source_name=path)
+        self.path = path
+
+    def read(self):
+        df = spark.read.parquet(self.path)
+        return self.validate(df)   # same inherited method</code></pre>
+    </div>
+
+    <p><strong>4. Polymorphism</strong></p>
+    <p>"Poly" = many, "morph" = forms. The same method name behaves differently depending on which class's object is calling it. This lets you write generic code that works with multiple types — you don't care which specific reader it is, you just call <code>.read()</code> and it does the right thing for its type.</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python"># Same method name — different behaviour per class
+class SqlReader(BaseReader):
+    def read(self):
+        print(f"Reading from SQL: {self.source_name}")
+        return spark.read.jdbc(...)
+
+class AdlsReader(BaseReader):
+    def read(self):
+        print(f"Reading from ADLS: {self.source_name}")
+        return spark.read.parquet(...)
+
+class ApiReader(BaseReader):
+    def read(self):
+        print(f"Reading from API: {self.source_name}")
+        return requests.get(self.source_name).json()
+
+# Polymorphism in action — same loop, different behaviour
+readers = [
+    SqlReader("orders", jdbc_url),
+    AdlsReader("/mnt/bronze/customers"),
+    ApiReader("https://api.example.com/products"),
+]
+
+# We don't care what type each reader is
+# Each .read() call does the right thing for its class
+for reader in readers:
+    data = reader.read()
+    process(data)</code></pre>
+    </div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>
+      <strong>Quick way to remember all 4:</strong><br>
+      <strong>Encapsulation</strong> — hide the data, control access via methods.<br>
+      <strong>Abstraction</strong> — hide the HOW, expose only the WHAT (interface).<br>
+      <strong>Inheritance</strong> — child gets parent's features, avoids code duplication.<br>
+      <strong>Polymorphism</strong> — same method name, different behaviour per class.
+    </div></div>
+    <p><strong>Key OOP concepts used here:</strong></p>
+      <ul>
+        <li><strong>Class:</strong> Blueprint for creating objects — <code>BaseReader</code>, <code>SqlReader</code></li>
+        <li><strong>Inheritance:</strong> <code>SqlReader</code> inherits from <code>BaseReader</code> — gets <code>validate()</code> for free</li>
+        <li><strong><code>__init__</code>:</strong> Constructor — runs when object is created, sets up attributes</li>
+        <li><strong><code>super()</code>:</strong> Calls the parent class's <code>__init__</code> — so I don't duplicate that setup code</li>
+        <li><strong>Polymorphism:</strong> Both readers have a <code>read()</code> method — I can loop through them uniformly without caring which type each is</li>
+      </ul>
+  </div>
+  </div>
+
+  
+  <!--<div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">5</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Explain OOP in Python — classes, inheritance, and how you use it in data engineering.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"OOP lets me model real-world concepts as objects with state (attributes) and behaviour (methods). In data engineering, the most practical use is building reusable, extensible pipeline components — instead of writing similar ingestion logic 10 times, I write it once as a base class and extend it."</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Base reader class — defines the interface
+class BaseReader:
+    def __init__(self, source_name):
+        self.source_name = source_name
+
+    def read(self):
+        raise NotImplementedError("Subclasses must implement read()")
+
+    def validate(self, df):
+        if df.count() == 0:
+            raise ValueError(f"{self.source_name} returned 0 rows")
+        return df
+
+# Concrete implementations — each overrides read()
+class SqlReader(BaseReader):
+    def __init__(self, table_name, jdbc_url):
+        super().__init__(source_name=table_name)
+        self.table_name = table_name
+        self.jdbc_url   = jdbc_url
+
+    def read(self):
+        df = spark.read.jdbc(self.jdbc_url, self.table_name)
+        return self.validate(df)
+
+class AdlsReader(BaseReader):
+    def __init__(self, path, file_format="parquet"):
+        super().__init__(source_name=path)
+        self.path        = path
+        self.file_format = file_format
+
+    def read(self):
+        df = spark.read.format(self.file_format).load(self.path)
+        return self.validate(df)
+
+# Usage — same interface regardless of source
+readers = [
+    SqlReader("orders", "jdbc:sqlserver://..."),
+    AdlsReader("/mnt/bronze/customers"),
+]
+
+for reader in readers:
+    df = reader.read()
+    process(df)</code></pre>
+      </div>
+      <p><strong>Key OOP concepts used here:</strong></p>
+      <ul>
+        <li><strong>Class:</strong> Blueprint for creating objects — <code>BaseReader</code>, <code>SqlReader</code></li>
+        <li><strong>Inheritance:</strong> <code>SqlReader</code> inherits from <code>BaseReader</code> — gets <code>validate()</code> for free</li>
+        <li><strong><code>__init__</code>:</strong> Constructor — runs when object is created, sets up attributes</li>
+        <li><strong><code>super()</code>:</strong> Calls the parent class's <code>__init__</code> — so I don't duplicate that setup code</li>
+        <li><strong>Polymorphism:</strong> Both readers have a <code>read()</code> method — I can loop through them uniformly without caring which type each is</li>
+      </ul>
+    </div>
+  </div> -->
+
+  <!-- Q6 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">6</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What is the difference between <code>*args</code> and <code>**kwargs</code>?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p><code>*args</code> — lets a function accept any number of <strong>positional</strong> arguments. They come in as a tuple.</p>
+      <p><code>**kwargs</code> — lets a function accept any number of <strong>keyword</strong> arguments (name=value pairs). They come in as a dictionary.</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># *args — variable positional arguments
+def log_tables(*args):
+    for table in args:
+        print(f"Processing: {table}")
+
+log_tables("orders", "customers", "products")
+# Processing: orders
+# Processing: customers
+# Processing: products
+
+# **kwargs — variable keyword arguments
+def run_pipeline(**kwargs):
+    print(f"Source: {kwargs.get('source')}")
+    print(f"Target: {kwargs.get('target')}")
+    print(f"Mode:   {kwargs.get('mode', 'append')}")
+
+run_pipeline(source="sql_server", target="/mnt/delta/orders", mode="overwrite")
+
+# Common real use — passing config dict to a function
+config = {"source": "adls", "target": "/mnt/gold", "mode": "merge"}
+run_pipeline(**config)   # unpacks dict as keyword arguments
+
+# Airflow tasks use **kwargs to receive context
+def my_task(**kwargs):
+    ti = kwargs["ti"]              # task instance
+    execution_date = kwargs["execution_date"]
+    print(f"Running for: {execution_date}")</code></pre>
+      </div>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>You've already seen <code>**kwargs</code> in Airflow tasks — when we extract <code>ti = kwargs["ti"]</code> to access XCom, that's <code>**kwargs</code> in action. Airflow passes the full task context as keyword arguments to every Python callable.</div></div>
+    </div>
+  </div>
+
+  <!-- Q7 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">7</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What is the difference between <code>map()</code>, <code>filter()</code> and <code>reduce()</code>?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <ul>
+        <li><strong>map()</strong> — applies a function to every item in an iterable, returns a new iterable of the same length. One-to-one transformation.</li>
+        <li><strong>filter()</strong> — applies a function that returns True/False to every item, keeps only items where the result is True. Reduces the collection.</li>
+        <li><strong>reduce()</strong> — applies a function cumulatively to items, reducing the whole collection to a single value. Needs <code>functools.reduce</code>.</li>
+      </ul>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">from functools import reduce
+
+amounts = [100, 250, None, 400, None, 75]
+
+# map() — transform every item
+# Replace None with 0 across all amounts
+cleaned = list(map(lambda x: x if x is not None else 0, amounts))
+print(cleaned)  # [100, 250, 0, 400, 0, 75]
+
+# filter() — keep only matching items
+# Remove None values
+valid = list(filter(lambda x: x is not None, amounts))
+print(valid)  # [100, 250, 400, 75]
+
+# reduce() — collapse to single value
+# Sum all valid amounts
+total = reduce(lambda acc, x: acc + x, valid)
+print(total)  # 825
+
+# In practice — list comprehensions are more Pythonic
+# map equivalent:
+cleaned = [x if x is not None else 0 for x in amounts]
+# filter equivalent:
+valid   = [x for x in amounts if x is not None]</code></pre>
+      </div>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>In data engineering, <code>map()</code> and <code>filter()</code> are more commonly replaced by list comprehensions for readability. But they're still useful when passing functions as arguments — and they're conceptually identical to Spark's <code>.map()</code> and <code>.filter()</code> on RDDs, so understanding them helps with Spark internals too.</div></div>
+    </div>
+  </div>
+
+  <!-- Q8 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">8</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What is exception handling in Python? How do you handle errors in ETL pipelines?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"Exception handling lets us anticipate errors, handle them gracefully, and continue or fail with a clear message — instead of the program crashing with an unhelpful traceback."</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Basic try/except/finally
+def load_table(table_name, jdbc_url):
+    try:
+        df = spark.read.jdbc(jdbc_url, table_name)
+        row_count = df.count()
+        logger.info(f"{table_name}: {row_count} rows loaded")
+        return df
+
+    except Exception as e:
+        logger.error(f"{table_name} failed: {str(e)}")
+        raise  # re-raise so ADF/Airflow knows it failed
+
+    finally:
+        # always runs — good for cleanup
+        logger.info(f"Finished attempt for {table_name}")
+
+# Multiple exception types
+def read_config(path):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Config not found at: {path}")
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Config file is not valid JSON: {e}")
+
+# Custom exception — useful for pipeline-specific errors
+class DataQualityError(Exception):
+    pass
+
+def validate(df, table_name):
+    if df.count() == 0:
+        raise DataQualityError(f"{table_name} has 0 rows — aborting pipeline")
+    null_ids = df.filter(col("id").isNull()).count()
+    if null_ids > 0:
+        raise DataQualityError(f"{table_name} has {null_ids} null primary keys")</code></pre>
+      </div>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>Always <code>raise</code> after logging in a pipeline function — if you catch the error and don't re-raise it, the orchestrator (ADF, Airflow) thinks the task succeeded and marks it green. Silent failures are the worst kind in production.</div></div>
+    </div>
+  </div>
+
+  <!-- Q9 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">9</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What is the difference between <code>deepcopy</code> and <code>shallow copy</code>?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p><strong>Shallow copy:</strong> Creates a new object, but the elements inside still reference the same memory locations as the original. Changing a nested object in the copy also changes it in the original.</p>
+      <p><strong>Deep copy:</strong> Creates a completely independent copy — the new object and all objects nested inside it are new. Changes to the copy don't affect the original at all.</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import copy
+
+original = {"tables": ["orders", "customers"], "config": {"mode": "append"}}
+
+# Shallow copy — nested objects still shared
+shallow = copy.copy(original)
+shallow["tables"].append("products")
+print(original["tables"])  # ['orders', 'customers', 'products'] — ALSO changed!
+
+# Deep copy — fully independent
+original2 = {"tables": ["orders", "customers"], "config": {"mode": "append"}}
+deep = copy.deepcopy(original2)
+deep["tables"].append("products")
+print(original2["tables"])  # ['orders', 'customers'] — unchanged ✓
+
+# In data engineering — relevant when copying pipeline configs
+# If you reuse a config dict across multiple pipeline runs,
+# always deepcopy it first so one run's changes don't bleed into another
+base_config = {"mode": "append", "filters": []}
+
+run1_config = copy.deepcopy(base_config)
+run1_config["filters"].append("date = '2024-01-01'")
+
+run2_config = copy.deepcopy(base_config)
+run2_config["filters"].append("date = '2024-01-02'")
+
+# Both are independent — no cross-contamination</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q10 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">10</div>
+      <div class="q-title-wrap">
+        <div class="q-title">How do you read and write files in Python? How do you work with JSON and CSV?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"File I/O comes up constantly in data engineering — reading config files, writing audit logs, processing flat files before loading to a data lake."</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import json
+import csv
+
+# ── Reading / Writing text files ──────────────────────
+with open("pipeline.log", "w") as f:
+    f.write("Pipeline started\n")
+
+with open("pipeline.log", "r") as f:
+    content = f.read()
+
+# Always use 'with' — auto-closes the file even if an error occurs
+
+# ── JSON ───────────────────────────────────────────────
+# Reading config files
+with open("pipeline_config.json", "r") as f:
+    config = json.load(f)        # file → dict
+    table_name = config["table"]
+
+# Writing JSON
+audit_record = {"pipeline": "orders", "rows": 5000, "status": "success"}
+with open("audit.json", "w") as f:
+    json.dump(audit_record, f, indent=2)  # dict → file
+
+# String ↔ JSON (common with API responses)
+json_str = '{"id": 1, "name": "Salman"}'
+data = json.loads(json_str)   # string → dict
+back = json.dumps(data)       # dict → string
+
+# ── CSV ────────────────────────────────────────────────
+# Reading CSV
+with open("orders.csv", "r") as f:
+    reader = csv.DictReader(f)   # each row is a dict
+    for row in reader:
+        print(row["order_id"], row["amount"])
+
+# Writing CSV
+headers = ["order_id", "amount", "status"]
+rows    = [["O001", 500, "completed"], ["O002", 300, "pending"]]
+
+with open("output.csv", "w", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerow(headers)
+    writer.writerows(rows)</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q11 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">11</div>
+      <div class="q-title-wrap">
+        <div class="q-title">How do you implement parallel processing in Python for ETL? Explain threading vs multiprocessing.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"Python has a GIL (Global Interpreter Lock) — only one thread executes Python bytecode at a time. This means threading is NOT truly parallel for CPU-bound tasks, but it IS effective for I/O-bound tasks where threads spend most of their time waiting."</p>
+      <ul>
+        <li><strong>Threading</strong> — best for I/O-bound tasks: API calls, database reads/writes, file uploads to ADLS. While one thread waits for a network response, another thread can run. Multiple source tables loading simultaneously is a great use case.</li>
+        <li><strong>Multiprocessing</strong> — best for CPU-bound tasks: heavy data transformations, compression, parsing. Each process gets its own GIL so they genuinely run in parallel.</li>
+      </ul>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+
+tables = ["orders", "customers", "products", "inventory", "payments"]
+
+# Threading — I/O bound (DB reads, API calls, file uploads)
+def ingest_table(table_name):
+    df = read_from_sql(table_name)
+    write_to_adls(df, f"/mnt/bronze/{table_name}")
+    return f"{table_name}: {df.count()} rows"
+
+with ThreadPoolExecutor(max_workers=5) as executor:
+    futures = {executor.submit(ingest_table, t): t for t in tables}
+    for future in as_completed(futures):
+        try:
+            print(future.result())
+        except Exception as e:
+            print(f"{futures[future]} failed: {e}")
+
+# Multiprocessing — CPU bound (heavy transformation)
+def transform_chunk(chunk):
+    # expensive CPU work — parsing, compression, aggregation
+    return [process_row(row) for row in chunk]
+
+chunks = split_into_chunks(large_dataset, n=8)
+
+with ProcessPoolExecutor(max_workers=4) as executor:
+    results = list(executor.map(transform_chunk, chunks))</code></pre>
+      </div>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>"In my ETL pipelines, I use <code>ThreadPoolExecutor</code> for parallel table ingestion — all tables connect and read from the source simultaneously. For heavy CPU transformation work I prefer Spark (which handles parallelism across a cluster) over Python multiprocessing."</div></div>
+    </div>
+  </div>
+
+  <!-- Q12 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">12</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What are lambda functions? When do you use them?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"A lambda is an anonymous, single-expression function defined inline. It's not for complex logic — it's for simple, throwaway operations that don't need a full <code>def</code> block."</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Regular function vs lambda — same result
+def double(x): return x * 2
+double_lambda = lambda x: x * 2
+
+# Most common use — as argument to sorted(), map(), filter()
+tables = [
+    {"name": "orders",    "row_count": 5000},
+    {"name": "customers", "row_count": 1200},
+    {"name": "products",  "row_count": 300},
+]
+
+# Sort by row_count
+sorted_tables = sorted(tables, key=lambda t: t["row_count"], reverse=True)
+
+# Filter only large tables
+large_tables = list(filter(lambda t: t["row_count"] > 1000, tables))
+
+# With map — apply transformation to each item
+table_names = list(map(lambda t: t["name"].upper(), tables))
+# ['ORDERS', 'CUSTOMERS', 'PRODUCTS']
+
+# Real ETL use — sorting columns for consistent schema comparison
+schema_cols = ["amount", "id", "date", "name"]
+schema_cols.sort(key=lambda c: c.lower())</code></pre>
+      </div>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>Don't overuse lambdas for complex logic — if it doesn't fit on one line readably, use a proper <code>def</code> function. Lambdas are for simplicity, not compression.</div></div>
+    </div>
+  </div>
+
+  <!-- Q13 -->
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">13</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What are Python's built-in string methods? Which ones do you use most in data engineering?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"String manipulation comes up constantly in data engineering — cleaning column names, parsing file paths, validating formats, building dynamic SQL queries."</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python"># Most used string methods in data engineering
+
+# strip / lstrip / rstrip — remove whitespace or characters
+"  orders  ".strip()          # "orders"
+"/mnt/delta/".rstrip("/")     # "/mnt/delta"
+
+# lower / upper — normalise before comparison
+"Customer_ID".lower()         # "customer_id"
+col_name = "  Order_Date  ".strip().lower().replace(" ", "_")
+# "order_date"
+
+# split / join — parse and rebuild strings
+path = "/mnt/bronze/orders/2024/01"
+parts = path.split("/")       # ['', 'mnt', 'bronze', 'orders', '2024', '01']
+"/".join(parts[1:])           # "mnt/bronze/orders/2024/01"
+
+# replace — clean values
+"₹1,00,000".replace(",", "").replace("₹", "")  # "100000"
+
+# startswith / endswith — check file type
+filename = "orders_2024.parquet"
+filename.endswith(".parquet")  # True
+filename.startswith("orders")  # True
+
+# in — membership check
+"delta" in "/mnt/delta/orders"  # True
+
+# format / f-strings — build dynamic paths and queries
+table   = "orders"
+schema  = "silver"
+path    = f"/mnt/delta/{schema}/{table}"
+query   = f"SELECT * FROM {schema}.{table} WHERE date = '2024-01-01'"
+
+# zfill — pad numbers (useful for file naming)
+f"part_{str(1).zfill(4)}.parquet"  # "part_0001.parquet"</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- Q14 -->
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">14</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What is the difference between <code>is</code> and <code>==</code> in Python?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p><code>==</code> checks <strong>value equality</strong> — are the two objects equal in value?</p>
+    <p><code>is</code> checks <strong>identity</strong> — are the two variables pointing to the exact same object in memory?</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python">a = [1, 2, 3]
+b = [1, 2, 3]
+c = a
+
+print(a == b)   # True  — same values
+print(a is b)   # False — different objects in memory
+print(a is c)   # True  — c points to the SAME object as a
+
+# The classic trap
+x = None
+if x is None:    # correct — use 'is' for None checks
+    print("x is None")
+if x == None:    # works but not Pythonic — avoid this
+    print("x is None")
+
+# Why it matters in data engineering
+config1 = {"mode": "append"}
+config2 = config1            # same object — changing one changes both!
+config3 = config1.copy()     # new object — independent
+
+config2["mode"] = "overwrite"
+print(config1["mode"])  # "overwrite" — config1 also changed (same object)
+print(config3["mode"])  # "append"    — config3 unchanged (different object)</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>Always use <code>is</code> when checking for <code>None</code>, <code>True</code>, or <code>False</code>. Use <code>==</code> for value comparisons. This is a common Python interview gotcha.</div></div>
+  </div>
+</div>
+
+<!-- Q15 -->
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">15</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What are context managers in Python? Why is <code>with</code> important?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"A context manager handles setup and teardown automatically — it guarantees that certain cleanup code always runs, even if an exception occurs. The <code>with</code> statement is Python's way of using them."</p>
+    <p>In data engineering, the most common use is file handling — but it's also critical for database connections, locks, and timing blocks.</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python"># Without context manager — risky
+f = open("data.csv", "r")
+data = f.read()
+f.close()   # if an error happens before this, file stays open forever
+
+# With context manager — always closes, even on error
+with open("data.csv", "r") as f:
+    data = f.read()
+# file is automatically closed here, no matter what
+
+# Building a custom context manager — using contextlib
+from contextlib import contextmanager
+import time
+
+@contextmanager
+def timer(label):
+    start = time.time()
+    try:
+        yield    # code inside the 'with' block runs here
+    finally:
+        elapsed = time.time() - start
+        print(f"{label} took {elapsed:.2f}s")
+
+# Usage
+with timer("Bronze ingestion"):
+    df = spark.read.parquet("/mnt/bronze/orders")
+    df.write.format("delta").save("/mnt/silver/orders")
+# prints: Bronze ingestion took 12.45s
+
+# Database connection context manager
+@contextmanager
+def get_db_connection(conn_string):
+    conn = create_connection(conn_string)
+    try:
+        yield conn
+    except Exception as e:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()   # always closes
+
+with get_db_connection(CONN_STRING) as conn:
+    conn.execute("UPDATE watermark SET last_load = GETDATE()")</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- Q16 -->
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">16</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What are Python type hints? Why should you use them?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Type hints let you declare the expected data types of function arguments and return values. Python doesn't enforce them at runtime — but they make code much more readable, help IDEs give better autocomplete, and catch bugs early when used with tools like <code>mypy</code>."</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python">from typing import Optional, List, Dict, Tuple, Any
+from pyspark.sql import DataFrame
+
+# Without type hints — hard to know what goes in and what comes out
+def process(table, config, mode):
+    pass
+
+# With type hints — immediately clear
+def process(
+    table_name : str,
+    config     : Dict[str, Any],
+    mode       : str = "append"
+) -> DataFrame:
+    pass
+
+# Optional — value can be the type OR None
+def get_watermark(table_name: str) -> Optional[str]:
+    result = db.query(f"SELECT max_date FROM watermark WHERE table='{table_name}'")
+    return result[0] if result else None
+
+# List, Dict type hints
+def load_tables(
+    table_names : List[str],
+    schema_map  : Dict[str, str]
+) -> List[DataFrame]:
+    return [spark.read.table(t) for t in table_names]
+
+# Tuple with specific types
+def get_row_stats(df: DataFrame) -> Tuple[int, int]:
+    total    = df.count()
+    non_null = df.dropna().count()
+    return total, non_null
+
+total, non_null = get_row_stats(orders_df)</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>Type hints don't affect performance — they're purely for readability and tooling. In production ETL code with many functions, they're the difference between readable, self-documenting code and a codebase nobody wants to maintain.</div></div>
+  </div>
+</div>
+
+<!-- Q17 -->
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">17</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you work with environment variables and secrets in Python? How do you manage configs across environments?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Never hardcode connection strings, passwords, or API keys in Python code — they end up in Git history and create security vulnerabilities. In data engineering, I manage secrets at multiple levels depending on the environment."</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python">import os
+from dotenv import load_dotenv    # pip install python-dotenv
+
+# ── Local development — .env file ──────────────────────
+# .env file (never commit this to Git — add to .gitignore)
+# DB_HOST=localhost
+# DB_PASSWORD=mypassword
+# ADLS_KEY=abc123
+
+load_dotenv()   # loads .env into environment variables
+
+db_host = os.getenv("DB_HOST")
+db_pass = os.getenv("DB_PASSWORD")
+adls_key = os.getenv("ADLS_KEY", "default_if_missing")
+
+# ── Production — Azure Key Vault ───────────────────────
+from azure.keyvault.secrets import SecretClient
+from azure.identity import DefaultAzureCredential
+
+def get_secret(secret_name: str) -> str:
+    credential  = DefaultAzureCredential()
+    client      = SecretClient(
+        vault_url="https://my-keyvault.vault.azure.net/",
+        credential=credential
+    )
+    return client.get_secret(secret_name).value
+
+db_password = get_secret("sql-server-password")
+
+# ── Databricks — dbutils.secrets ───────────────────────
+# In a Databricks notebook, secrets come from secret scopes
+storage_key = dbutils.secrets.get(scope="kv-scope", key="adls-key")
+jdbc_pass   = dbutils.secrets.get(scope="kv-scope", key="sql-password")
+
+# ── Config per environment ─────────────────────────────
+# Avoid if/else env checks scattered through code
+# Use a config class instead
+
+class Config:
+    ENV = os.getenv("ENVIRONMENT", "dev")
+
+    STORAGE_PATH = {
+        "dev" : "/mnt/dev/bronze",
+        "test": "/mnt/test/bronze",
+        "prod": "/mnt/prod/bronze",
+    }[ENV]
+
+    DB_SERVER = {
+        "dev" : "dev-sql-server.database.windows.net",
+        "prod": "prod-sql-server.database.windows.net",
+    }.get(ENV, "dev-sql-server.database.windows.net")
+
+# Usage anywhere in the codebase
+from config import Config
+print(Config.STORAGE_PATH)   # /mnt/dev/bronze or /mnt/prod/bronze</code></pre>
+    </div>
+    <div class="callout warn"><span class="callout-icon">⚠️</span><div>Always add <code>.env</code> to your <code>.gitignore</code>. A leaked <code>.env</code> file with real Azure connection strings in a public GitHub repo is one of the most common cloud security incidents.</div></div>
+  </div>
+</div>
+
+<!-- Q18 -->
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">18</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you write unit tests in Python? How do you test ETL logic?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Testing ETL code is harder than testing regular application code because the logic depends on DataFrames and external systems. But transformation logic — the business rules — absolutely should be tested. A bug in a transformation discovered in production is 10x more painful than one caught in a unit test."</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python">import pytest
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+
+# ── The function we want to test ───────────────────────
+def clean_orders(df):
+    """Remove nulls in order_id, filter negative amounts, uppercase status"""
+    from pyspark.sql.functions import col, upper
+    return (df
+        .filter(col("order_id").isNotNull())
+        .filter(col("amount") >= 0)
+        .withColumn("status", upper(col("status")))
+    )
+
+# ── Test file: test_transformations.py ─────────────────
+@pytest.fixture(scope="session")
+def spark():
+    return (SparkSession.builder
+        .master("local[1]")
+        .appName("unit_tests")
+        .getOrCreate())
+
+def test_clean_orders_removes_null_ids(spark):
+    data = [
+        (1,   500, "completed"),
+        (None, 300, "pending"),   # should be removed
+        (3,   200, "completed"),
+    ]
+    schema = ["order_id", "amount", "status"]
+    df     = spark.createDataFrame(data, schema)
+    result = clean_orders(df)
+    assert result.count() == 2   # null row removed
+
+def test_clean_orders_filters_negative_amounts(spark):
+    data = [
+        (1,  500, "completed"),
+        (2,  -50, "refund"),    # should be removed
+    ]
+    df     = spark.createDataFrame(data, ["order_id", "amount", "status"])
+    result = clean_orders(df)
+    assert result.count() == 1
+
+def test_clean_orders_uppercases_status(spark):
+    data   = [(1, 500, "completed")]
+    df     = spark.createDataFrame(data, ["order_id", "amount", "status"])
+    result = clean_orders(df)
+    assert result.first()["status"] == "COMPLETED"
+
+# Run with: pytest test_transformations.py -v</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"I test transformation logic with small, controlled DataFrames — I create the input data explicitly, run the function, and assert the output. I never test against production data in unit tests. The goal is to test one behaviour per test so failures tell you exactly what broke."</div></div>
+  </div>
+</div>
+
+<!-- Q19 -->
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">19</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What is the difference between <code>mutable</code> and <code>immutable</code> objects? Why does it matter in Python?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p><strong>Mutable</strong> — can be changed after creation. Lists, dictionaries, sets.</p>
+    <p><strong>Immutable</strong> — cannot be changed after creation. Strings, integers, floats, tuples. Any "change" creates a new object.</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python"># Immutable — string
+name = "salman"
+name.upper()      # creates NEW string, doesn't change original
+print(name)       # still "salman"
+name = name.upper()  # must reassign to keep the change
+
+# Mutable — list
+tables = ["orders", "customers"]
+tables.append("products")  # modifies IN PLACE
+print(tables)     # ["orders", "customers", "products"]
+
+# The most common trap — mutable default argument
+# WRONG — the list is created once and shared across all calls
+def add_table(table, tables=[]):
+    tables.append(table)
+    return tables
+
+add_table("orders")    # ["orders"]
+add_table("customers") # ["orders", "customers"] — NOT a fresh list!
+
+# CORRECT — use None as default, create fresh list inside
+def add_table(table, tables=None):
+    if tables is None:
+        tables = []
+    tables.append(table)
+    return tables
+
+# Mutable objects passed to functions — changes affect original
+def process(config):
+    config["processed"] = True  # modifies the ORIGINAL dict
+
+my_config = {"table": "orders"}
+process(my_config)
+print(my_config)  # {"table": "orders", "processed": True}
+# If you don't want this — pass a copy: process(my_config.copy())</code></pre>
+    </div>
+    <div class="callout warn"><span class="callout-icon">⚠️</span><div>The mutable default argument bug is one of Python's most infamous gotchas. It trips up even experienced developers — always use <code>None</code> as the default for mutable parameters.</div></div>
+  </div>
+</div>
+
+<!-- Q20 -->
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">20</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you handle date and time in Python? What functions do you use most?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Dates come up everywhere in data engineering — watermark columns, partition paths, filename generation, filtering incremental loads. Python's <code>datetime</code> module handles most of this."</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python">from datetime import datetime, date, timedelta
+
+# ── Get current date/time ──────────────────────────────
+now       = datetime.now()           # datetime object — 2024-01-15 08:30:00
+today     = date.today()             # date object — 2024-01-15
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # "20240115_083000"
+
+# ── Format datetime to string ──────────────────────────
+dt = datetime(2024, 1, 15, 8, 30)
+dt.strftime("%Y-%m-%d")              # "2024-01-15"
+dt.strftime("%d/%m/%Y %H:%M")        # "15/01/2024 08:30"
+dt.strftime("%Y/%m/%d")              # "2024/01/15" — for partition paths
+
+# ── Parse string to datetime ───────────────────────────
+date_str = "2024-01-15"
+dt = datetime.strptime(date_str, "%Y-%m-%d")
+
+# ── Date arithmetic ────────────────────────────────────
+yesterday   = date.today() - timedelta(days=1)
+last_week   = date.today() - timedelta(weeks=1)
+next_30_days = date.today() + timedelta(days=30)
+
+# ── Watermark pattern — most common ETL use ────────────
+def get_incremental_range(last_load_date: str) -> tuple:
+    """Returns start and end dates for incremental extraction"""
+    start = datetime.strptime(last_load_date, "%Y-%m-%d")
+    end   = datetime.now()
+    return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
+
+start, end = get_incremental_range("2024-01-01")
+query = f"SELECT * FROM orders WHERE updated_at BETWEEN '{start}' AND '{end}'"
+
+# ── Partition path generation ──────────────────────────
+run_date = datetime.now()
+path = f"/mnt/bronze/orders/year={run_date.year}/month={run_date.month:02d}"
+# /mnt/bronze/orders/year=2024/month=01
+
+# ── Filename with timestamp ────────────────────────────
+filename = f"audit_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+# audit_log_20240115_083000.json</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div><code>strftime</code> = datetime → string ("format time"). <code>strptime</code> = string → datetime ("parse time"). The "f" and "p" are the easiest way to remember which is which.</div></div>
+  </div>
+</div>
+
+</div><!-- /python -->
 
 
   </main>
