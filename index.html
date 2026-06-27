@@ -783,20 +783,21 @@
     
     <ul class="nav-list">
       <li class="nav-item"><button onclick="show('intro')" class="active"><span class="nav-dot"></span>Intro<span class="nav-count">4</span></button></li>
-      <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy Set<span class="nav-count">14</span></button></li>
-      <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">16</span></button></li>
-      <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count">13</span></button></li>
+      <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy<span class="nav-count">14</span></button></li>
+      <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>Spark<span class="nav-count">16</span></button></li>
       <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">11</span></button></li>
+      <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count">13</span></button></li>
       <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">12</span></button></li>
-      <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta Lake<span class="nav-count">7</span></button></li>
+      <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta<span class="nav-count">7</span></button></li>
       <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>ADF<span class="nav-count">13</span></button></li>
       <li class="nav-item"><button onclick="show('synapse')"><span class="nav-dot"></span>Synapse<span class="nav-count">12</span></button></li>
       <li class="nav-item"><button onclick="show('security')"><span class="nav-dot"></span>Security<span class="nav-count">5</span></button></li>
       <li class="nav-item"><button onclick="show('coding')"><span class="nav-dot"></span>Coding<span class="nav-count">25</span></button></li>
       <li class="nav-item"><button onclick="show('airflow')"><span class="nav-dot"></span>Airflow<span class="nav-count">8</span></button></li>
-      <li class="nav-item"><button onclick="show('datamodel')"><span class="nav-dot"></span>Data Modelling<span class="nav-count">16</span></button></li>
+      <li class="nav-item"><button onclick="show('datamodel')"><span class="nav-dot"></span>DataModel<span class="nav-count">16</span></button></li>
       <li class="nav-item"><button onclick="show('hr')"><span class="nav-dot"></span>HR<span class="nav-count">20</span></button></li>
       <li class="nav-item"><button onclick="show('python')"><span class="nav-dot"></span>Python<span class="nav-count">20</span></button></li>
+      <li class="nav-item"><button onclick="show('pandas')"><span class="nav-dot"></span>Adv-Py<span class="nav-count">15</span></button></li>
     </ul>
   </aside>
 
@@ -8944,6 +8945,765 @@ filename = f"audit_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 </div>
 
 </div><!-- /python -->
+
+<!-- ════════════════════════════════════════════════════════
+     PANDAS & NUMPY
+═══════════════════════════════════════════════════════════ -->
+<div id="pandas" class="section">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#FFF3E0">📊</div>
+    <div>
+      <div class="sec-title">Pandas & NumPy</div>
+      <div class="sec-desc">Data manipulation, array operations, and numerical computing — from basics to interview-ready</div>
+    </div>
+  </div>
+
+  <!-- ─── PANDAS ─────────────────────────────────── -->
+  <div class="concept-group">
+    <div class="concept-label"><span>Pandas</span></div>
+
+  <!-- P1 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">1</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What is Pandas and why do we need it? How is it different from plain Python lists?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"Pandas is a Python library built for data manipulation and analysis. The core reason we need it is that plain Python lists and dictionaries don't understand the concept of a table — rows, columns, data types per column, missing values, or aggregations. Pandas does all of that natively."</p>
+      <ul>
+        <li><strong>Plain Python list:</strong> One-dimensional, no column names, no data types, manual loops for any operation.</li>
+        <li><strong>Pandas DataFrame:</strong> Two-dimensional table with named columns, mixed data types per column, built-in operations for filtering, grouping, merging, and reshaping — all without writing explicit loops.</li>
+        <li><strong>Why it matters in data engineering:</strong> Before data reaches Spark or a data lake, a lot of config reading, small-file processing, audit log writing, and API response parsing happens in Pandas. It's also the closest Python equivalent to a SQL table, so it's the natural tool for small-to-medium data that doesn't need a distributed cluster.</li>
+      </ul>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import pandas as pd
+
+# Plain Python — manual and verbose
+rows = [["O001", 500], ["O002", 300], ["O003", 700]]
+total = sum(row[1] for row in rows)   # have to know index 1 = amount
+
+# Pandas — expressive and readable
+df = pd.DataFrame(rows, columns=["order_id", "amount"])
+total = df["amount"].sum()            # clear, named column access
+print(total)                          # 1500
+
+# DataFrame gives you the table structure immediately
+print(df)
+#   order_id  amount
+# 0     O001     500
+# 1     O002     300
+# 2     O003     700</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- P2 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">2</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What is the difference between a Series and a DataFrame?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p><strong>Series</strong> — a single one-dimensional column of data with an index. Think of it as a single column from a spreadsheet.</p>
+      <p><strong>DataFrame</strong> — a two-dimensional table made up of multiple Series, each sharing the same index. Think of it as a full spreadsheet with rows and columns.</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import pandas as pd
+
+# Series — 1D, like a single column
+amounts = pd.Series([500, 300, 700], name="amount")
+print(amounts)
+# 0    500
+# 1    300
+# 2    700
+# Name: amount, dtype: int64
+
+print(type(amounts))  # <class 'pandas.core.series.Series'>
+
+# DataFrame — 2D table
+df = pd.DataFrame({
+    "order_id": ["O001", "O002", "O003"],
+    "amount":   [500, 300, 700]
+})
+print(type(df))       # <class 'pandas.core.frame.DataFrame'>
+
+# Selecting a column from a DataFrame returns a Series
+col = df["amount"]
+print(type(col))      # <class 'pandas.core.series.Series'>
+
+# Selecting multiple columns returns a DataFrame
+subset = df[["order_id", "amount"]]
+print(type(subset))   # <class 'pandas.core.frame.DataFrame'></code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- P3 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">3</div>
+      <div class="q-title-wrap">
+        <div class="q-title">How do you read and write data in Pandas? CSV, Excel, JSON, SQL.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import pandas as pd
+
+# ── Reading ────────────────────────────────────────────
+df = pd.read_csv("orders.csv")
+df = pd.read_csv("orders.csv", sep="|", encoding="utf-8")
+df = pd.read_csv("orders.csv", usecols=["order_id","amount"])  # specific cols only
+df = pd.read_csv("orders.csv", chunksize=10000)                # read in chunks
+
+df = pd.read_excel("report.xlsx", sheet_name="Orders")
+df = pd.read_json("response.json")
+df = pd.read_json("response.json", orient="records")
+
+import sqlalchemy
+engine = sqlalchemy.create_engine("mssql+pyodbc://...")
+df = pd.read_sql("SELECT * FROM orders WHERE status='active'", con=engine)
+df = pd.read_sql_table("orders", con=engine)
+
+# ── Writing ────────────────────────────────────────────
+df.to_csv("output.csv", index=False)           # index=False avoids extra index column
+df.to_excel("output.xlsx", sheet_name="Result", index=False)
+df.to_json("output.json", orient="records", indent=2)
+df.to_sql("orders_staging", con=engine, if_exists="replace", index=False)
+# if_exists: 'replace' drops & recreates, 'append' adds rows, 'fail' errors if exists</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- P4 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">4</div>
+      <div class="q-title-wrap">
+        <div class="q-title">How do you explore a DataFrame? What are the first things you check when you get new data?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"Whenever I get a new dataset, I always run a quick EDA (Exploratory Data Analysis) sequence — same 5 commands every time before touching the data."</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">df = pd.read_csv("orders.csv")
+
+df.shape          # (rows, columns) — (10000, 8)
+df.dtypes         # data type per column
+df.head(5)        # first 5 rows
+df.tail(5)        # last 5 rows
+df.info()         # columns, non-null count, dtypes, memory usage
+df.describe()     # count, mean, std, min, max for numeric columns
+
+# Null checks — critical for data quality
+df.isnull().sum()           # null count per column
+df.isnull().sum() / len(df) # null percentage per column
+
+# Duplicates
+df.duplicated().sum()                        # total duplicate rows
+df.duplicated(subset=["order_id"]).sum()     # duplicates on a specific key
+
+# Value distribution
+df["status"].value_counts()         # frequency of each value
+df["status"].value_counts(normalize=True)   # as percentages
+
+# Column names and index
+df.columns.tolist()
+df.index</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- P5 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">5</div>
+      <div class="q-title-wrap">
+        <div class="q-title">How do you filter, select and slice data in Pandas? What is the difference between <code>loc</code> and <code>iloc</code>?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p><strong><code>loc</code></strong> — label-based. You select by column name and row label (index value).</p>
+      <p><strong><code>iloc</code></strong> — integer position-based. You select by row number and column number (0, 1, 2...).</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">df = pd.DataFrame({
+    "order_id": ["O001","O002","O003","O004"],
+    "amount":   [500, 300, 700, 150],
+    "status":   ["completed","pending","completed","cancelled"]
+})
+
+# ── Column selection ───────────────────────────────────
+df["amount"]                        # single column → Series
+df[["order_id","amount"]]           # multiple columns → DataFrame
+
+# ── Row filtering ──────────────────────────────────────
+df[df["amount"] > 400]              # condition filter
+df[df["status"] == "completed"]     # equality filter
+df[(df["amount"] > 200) & (df["status"] == "completed")]  # AND
+df[(df["amount"] > 500) | (df["status"] == "pending")]    # OR
+df[df["status"].isin(["completed", "pending"])]           # isin
+df[~df["status"].isin(["cancelled"])]                     # NOT isin
+
+# ── loc — label based ──────────────────────────────────
+df.loc[0, "amount"]           # row 0, column "amount" → 500
+df.loc[0:2, "amount"]         # rows 0 to 2, column "amount"
+df.loc[0:2, ["order_id","amount"]]  # rows 0-2, specific columns
+
+# ── iloc — position based ──────────────────────────────
+df.iloc[0]             # first row — regardless of index label
+df.iloc[0, 1]          # row 0, column 1 → 500
+df.iloc[:3, :2]        # first 3 rows, first 2 columns
+df.iloc[-1]            # last row</code></pre>
+      </div>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>Rule of thumb: use <code>loc</code> when you know column names (almost always). Use <code>iloc</code> when you need positional slicing — like "give me every 100th row" or "give me the last column regardless of its name."</div></div>
+    </div>
+  </div>
+
+  <!-- P6 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">6</div>
+      <div class="q-title-wrap">
+        <div class="q-title">How do you handle missing values in Pandas?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Detect
+df.isnull()                           # True/False per cell
+df.isnull().sum()                     # count per column
+df[df["amount"].isnull()]             # rows where amount is null
+
+# Drop
+df.dropna()                           # drop rows with ANY null
+df.dropna(subset=["order_id"])        # drop only if this column is null
+df.dropna(thresh=3)                   # drop if fewer than 3 non-null values
+df.dropna(axis=1)                     # drop COLUMNS with any null
+
+# Fill
+df.fillna(0)                                       # fill all nulls with 0
+df.fillna({"amount": 0, "status": "unknown"})      # per column defaults
+df["amount"].fillna(df["amount"].mean())            # fill with column mean
+df["status"].fillna(method="ffill")                # forward fill — carry last value
+df["status"].fillna(method="bfill")                # backward fill — use next value
+
+# Replace specific values
+df.replace(-1, None)                  # replace -1 with NaN
+df.replace({"status": {"N/A": None, "NULL": None}})  # map replacements</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- P7 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">7</div>
+      <div class="q-title-wrap">
+        <div class="q-title">How do you group and aggregate data in Pandas? Explain <code>groupby</code>.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"<code>groupby</code> is Pandas' equivalent of SQL's GROUP BY — split data into groups, apply an aggregation function to each group, combine the results."</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">df = pd.DataFrame({
+    "department": ["Sales","Sales","HR","HR","Tech"],
+    "employee":   ["Alice","Bob","Carol","Dave","Eve"],
+    "salary":     [70000, 80000, 60000, 65000, 90000],
+    "bonus":      [5000, 7000, 4000, 4500, 9000]
+})
+
+# Basic groupby
+df.groupby("department")["salary"].sum()
+# department
+# HR       125000
+# Sales    150000
+# Tech      90000
+
+# Multiple aggregations on one column
+df.groupby("department")["salary"].agg(["sum","mean","min","max","count"])
+
+# Multiple aggregations on multiple columns
+df.groupby("department").agg(
+    total_salary = ("salary", "sum"),
+    avg_salary   = ("salary", "mean"),
+    total_bonus  = ("bonus",  "sum"),
+    headcount    = ("employee","count")
+)
+
+# Group by multiple columns
+df.groupby(["department","employee"])["salary"].sum()
+
+# Reset index — turns group keys back into columns
+result = df.groupby("department")["salary"].sum().reset_index()
+
+# Filter groups — keep only groups meeting a condition
+high_pay_depts = (df.groupby("department")
+  .filter(lambda g: g["salary"].mean() > 70000)
+)</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- P8 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">8</div>
+      <div class="q-title-wrap">
+        <div class="q-title">How do you merge and join DataFrames in Pandas?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"Pandas has <code>merge()</code> (like SQL JOIN), <code>concat()</code> (stacking DataFrames), and <code>join()</code> (index-based merge). In data engineering, <code>merge()</code> is by far the most used."</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">orders = pd.DataFrame({
+    "order_id":   ["O001","O002","O003"],
+    "customer_id":["C1","C2","C1"],
+    "amount":     [500, 300, 700]
+})
+customers = pd.DataFrame({
+    "customer_id":["C1","C2","C3"],
+    "name":       ["Alice","Bob","Carol"]
+})
+
+# merge — like SQL JOIN
+pd.merge(orders, customers, on="customer_id", how="inner")
+pd.merge(orders, customers, on="customer_id", how="left")   # keep all orders
+pd.merge(orders, customers, on="customer_id", how="right")
+pd.merge(orders, customers, on="customer_id", how="outer")
+
+# Different column names in each table
+pd.merge(orders, customers,
+    left_on="customer_id", right_on="cust_id", how="left")
+
+# concat — stack DataFrames vertically (append rows)
+jan = pd.read_csv("jan.csv")
+feb = pd.read_csv("feb.csv")
+combined = pd.concat([jan, feb], ignore_index=True)
+
+# concat horizontally (add columns side by side)
+pd.concat([df1, df2], axis=1)
+
+# Check for merge issues — rows that didn't match
+merged = pd.merge(orders, customers, on="customer_id", how="left", indicator=True)
+unmatched = merged[merged["_merge"] == "left_only"]
+print(f"Orders with no matching customer: {len(unmatched)}")</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- P9 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">9</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What is <code>apply()</code> in Pandas? When should you use it and when should you avoid it?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"<code>apply()</code> lets you apply a custom Python function to each row or column of a DataFrame. It's flexible — but it runs in Python row by row, not vectorized. That means it's slow on large DataFrames compared to built-in Pandas operations."</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">df = pd.DataFrame({
+    "first_name": ["alice", "bob", "carol"],
+    "last_name":  ["smith", "jones", "white"],
+    "salary":     [70000, 80000, 60000]
+})
+
+# apply on a column (Series)
+df["first_name"].apply(str.title)         # vectorized, built-in — fast
+df["salary"].apply(lambda x: x * 1.10)   # 10% raise — but just use * 1.10
+
+# apply row-wise — when logic needs multiple columns
+def full_name(row):
+    return f"{row['first_name'].title()} {row['last_name'].title()}"
+
+df["full_name"] = df.apply(full_name, axis=1)
+
+# When to AVOID apply — if built-in vectorized ops exist, use those
+# Slow:
+df["salary"].apply(lambda x: x * 1.10)
+# Fast (vectorized):
+df["salary"] * 1.10
+
+# Slow:
+df["first_name"].apply(lambda x: x.upper())
+# Fast (built-in string method):
+df["first_name"].str.upper()
+
+# Use apply ONLY when no built-in vectorized equivalent exists
+# — complex conditional logic across multiple columns
+def classify(row):
+    if row["salary"] > 75000 and row["first_name"] == "alice":
+        return "Senior"
+    return "Junior"
+
+df["level"] = df.apply(classify, axis=1)</code></pre>
+      </div>
+      <div class="callout warn"><span class="callout-icon">⚠️</span><div>On a 10 million row DataFrame, <code>apply()</code> is 10–100x slower than vectorized operations. Always check if Pandas has a built-in method first before reaching for <code>apply()</code>.</div></div>
+    </div>
+  </div>
+
+  <!-- P10 — PANDAS FUNCTIONS REFERENCE -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">10</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Most used Pandas functions — with outputs (quick reference)</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import pandas as pd
+
+df = pd.DataFrame({
+    "order_id": ["O001","O002","O003","O001","O004"],
+    "amount":   [500, 300, 700, 500, None],
+    "status":   ["completed","pending","completed","completed","cancelled"],
+    "date":     ["2024-01-01","2024-01-02","2024-01-01","2024-01-03","2024-01-02"]
+})
+
+# ── Shape & Info ───────────────────────────────────────
+df.shape                     # (5, 4)
+df.dtypes                    # order_id object, amount float64...
+df.info()                    # RangeIndex: 5, non-null counts per col
+
+# ── Basic stats ────────────────────────────────────────
+df["amount"].sum()           # 2000.0
+df["amount"].mean()          # 500.0
+df["amount"].max()           # 700.0
+df["amount"].min()           # 300.0
+df["amount"].count()         # 4  (skips NaN)
+df["amount"].nunique()       # 3  (unique non-null values)
+df["status"].value_counts()
+# completed    3
+# cancelled    1
+# pending      1
+
+# ── Cleaning ───────────────────────────────────────────
+df.drop_duplicates()                          # rows: 4 (O001 dup removed)
+df.drop_duplicates(subset=["order_id"])       # keep first O001 only
+df.dropna(subset=["amount"])                  # remove row with None amount
+df.fillna({"amount": 0})                      # replace None with 0
+df.rename(columns={"order_id":"id"})          # rename column
+
+# ── Transformation ─────────────────────────────────────
+df["amount_inr"] = df["amount"] * 83          # vectorized column operation
+df["date"] = pd.to_datetime(df["date"])       # string → datetime
+df["month"] = df["date"].dt.month             # extract month → 1
+df["status_upper"] = df["status"].str.upper() # string method → "COMPLETED"
+
+# ── Sorting ────────────────────────────────────────────
+df.sort_values("amount", ascending=False)
+df.sort_values(["status","amount"], ascending=[True, False])
+
+# ── Pivot ──────────────────────────────────────────────
+df.pivot_table(
+    values="amount",
+    index="status",
+    aggfunc="sum"
+)
+# status        amount
+# cancelled        0.0
+# completed     1700.0
+# pending        300.0
+
+# ── Type casting ───────────────────────────────────────
+df["amount"] = df["amount"].astype("Int64")   # nullable integer
+df["status"] = df["status"].astype("category")</code></pre>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /pandas group -->
+
+  <!-- ─── NUMPY ──────────────────────────────────── -->
+  <div class="concept-group">
+    <div class="concept-label"><span>NumPy</span></div>
+
+  <!-- N1 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">11</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What is NumPy and why do we need it? How is it different from Python lists?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"NumPy (Numerical Python) is a library for fast numerical computing. The core reason we need it is that Python lists are slow for mathematical operations — they're general-purpose containers that can hold mixed types. NumPy arrays are fixed-type, stored in contiguous memory, and operations on them are executed in optimized C code under the hood — making them 10–100x faster than equivalent Python list operations."</p>
+      <ul>
+        <li><strong>Python list:</strong> Mixed types, no broadcasting, no vectorized math, slow for large data.</li>
+        <li><strong>NumPy array:</strong> Single type (homogeneous), vectorized operations, supports broadcasting, much faster, uses less memory.</li>
+        <li><strong>Why it matters in data engineering:</strong> NumPy is the foundation of Pandas — every Pandas Series is backed by a NumPy array. It's also used for numerical transformations, statistical checks, array-based masking for data quality, and generating test data.</li>
+      </ul>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import numpy as np
+import time
+
+# Speed comparison — multiply 1 million numbers by 2
+python_list = list(range(1_000_000))
+numpy_array = np.arange(1_000_000)
+
+# Python list — slow loop
+start = time.time()
+result = [x * 2 for x in python_list]
+print(f"List: {time.time() - start:.4f}s")    # ~0.08s
+
+# NumPy — vectorized, no loop
+start = time.time()
+result = numpy_array * 2
+print(f"NumPy: {time.time() - start:.4f}s")   # ~0.002s — 40x faster
+
+# Type enforcement
+arr = np.array([1, 2, 3, 4.5])     # all become float64
+print(arr.dtype)                     # float64
+# Python list: [1, 2, 3, 4.5] — mixed int and float, no enforcement</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- N2 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">12</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What is broadcasting in NumPy? Why is it powerful?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"Broadcasting is NumPy's ability to perform operations between arrays of different shapes — without actually copying the data to make them the same size. It automatically 'stretches' smaller arrays to match the shape of larger ones during computation."</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import numpy as np
+
+# Scalar broadcast — apply one value to all elements
+salaries = np.array([50000, 60000, 70000])
+salaries * 1.10                  # [55000, 66000, 77000] — 10% raise applied to all
+
+# Without broadcasting (manual Python)
+[s * 1.10 for s in salaries]    # same result but slower
+
+# Array broadcast — different shaped arrays
+# Add tax rate per department to all employee salaries
+salaries = np.array([[50000, 60000],   # dept 1 employees
+                     [70000, 80000]])  # dept 2 employees
+tax_rates = np.array([0.2, 0.3])      # tax per dept (1D)
+
+tax_amounts = salaries * tax_rates[:, np.newaxis]
+# salaries shape: (2, 2)
+# tax_rates shape: (2,) → broadcast to (2, 2) automatically
+# Result:
+# [[10000, 12000],   dept 1: 0.2 * each salary
+#  [21000, 24000]]   dept 2: 0.3 * each salary
+
+# Practical — normalise a column of values (0 to 1 scale)
+prices = np.array([100, 200, 150, 300, 250])
+normalised = (prices - prices.min()) / (prices.max() - prices.min())
+# [0.  , 1.  , 0.25, 0.75, 0.5 ]</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- N3 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">13</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Explain <code>reshape()</code>, <code>flatten()</code> and array slicing in NumPy.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import numpy as np
+
+arr = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+
+# reshape — change shape without changing data
+matrix = arr.reshape(3, 4)      # 3 rows, 4 columns
+print(matrix)
+# [[ 1  2  3  4]
+#  [ 5  6  7  8]
+#  [ 9 10 11 12]]
+
+arr.reshape(2, 6)               # 2 rows, 6 columns
+arr.reshape(2, 2, 3)            # 3D array: 2 blocks, 2 rows, 3 cols
+arr.reshape(-1, 4)              # -1 = "figure out this dim automatically" → (3,4)
+
+# flatten — collapse back to 1D
+matrix.flatten()                # [1 2 3 4 5 6 7 8 9 10 11 12]
+matrix.ravel()                  # same but returns a VIEW (memory efficient)
+
+# Array slicing — same syntax as Python lists but for N dimensions
+matrix[0]                       # first row:  [1 2 3 4]
+matrix[:, 0]                    # first col:  [1 5 9]
+matrix[0, :]                    # first row:  [1 2 3 4]
+matrix[1:3, 2:4]                # rows 1-2, cols 2-3:  [[7 8][11 12]]
+matrix[-1]                      # last row:  [9 10 11 12]
+
+# Boolean masking — most used in data engineering
+arr2 = np.array([100, -50, 200, -30, 150])
+arr2[arr2 > 0]                  # [100 200 150] — only positive values
+arr2[arr2 < 0] = 0              # replace negatives with 0
+print(arr2)                     # [100   0 200   0 150]</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- N4 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">14</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What is <code>np.where()</code>? How is it used in data engineering?</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>"<code>np.where(condition, value_if_true, value_if_false)</code> is the vectorized equivalent of an if-else applied across an entire array. It's much faster than a Python loop or <code>apply()</code> for conditional logic on large arrays or Pandas columns."</p>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import numpy as np
+import pandas as pd
+
+amounts = np.array([500, -50, 300, -200, 700, 0])
+
+# Basic — flag negative amounts
+flags = np.where(amounts < 0, "refund", "sale")
+print(flags)
+# ['sale' 'refund' 'sale' 'refund' 'sale' 'sale']
+
+# Replace negatives with 0
+cleaned = np.where(amounts < 0, 0, amounts)
+print(cleaned)           # [500   0 300   0 700   0]
+
+# Most common use — creating a new Pandas column conditionally
+df = pd.DataFrame({"amount": [500, -50, 300, -200, 700]})
+
+df["type"] = np.where(df["amount"] >= 0, "credit", "debit")
+print(df)
+#    amount    type
+# 0     500  credit
+# 1     -50   debit
+# 2     300  credit
+# 3    -200   debit
+# 4     700  credit
+
+# Nested np.where — like CASE WHEN in SQL
+df["category"] = np.where(
+    df["amount"] > 500, "high",
+    np.where(df["amount"] > 200, "medium", "low")
+)
+#    amount    type category
+# 0     500  credit   medium
+# 1     -50   debit      low
+# 2     300  credit   medium
+# 3    -200   debit      low
+# 4     700  credit     high</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- N5 — NUMPY FUNCTIONS REFERENCE -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">15</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Most used NumPy functions — with outputs (quick reference)</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import numpy as np
+
+arr = np.array([3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
+
+# ── Array creation ─────────────────────────────────────
+np.array([1, 2, 3])               # from list
+np.zeros((3, 4))                  # 3x4 array of zeros
+np.ones((2, 3))                   # 2x3 array of ones
+np.full((2, 2), 7)                # 2x2 array filled with 7
+np.arange(0, 10, 2)              # [0 2 4 6 8]
+np.linspace(0, 1, 5)             # [0.   0.25 0.5  0.75 1.  ]
+np.eye(3)                         # 3x3 identity matrix
+
+# ── Random ─────────────────────────────────────────────
+np.random.seed(42)                # reproducible results
+np.random.rand(3)                 # [0.37, 0.95, 0.73] uniform 0-1
+np.random.randint(1, 100, size=5) # [52, 93, 15, 72, 61]
+np.random.normal(0, 1, size=5)   # normal distribution, mean=0, std=1
+np.random.choice([1,2,3,4], size=3, replace=False)  # sample without replacement
+
+# ── Math operations ────────────────────────────────────
+np.sum(arr)                       # 39
+np.mean(arr)                      # 3.9
+np.median(arr)                    # 3.5
+np.std(arr)                       # 2.34
+np.var(arr)                       # 5.49
+np.min(arr)                       # 1
+np.max(arr)                       # 9
+np.argmin(arr)                    # 1  (index of min)
+np.argmax(arr)                    # 5  (index of max)
+np.cumsum(arr)                    # [3 4 8 9 14 23 25 31 36 39]
+np.diff(arr)                      # differences between consecutive: [-2  3 -3  4  4 -7  4 -1 -2]
+np.abs(np.array([-3, 2, -5]))    # [3 2 5]
+np.sqrt(np.array([4, 9, 16]))    # [2. 3. 4.]
+np.log(np.array([1, 10, 100]))   # [0.  2.3  4.6]
+np.round(np.array([1.567, 2.345]), 2)  # [1.57 2.35]
+
+# ── Shape & type ───────────────────────────────────────
+arr.shape                         # (10,)
+arr.ndim                          # 1
+arr.dtype                         # int64
+arr.size                          # 10
+
+# ── Sorting & searching ────────────────────────────────
+np.sort(arr)                      # [1 1 2 3 3 4 5 5 6 9]
+np.argsort(arr)                   # indices that would sort the array
+np.unique(arr)                    # [1 2 3 4 5 6 9]
+np.unique(arr, return_counts=True)
+# (array([1,2,3,4,5,6,9]), array([2,1,2,1,2,1,1]))  ← value + count
+
+# ── Useful for data engineering ────────────────────────
+np.isnan(np.array([1, np.nan, 3]))      # [False  True False]
+np.isinf(np.array([1, np.inf, 3]))      # [False  True False]
+np.clip(arr, 2, 6)                       # clip values: [3 2 4 2 5 6 2 6 5 3]
+np.percentile(arr, [25, 50, 75])         # [2.25 3.5  5.  ]
+np.corrcoef([1,2,3,4], [2,4,5,4])       # correlation matrix</code></pre>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /numpy group -->
+
+</div><!-- /pandas -->
 
 
   </main>
