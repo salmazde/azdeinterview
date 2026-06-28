@@ -753,6 +753,8 @@
     padding: 3px 10px; font-size: 12px; font-weight: 600; color: #1B5E20;
     margin: 3px;
   }
+
+  
 </style>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
 </head>
@@ -784,17 +786,17 @@
     <ul class="nav-list">
       <li class="nav-item"><button onclick="show('intro')" class="active"><span class="nav-dot"></span>Intro<span class="nav-count">4</span></button></li>
       <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy Set<span class="nav-count">14</span></button></li>
-      <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">16</span></button></li>
-      <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count">13</span></button></li>
+      <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">17</span></button></li>
+      <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count">14</span></button></li>
       <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">11</span></button></li>
-      <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">12</span></button></li>
-      <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta Lake<span class="nav-count">7</span></button></li>
+      <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">14</span></button></li>
+      <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta Lake<span class="nav-count">8</span></button></li>
       <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>ADF<span class="nav-count">13</span></button></li>
       <li class="nav-item"><button onclick="show('synapse')"><span class="nav-dot"></span>Synapse<span class="nav-count">12</span></button></li>
       <li class="nav-item"><button onclick="show('security')"><span class="nav-dot"></span>Security<span class="nav-count">5</span></button></li>
       <li class="nav-item"><button onclick="show('coding')"><span class="nav-dot"></span>Coding<span class="nav-count">25</span></button></li>
       <li class="nav-item"><button onclick="show('airflow')"><span class="nav-dot"></span>Airflow<span class="nav-count">8</span></button></li>
-      <li class="nav-item"><button onclick="show('datamodel')"><span class="nav-dot"></span>Data Modelling<span class="nav-count">16</span></button></li>
+      <li class="nav-item"><button onclick="show('datamodel')"><span class="nav-dot"></span>Data Modelling<span class="nav-count">17</span></button></li>
       <li class="nav-item"><button onclick="show('hr')"><span class="nav-dot"></span>HR<span class="nav-count">20</span></button></li>
       <li class="nav-item"><button onclick="show('python')"><span class="nav-dot"></span>Python<span class="nav-count">20</span></button></li>
       <li class="nav-item"><button onclick="show('pandas')"><span class="nav-dot"></span>Adv-Py<span class="nav-count">15</span></button></li>
@@ -1381,6 +1383,56 @@ df.writeStream \
     </ul>
 
     <div class="callout tip"><span class="callout-icon">💡</span><div>"My mental shortcut: Queued = waiting for something, not broken. I check compute capacity, IR/connector capacity, then concurrency limits — in that order, because that's roughly the order of how often each one is actually the cause."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">14</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you design a pipeline that guarantees exactly-once processing? What are the trade-offs between idempotency and deduplication?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Exactly-once is one of the hardest guarantees in distributed systems — because networks fail, jobs restart, and sources sometimes send the same data twice. The practical approach is not to achieve true exactly-once delivery (which is extremely hard), but to make every step <strong>idempotent</strong> — meaning running it twice gives the same result as running it once."</p>
+
+    <p><strong>How I design for exactly-once:</strong></p>
+    <ul>
+      <li><strong>Idempotent writes using MERGE:</strong> Instead of blindly appending, I MERGE on the natural key — if the record already exists, update it; if not, insert it. Running the same batch 10 times gives the same result as running it once.</li>
+      <li><strong>Checkpointing for streaming:</strong> Structured Streaming checkpoints track which source offsets have been processed. If the job restarts, it resumes exactly where it left off — no reprocessing, no skipping.</li>
+      <li><strong>Watermark columns for batch:</strong> Track the last successfully processed timestamp. On next run, only process records newer than the watermark. Even if the job reruns the same window, the watermark ensures no duplicates land in the output.</li>
+      <li><strong>Partition overwrite for idempotent batch writes:</strong> Instead of append, overwrite the specific partition being processed. Rerunning the same date's partition always produces the same result.</li>
+    </ul>
+<div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; PySpark</div>
+    <pre><code class="language-python"># Idempotent write — MERGE pattern
+from delta.tables import DeltaTable
+
+def idempotent_write(batch_df, batch_id):
+    delta_table = DeltaTable.forPath(spark, "/mnt/delta/orders")
+    delta_table.alias("t").merge(
+        batch_df.alias("s"),
+        "t.order_id = s.order_id"
+    ).whenMatchedUpdateAll() \
+     .whenNotMatchedInsertAll() \
+     .execute()
+
+# Partition overwrite — idempotent for batch date processing
+spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+df.write.format("delta") \
+  .partitionBy("process_date") \
+  .mode("overwrite") \
+  .save("/mnt/delta/orders")</code></pre></div>
+
+    <p><strong>Idempotency vs Deduplication — the trade-off:</strong></p>
+    <ul>
+      <li><strong>Idempotency</strong> — designing the write operation so re-running it doesn't create new records. The source of truth prevents duplicates at write time. Simple, elegant, works well when you control the write. Downside: requires a reliable natural key to MERGE on.</li>
+      <li><strong>Deduplication</strong> — detecting and removing duplicates after they've been written. Flexible — works even without a natural key (can dedup on composite columns or hash). Downside: more expensive (requires scanning and comparing records), and duplicates exist temporarily until the dedup job runs. Also stateful in streaming — maintaining a "seen events" state store has memory implications.</li>
+      <li><strong>When to use which:</strong> If I control the write layer → idempotency first (MERGE). If the source inherently sends duplicates and I can't prevent them at write → deduplication layer in Silver. In most production pipelines I use both — idempotent writes as the primary defence, plus a dedup check in the Silver transformation as a safety net.</li>
+    </ul>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Exactly-once is a spectrum, not a binary. At-most-once (may lose data), at-least-once (may duplicate), exactly-once (neither). In practice, I design for at-least-once delivery with idempotent processing — which gives the same end result as exactly-once but is much simpler to implement reliably."</div></div>
   </div>
 </div>
 
@@ -2144,9 +2196,91 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
     </div>
   </div>
 
+  <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">8</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you manage access control and governance in a shared Databricks workspace?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"In a shared workspace — where multiple teams, environments, and use cases co-exist — governance isn't optional. Without it, you end up with data sprawl, accidental overwrites, and compliance failures. I manage it at three layers."</p>
+
+    <p><strong>1. Identity & Authentication:</strong></p>
+    <ul>
+      <li>All users authenticate via <strong>Azure Active Directory (AAD)</strong> — no local Databricks passwords in production. This gives you single sign-on and centralized identity management.</li>
+      <li>Service principals (not personal accounts) are used for automated pipelines and ADF connections. A pipeline running as "salman@company.com" is a problem if that person leaves the company — service principals don't.</li>
+    </ul>
+
+    <p><strong>2. Unity Catalog — the main governance layer:</strong></p>
+    <ul>
+      <li><strong>Three-level namespace:</strong> <code>catalog.schema.table</code> — e.g., <code>citi_prod.silver.customer_transactions</code>. Each level has its own permissions.</li>
+      <li><strong>GRANT/REVOKE at any level:</strong> Grant SELECT on a specific table to an analyst group. Grant ALL PRIVILEGES on a schema to the data engineering team. Deny access to PII tables for everyone except the compliance team.</li>
+      <li><strong>Column-level security:</strong> Mask or restrict specific columns (like SSN, credit card) per user group — the table is visible but sensitive columns return masked values.</li>
+      <li><strong>Row-level security:</strong> Apply row filters so a regional team only sees their region's data, even when querying the same shared table.</li>
+      <li><strong>Data lineage:</strong> Unity Catalog auto-tracks which notebook/job read or wrote each table — critical for impact analysis and compliance audits.</li>
+    </ul>
+
+    <p><strong>3. Cluster & compute access:</strong></p>
+    <ul>
+      <li>Cluster policies restrict what cluster configurations users can create — preventing analysts from spinning up 64-node clusters by accident.</li>
+      <li>Separate cluster pools per team — data engineering gets job clusters, analysts get SQL Warehouses, ML gets GPU clusters. Each pool has its own budget and access control.</li>
+      <li>Table ACLs on SQL Warehouses — analysts can only query what they're explicitly granted, not browse the entire metastore.</li>
+    </ul>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"My rule for shared workspaces: least privilege by default. Start with no access and grant explicitly — don't start with broad access and try to revoke it later. The second approach always leaves gaps."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">9</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Your Databricks cost is too high — what strategies would you use to reduce it?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Databricks cost has two main components — DBU (Databricks Units, based on cluster type and size) and the underlying cloud VM cost. I attack both."</p>
+
+    <p><strong>1. Cluster strategy — biggest impact:</strong></p>
+    <ul>
+      <li><strong>Job clusters over all-purpose clusters:</strong> All-purpose clusters run 24/7 and bill every minute even when idle. Job clusters spin up for a specific run and auto-terminate when done. For production batch pipelines, this is non-negotiable.</li>
+      <li><strong>Spot/preemptible instances for workers:</strong> Worker nodes on spot VMs cost 60–90% less than on-demand. Databricks handles spot preemption with automatic retries. I keep only the driver on on-demand.</li>
+      <li><strong>Auto-termination:</strong> Set idle termination to 15–30 minutes on any all-purpose cluster used for development. An idle 10-node cluster left running overnight burns money for nothing.</li>
+      <li><strong>Right-sizing:</strong> Profile the job in Spark UI first — check executor utilization, spill, and skew. Most jobs run on clusters twice as large as they need to be because nobody revisited the config after initial setup.</li>
+    </ul>
+
+    <p><strong>2. Cluster pools:</strong></p>
+    <ul>
+      <li>Cluster pools keep a warm set of VMs ready — so job clusters start in 30 seconds instead of 5 minutes, without paying for a running cluster in between runs. Ideal for pipelines that trigger frequently throughout the day.</li>
+    </ul>
+
+    <p><strong>3. Photon engine:</strong></p>
+    <ul>
+      <li>Photon is Databricks' vectorized query engine — it runs SQL and DataFrame operations 2–4x faster than standard Spark on the same hardware. Jobs finish faster, cluster uptime is shorter, total cost drops. Worth enabling on SQL-heavy workloads even though Photon DBUs are priced slightly higher per hour.</li>
+    </ul>
+
+    <p><strong>4. Storage optimization:</strong></p>
+    <ul>
+      <li>Small file problems inflate read times and inflate the cluster time needed. Regular OPTIMIZE + VACUUM on Delta tables reduces both scan time and storage cost.</li>
+      <li>ADLS lifecycle policies — move Bronze files older than 30 days to Cool tier, 90 days to Archive. Raw data you never query shouldn't sit on hot storage.</li>
+    </ul>
+
+    <p><strong>5. Monitor and attribute cost:</strong></p>
+    <ul>
+      <li>Tag every cluster with team, project, and environment tags. Use Databricks cost dashboards + Azure Cost Management to see which team, pipeline, or job is driving spend. You can't optimize what you can't measure.</li>
+      <li>Set budget alerts — email the team lead when a workspace exceeds a weekly threshold. Nobody reduces cost without visibility into what they're spending.</li>
+    </ul>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The single highest-impact change is almost always switching from all-purpose to job clusters with spot workers. I've seen Databricks bills drop 40–60% from that one change alone, before touching anything else."</div></div>
+  </div>
+</div>
+
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How do you optimize a slow Databricks job? End-to-end approach.</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span><span class="q-tag tag-debug">Tuning</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">How do you optimize a slow Databricks job? End-to-end approach.</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span><span class="q-tag tag-debug">Tuning</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Work through these layers in order — fix the cheapest issue first:</p>
       <ol>
@@ -2163,7 +2297,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">How do you control Azure costs across your data platform?</div><div class="q-tags"><span class="q-tag tag-cost">Cost Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">How do you control Azure costs across your data platform?</div><div class="q-tags"><span class="q-tag tag-cost">Cost Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ul>
         <li><strong>Databricks:</strong> Use spot instances for batch (90% cheaper). Use job clusters (auto-terminate) not all-purpose clusters (idle billing). Enable auto-termination (15–30 min idle). Use cluster pools for faster spin-up without idle cost. Right-size — profile job metrics and pick smallest fitting cluster.</li>
@@ -2177,7 +2311,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">How do you ensure data quality and monitoring in production pipelines?</div><div class="q-tags"><span class="q-tag tag-pattern">Data Quality</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">How do you ensure data quality and monitoring in production pipelines?</div><div class="q-tags"><span class="q-tag tag-pattern">Data Quality</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Data Quality Checks (at each layer):</strong></p>
       <ul>
@@ -2199,7 +2333,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">Describe a production issue you handled end-to-end.</div><div class="q-tags"><span class="q-tag tag-debug">Scenario</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">Describe a production issue you handled end-to-end.</div><div class="q-tags"><span class="q-tag tag-debug">Scenario</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>"Our nightly ADF pipeline that loaded source tables from on-prem SQL Server into ADLS Gen2 started failing intermittently — specifically on some Mondays. Other days it ran fine, which made it harder to diagnose.</p>
       <p>I checked ADF Monitor and found the Copy Activity was timing out on the SHIR connection. I SSH'd into the SHIR machine and found the disk was at 98% capacity — weeks of ADF diagnostic logs had accumulated with no rotation policy in place. I cleared the logs, freed the disk, and manually re-triggered the pipeline. It completed in 35 minutes.</p>
@@ -2210,7 +2344,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">A job works in Dev but fails in Production — how would you debug it?</div><div class="q-tags"><span class="q-tag tag-debug">Debugging</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">A job works in Dev but fails in Production — how would you debug it?</div><div class="q-tags"><span class="q-tag tag-debug">Debugging</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>This is one of the most common real-world scenarios. Check these differences between Dev and Prod:</p>
       <ol>
@@ -2869,10 +3003,75 @@ df.withColumn("result", multiply_by_two(col("amount")))</code></pre></div></div>
     </div>
   </div>
 
+  <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">11</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What are the different read and write modes in Spark?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+
+    <p><strong>Write Modes (batch):</strong></p>
+    <ul>
+      <li><strong>append:</strong> Adds new data to the existing table/path. Existing data is untouched. Most common for incremental loads.</li>
+      <li><strong>overwrite:</strong> Deletes all existing data and replaces with the new data. Use for full refreshes or when reprocessing a partition.</li>
+      <li><strong>ignore:</strong> If data already exists at the target path, do nothing — silently skip the write. Useful for idempotent pipelines where you want first-write-wins behaviour.</li>
+      <li><strong>error / errorIfExists (default):</strong> Throws an error if data already exists at the path. Protects against accidental overwrites.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; PySpark</div>
+    <pre><code class="language-python">df.write.format("delta").mode("append").save("/mnt/delta/orders")
+df.write.format("delta").mode("overwrite").save("/mnt/delta/orders")
+df.write.format("delta").mode("ignore").save("/mnt/delta/orders")
+df.write.format("delta").mode("error").save("/mnt/delta/orders")
+
+# Partition overwrite — overwrite only specific partitions, not entire table
+spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+df.write.format("delta").mode("overwrite").save("/mnt/delta/orders")
+# Only partitions present in df get overwritten — others stay untouched</code></pre></div>
+
+    <p><strong>Streaming output modes:</strong></p>
+    <ul>
+      <li><strong>append:</strong> Only new rows added since the last trigger are written. Most common. Cannot be used with aggregations (unless watermark is defined).</li>
+      <li><strong>complete:</strong> The entire result table is written every trigger. Used with aggregations — e.g., running count of events per category. Expensive on large datasets.</li>
+      <li><strong>update:</strong> Only rows that changed since last trigger are written. More efficient than complete for aggregations — only updated group rows are output.</li>
+    </ul>
+  <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; PySpark</div>
+    <pre><code class="language-python"># Streaming write modes
+df.writeStream.outputMode("append").format("delta").start(path)
+df.writeStream.outputMode("complete").format("delta").start(path)
+df.writeStream.outputMode("update").format("delta").start(path)</code></pre></div>
+
+    <p><strong>Read modes (for handling corrupt records):</strong></p>
+    <ul>
+      <li><strong>PERMISSIVE (default):</strong> Corrupt records are set to null and put in a <code>_corrupt_record</code> column. Processing continues.</li>
+      <li><strong>DROPMALFORMED:</strong> Silently drops corrupt records. Processing continues with clean records only.</li>
+      <li><strong>FAILFAST:</strong> Throws an exception immediately when a corrupt record is encountered. Stops the job. Use in strict quality-controlled pipelines.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; PySpark</div>
+    <pre><code class="language-python">df = (spark.read.format("csv")
+  .option("header", "true")
+  .option("mode", "PERMISSIVE")          # or DROPMALFORMED or FAILFAST
+  .option("columnNameOfCorruptRecord", "_corrupt_record")
+  .load("/mnt/bronze/orders.csv")
+)
+
+# Check what came in corrupt
+corrupt = df.filter(col("_corrupt_record").isNotNull())
+print(f"Corrupt records: {corrupt.count()}")</code></pre></div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>In production I use <strong>PERMISSIVE</strong> with a corrupt record check after reading — this lets the pipeline continue but gives me visibility into bad records. FAILFAST is too strict for data engineering where source quality varies, and DROPMALFORMED is too silent.</div></div>
+  </div>
+</div>
+
  
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">Explain Broadcast Hash Joins. What is the default threshold size in Spark?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">Explain Broadcast Hash Joins. What is the default threshold size in Spark?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>In a regular join, Spark must shuffle both tables across the network so matching keys land on the same executor. In a <strong>Broadcast Hash Join</strong>, the smaller table is fully copied ("broadcast") to every executor — no shuffle needed.</p>
       <p><strong>Default auto-broadcast threshold: 10MB</strong> (<code>spark.sql.autoBroadcastJoinThreshold = 10485760</code>). If the smaller table is under 10MB, Spark automatically broadcasts it.</p>
@@ -2887,7 +3086,7 @@ df_large.join(broadcast(df_small), "key")</code></pre></div></div>
 
   
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">What is Spark Spill? How do you identify it in the Spark UI and resolve it?</div><div class="q-tags"><span class="q-tag tag-debug">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">What is Spark Spill? How do you identify it in the Spark UI and resolve it?</div><div class="q-tags"><span class="q-tag tag-debug">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Spill occurs when a Spark task's in-memory data exceeds available executor memory. Spark writes excess to disk and reads it back when needed — disk I/O is 100-1000x slower than RAM.</p>
       <p><strong>Identify:</strong> Spark UI → Stages tab → look for non-zero <em>Shuffle Spill (Memory)</em> and <em>Shuffle Spill (Disk)</em> columns. Also check Stage detail → Task metrics for high "Disk bytes spilled".</p>
@@ -2901,7 +3100,7 @@ df_large.join(broadcast(df_small), "key")</code></pre></div></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">How do you handle the Small File Problem in a Data Lake? Coalesce vs. repartition?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">How do you handle the Small File Problem in a Data Lake? Coalesce vs. repartition?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Thousands of tiny files require a metadata call per file and Spark creates one task per file — 10,000 files = 10,000 tasks = scheduler and storage service overwhelm.</p>
       <ul>
@@ -2920,7 +3119,7 @@ df.repartition(10).write.parquet("output/")   # expensive, perfectly even</code>
   
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">Write PySpark code to process and flatten nested JSON data.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">15</div><div class="q-title-wrap"><div class="q-title">Write PySpark code to process and flatten nested JSON data.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Key functions: <code>explode()</code> for arrays (drops null rows), <code>explode_outer()</code> keeps null rows, <code>col("struct.field")</code> accesses nested struct fields.</p>
       <div class="split-grid">
@@ -2963,7 +3162,7 @@ df_flat.show()</code></pre>
 
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">15</div><div class="q-title-wrap"><div class="q-title">How do you implement parallel processing in Python for ETL workloads? How do you structure a reusable Python ETL framework?</div><div class="q-tags"><span class="q-tag tag-arch">Python ETL</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">16</div><div class="q-title-wrap"><div class="q-title">How do you implement parallel processing in Python for ETL workloads? How do you structure a reusable Python ETL framework?</div><div class="q-tags"><span class="q-tag tag-arch">Python ETL</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Parallel processing options in Python:</strong></p>
       <ul>
@@ -3005,7 +3204,7 @@ with ThreadPoolExecutor(max_workers=4) as executor:
 
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">16</div><div class="q-title-wrap"><div class="q-title">Partitioning strategies and how they impact performance</div><div class="q-tags"><span class="q-tag tag-perf">Partitioning</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">17</div><div class="q-title-wrap"><div class="q-title">Partitioning strategies and how they impact performance</div><div class="q-tags"><span class="q-tag tag-perf">Partitioning</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Physical partitioning (on disk):</strong> Splitting data into directories based on column values — <code>partitionBy("year","month")</code>. Queries filtering on those columns skip irrelevant directories (partition pruning). Performance is excellent for the partition columns; no benefit for other columns.</p>
       <p><strong>Choosing partition columns:</strong> Low cardinality (date, region, status) — good. High cardinality (user_id, order_id) — bad (millions of tiny directories = small files problem, driver overwhelmed by metadata).</p>
@@ -3196,10 +3395,51 @@ spark.sql("DELETE FROM orders WHERE order_id = 12345")</code></pre></div>
   </div>
 </div>
 
-
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">4</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How does Delta Lake support streaming and batch together? What is Lambda vs Kappa architecture?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"This is one of Delta Lake's most powerful features — the same table can be written to by a batch job and read from by a streaming job simultaneously, with full consistency. This is called the <strong>Lakehouse architecture</strong> and it eliminates the need to maintain separate batch and streaming pipelines."</p>
+
+    <p><strong>How it works — unified table for both:</strong></p>
+    <ul>
+      <li>A batch ADF pipeline runs nightly and appends records to a Delta table.</li>
+      <li>At the same time, a Structured Streaming job reads from the same Delta table using <code>readStream</code> — Delta's transaction log tells the stream exactly which new files to process since its last checkpoint. It never reads a file twice and never misses a new one.</li>
+      <li>ACID transactions ensure the stream reader never sees a partially written batch — it either sees the full committed batch or waits for it to complete.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; PySpark</div>
+    <pre><code class="language-python"># Batch write — standard
+df_batch.write.format("delta").mode("append").save("/mnt/delta/events")
+
+# Stream read from the SAME table — works seamlessly
+stream_df = (spark.readStream.format("delta").load("/mnt/delta/events"))
+
+stream_df.writeStream \
+  .format("delta") \
+  .option("checkpointLocation", "/mnt/checkpoints/events") \
+  .outputMode("append") \
+  .start("/mnt/delta/events_processed")</code></pre></div>
+
+    <p><strong>Lambda Architecture (old way):</strong> Maintain two separate systems — a batch layer (Hadoop/Spark for historical accuracy) and a speed layer (Kafka/Storm for real-time). Results from both are merged at the serving layer. Problem: two codebases, two sets of bugs, two maintenance efforts. The batch and stream logic often diverge over time.</p>
+
+    <p><strong>Kappa Architecture (simpler):</strong> Everything goes through streaming. Historical reprocessing is done by replaying the stream from the beginning. Simpler architecture — one codebase. Problem: reprocessing at scale is expensive, and batch jobs are often more efficient for large historical loads.</p>
+
+    <p><strong>Lakehouse with Delta (best of both):</strong> One storage layer, one table, both batch and streaming read/write to it. No duplication, no divergence. This is what Databricks calls the Lakehouse pattern — and Delta's transaction log is what makes it possible.</p>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"In my projects, I use Delta as a unified table. ADF batch loads run nightly, Structured Streaming reads the same table for near-real-time use cases. Same data, same quality guarantees, one pipeline to maintain."</div></div>
+  </div>
+</div>
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">5</div>
     <div class="q-title-wrap">
       <div class="q-title">A streaming job is writing duplicate records to a Delta table. How would you prevent and resolve the issue?</div>
       <div class="q-tags"><span class="q-tag tag-debug">Scenario</span><span class="q-tag tag-pattern">Streaming</span></div>
@@ -3255,7 +3495,7 @@ df.writeStream.foreachBatch(upsert_batch) \
 
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Explain the Data Skipping mechanism in Delta Lake. How does it differ from traditional SQL indexing?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Explain the Data Skipping mechanism in Delta Lake. How does it differ from traditional SQL indexing?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>When you read from a Delta table with a filter (e.g., <code>WHERE event_date = '2024-01-15'</code>), Delta reads the transaction log's <strong>file-level statistics</strong> before scanning any data. For each Parquet file, the log stores: min value, max value, and null count per column.</p>
       <p>If a file's <code>event_date</code> range is 2024-01-10 to 2024-01-12, Delta knows it cannot possibly contain 2024-01-15 and <strong>skips it entirely</strong> — no I/O, no task created.</p>
@@ -3265,7 +3505,7 @@ df.writeStream.foreachBatch(upsert_batch) \
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How do you choose between Partitioning and Z-Ordering for a 10TB dataset?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture Decision</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How do you choose between Partitioning and Z-Ordering for a 10TB dataset?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture Decision</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>These solve different problems and work best together:</p>
       <p><strong>Partitioning</strong> creates physical directory splits. A query with <code>WHERE year=2024</code> reads only that folder — extremely effective for the partition column. Problem: high-cardinality columns (user_id with millions of values) → millions of tiny directories.</p>
@@ -3279,7 +3519,7 @@ df.writeStream.foreachBatch(upsert_batch) \
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Explain Skew Join optimization in Spark 3.x and how to handle it manually when AQE is disabled.</div><div class="q-tags"><span class="q-tag tag-perf">Advanced</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">Explain Skew Join optimization in Spark 3.x and how to handle it manually when AQE is disabled.</div><div class="q-tags"><span class="q-tag tag-perf">Advanced</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>With AQE enabled:</strong> AQE monitors shuffle statistics mid-query. If a partition is more than 5x the median size (and larger than 256MB), AQE splits that partition into sub-partitions and processes them in parallel. Completely transparent — no code changes needed.</p>
       <p><strong>Manually without AQE (Salting):</strong></p>
@@ -6436,13 +6676,70 @@ first_dag()</code></pre></div>
       </ul>
     </div>
   </div>
+
+  <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">7</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Difference between Data Lake vs Data Warehouse vs Lakehouse architecture</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"These three represent the evolution of how organizations store and serve data. Each solved the problems of the previous one — but each introduced new trade-offs."</p>
+
+    <p><strong>Data Warehouse:</strong></p>
+    <ul>
+      <li>Structured, schema-enforced storage optimized for SQL queries and BI reporting. Data is cleaned and modelled before it lands here — ETL (Extract, Transform, Load).</li>
+      <li>Examples: Synapse Dedicated Pool, Redshift, Snowflake, BigQuery.</li>
+      <li><strong>Strengths:</strong> Fast SQL performance, strong governance, well-understood by BI tools, ACID transactions.</li>
+      <li><strong>Weaknesses:</strong> Expensive at scale, can't store unstructured data (images, logs, JSON), transformations must happen before loading — if you didn't anticipate a query pattern, you may not have the raw data anymore to re-derive it. Schema changes are painful and slow.</li>
+    </ul>
+
+    <p><strong>Data Lake:</strong></p>
+    <ul>
+      <li>Store everything raw, in any format (structured, semi-structured, unstructured), at low cost on object storage (ADLS, S3). Schema is applied on read — ELT (Extract, Load, Transform).</li>
+      <li>Examples: ADLS Gen2, S3, GCS with raw Parquet/JSON/CSV files.</li>
+      <li><strong>Strengths:</strong> Cheap, flexible, stores any data type, supports ML and data science workloads, never discard raw data.</li>
+      <li><strong>Weaknesses:</strong> No ACID transactions — partial writes create corrupted state. No schema enforcement — bad data silently lands. No update/delete support on Parquet. Performance is poor without careful partitioning. Can become a "data swamp" — data lands but nobody trusts or uses it.</li>
+    </ul>
+
+    <p><strong>Lakehouse:</strong></p>
+    <ul>
+      <li>Combines the best of both. Cheap object storage like a data lake, but with a transactional metadata layer (Delta Lake, Apache Iceberg, Apache Hudi) that adds ACID transactions, schema enforcement, time travel, and update/delete support.</li>
+      <li>Examples: Databricks Lakehouse (Delta Lake on ADLS), AWS Lakehouse (Iceberg on S3).</li>
+      <li><strong>Strengths:</strong> Low cost storage of a data lake + reliability and performance of a data warehouse. One system for BI, ML, and streaming. Schema enforcement without losing raw data. MERGE, UPDATE, DELETE on object storage. Time travel for audit and recovery.</li>
+      <li><strong>Weaknesses:</strong> More complex than a pure data warehouse for simple BI use cases. Requires more engineering expertise. Ecosystem is still maturing vs traditional DW tooling.</li>
+    </ul>
+
+    <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
+      <div style="padding:9px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-sec);">Quick comparison</div>
+      <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div style="background:#E6F1FB;border:1px solid #B5D4F4;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:#0C447C;margin-bottom:6px;font-weight:600;">Data Warehouse</div>
+          <div style="font-size:12.5px;color:#042C53;line-height:1.8;">✅ Fast SQL<br>✅ ACID<br>✅ Schema enforced<br>❌ Expensive<br>❌ No unstructured<br>❌ Schema rigid</div>
+        </div>
+        <div style="background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:#854F0B;margin-bottom:6px;font-weight:600;">Data Lake</div>
+          <div style="font-size:12.5px;color:#412402;line-height:1.8;">✅ Cheap<br>✅ Any format<br>✅ Flexible<br>❌ No ACID<br>❌ No updates<br>❌ Data swamp risk</div>
+        </div>
+        <div style="background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:#0F6E56;margin-bottom:6px;font-weight:600;">Lakehouse</div>
+          <div style="font-size:12.5px;color:#04342C;line-height:1.8;">✅ Cheap storage<br>✅ ACID<br>✅ Any format<br>✅ Updates/deletes<br>✅ Time travel<br>✅ One system</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"I always frame it this way in interviews: Data Warehouse = reliability but expensive and rigid. Data Lake = cheap and flexible but unreliable. Lakehouse = the transaction log on top of cheap object storage is what bridges the gap — you get cheap, flexible storage with warehouse-grade reliability. That's what Delta Lake gives us."</div></div>
+  </div>
+</div>
   </div><!-- /fundamentals group -->
 
   <div class="concept-group">
     <div class="concept-label"><span>&#x1F3AF; Scenario-Based & Advanced</span></div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How do you handle Many-to-Many relationships in a Star Schema without creating a Cartesian product?</div><div class="q-tags"><span class="q-tag tag-model">Advanced Modelling</span><span class="q-tag tag-scenario">Scenario</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How do you handle Many-to-Many relationships in a Star Schema without creating a Cartesian product?</div><div class="q-tags"><span class="q-tag tag-model">Advanced Modelling</span><span class="q-tag tag-scenario">Scenario</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>A many-to-many relationship (e.g., one Order can have many Promotions, one Promotion can apply to many Orders) creates a Cartesian product if you JOIN directly — every order row multiplied by every matching promotion row = duplicated facts (inflated revenue totals).</p>
       <p><strong>Solution: Bridge Table (associative entity)</strong></p>
@@ -6458,7 +6755,7 @@ first_dag()</code></pre></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How do you implement Dynamic Data Masking in a Lakehouse to protect PII data?</div><div class="q-tags"><span class="q-tag tag-sec">PII / Privacy</span><span class="q-tag tag-model">Governance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">How do you implement Dynamic Data Masking in a Lakehouse to protect PII data?</div><div class="q-tags"><span class="q-tag tag-sec">PII / Privacy</span><span class="q-tag tag-model">Governance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>PII (Personally Identifiable Information) masking ensures sensitive data (SSN, email, phone, credit card) is visible only to authorized users, even when the underlying data is stored in plain text.</p>
       <p><strong>Azure SQL / Synapse — Dynamic Data Masking (DDM):</strong></p>
@@ -6495,7 +6792,7 @@ ALTER TABLE customers ALTER COLUMN email
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">Explain the Data Skipping mechanism in Delta Lake vs traditional SQL indexing</div><div class="q-tags"><span class="q-tag tag-model">Delta Lake</span><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">Explain the Data Skipping mechanism in Delta Lake vs traditional SQL indexing</div><div class="q-tags"><span class="q-tag tag-model">Delta Lake</span><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Delta Lake Data Skipping:</strong> For each Parquet file in a Delta table, the transaction log stores file-level statistics: <code>minValues</code>, <code>maxValues</code>, and <code>nullCount</code> per column (for the first 32 columns by default). When you run a query with a filter, Delta checks these stats before opening any file. If a file's min/max range doesn't contain the filter value, the file is skipped entirely — no I/O, no task created.</p>
       <p>Example: <code>WHERE order_date = '2024-03-15'</code> on a table with 1,000 files. If 950 files' date ranges don't include March 15, only 50 files are read. 95% I/O reduction.</p>
@@ -6510,7 +6807,7 @@ ALTER TABLE customers ALTER COLUMN email
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">What is the impact of Broadcast Hints on worker memory? When should you avoid them?</div><div class="q-tags"><span class="q-tag tag-perf">Memory</span><span class="q-tag tag-model">Join Strategy</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">What is the impact of Broadcast Hints on worker memory? When should you avoid them?</div><div class="q-tags"><span class="q-tag tag-perf">Memory</span><span class="q-tag tag-model">Join Strategy</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>A broadcast hint sends a full copy of one DataFrame to every executor in the cluster. Memory impact = <strong>table size × number of executors</strong>.</p>
       <p>Example: 500MB table, 200 executors → 100GB of total executor memory consumed just for that broadcast. If executors have 8GB each, this exceeds their capacity → OOM → executor crashes.</p>
@@ -6527,7 +6824,7 @@ ALTER TABLE customers ALTER COLUMN email
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">How do you monitor pipeline failures and set up alerting using Azure Monitor and Log Analytics?</div><div class="q-tags"><span class="q-tag tag-model">Monitoring</span><span class="q-tag tag-pattern">Observability</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">How do you monitor pipeline failures and set up alerting using Azure Monitor and Log Analytics?</div><div class="q-tags"><span class="q-tag tag-model">Monitoring</span><span class="q-tag tag-pattern">Observability</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Layer 1 — ADF Native Alerts:</strong> In ADF Monitor → Alerts → New Alert Rule. Trigger on: Pipeline run failed, Activity run failed, Trigger run failed. Notification: Email, SMS, Teams webhook, Azure Action Group.</p>
       <p><strong>Layer 2 — Azure Monitor + Log Analytics:</strong></p>
@@ -6549,7 +6846,7 @@ ADFPipelineRun
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">What is a Data Vault and how does it differ from Star Schema?</div><div class="q-tags"><span class="q-tag tag-model">Advanced Modelling</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">What is a Data Vault and how does it differ from Star Schema?</div><div class="q-tags"><span class="q-tag tag-model">Advanced Modelling</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Data Vault is a modelling methodology designed for enterprise data warehouses where sources are many, change frequently, and history must be preserved. It has three entity types:</p>
       <ul>
@@ -6567,7 +6864,7 @@ ADFPipelineRun
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">How do you design a data model for a multi-tenant SaaS application?</div><div class="q-tags"><span class="q-tag tag-scenario">Scenario</span><span class="q-tag tag-model">Design</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">How do you design a data model for a multi-tenant SaaS application?</div><div class="q-tags"><span class="q-tag tag-scenario">Scenario</span><span class="q-tag tag-model">Design</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Multi-tenant data modelling requires balancing isolation, cost, and query performance across tenants:</p>
       <p><strong>Option 1 — Shared database, shared schema (most common):</strong> All tenants in the same tables, with a <code>tenant_id</code> column everywhere. Cheapest, easiest to scale. Requires Row-Level Security to ensure tenants can't see each other's data. Risk: one large tenant's queries can impact others (noisy neighbor).</p>
@@ -6579,7 +6876,7 @@ ADFPipelineRun
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">How would you model a time-series dataset for efficient querying?</div><div class="q-tags"><span class="q-tag tag-scenario">Scenario</span><span class="q-tag tag-model">Time-Series</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">15</div><div class="q-title-wrap"><div class="q-title">How would you model a time-series dataset for efficient querying?</div><div class="q-tags"><span class="q-tag tag-scenario">Scenario</span><span class="q-tag tag-model">Time-Series</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Time-series data (IoT sensor readings, stock prices, website events) has specific patterns: always appended (rarely updated), queried by time range and entity, aggregated over windows.</p>
       <p><strong>Partitioning:</strong> Partition by date (or date + hour for high-frequency data). <code>partitionBy("date")</code> in Delta/Parquet means time-range queries read only relevant partitions — critical for performance on years of data.</p>
@@ -6591,7 +6888,7 @@ ADFPipelineRun
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">15</div><div class="q-title-wrap"><div class="q-title">How do you enforce data quality checks in a large-scale pipeline?</div><div class="q-tags"><span class="q-tag tag-model">Data Quality</span><span class="q-tag tag-pattern">Governance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">16</div><div class="q-title-wrap"><div class="q-title">How do you enforce data quality checks in a large-scale pipeline?</div><div class="q-tags"><span class="q-tag tag-model">Data Quality</span><span class="q-tag tag-pattern">Governance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Four dimensions of data quality: Completeness, Accuracy, Consistency, Timeliness.</strong></p>
       <p><strong>Checks by layer:</strong></p>
@@ -6620,7 +6917,7 @@ def validate_df(df, name):
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">16</div><div class="q-title-wrap"><div class="q-title">How do you handle stakeholder requirements and changing needs as a data engineer?</div><div class="q-tags"><span class="q-tag tag-model">Collaboration</span><span class="q-tag tag-scenario">Soft Skills</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">17</div><div class="q-title-wrap"><div class="q-title">How do you handle stakeholder requirements and changing needs as a data engineer?</div><div class="q-tags"><span class="q-tag tag-model">Collaboration</span><span class="q-tag tag-scenario">Soft Skills</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>This is both a technical and a people problem. Key approaches:</p>
       <ul>
