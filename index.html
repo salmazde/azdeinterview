@@ -1957,7 +1957,9 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
-    <p>Databricks is built on top of Apache Spark and runs on cloud infrastructure (Azure, AWS, GCP). It has a two-plane architecture — the control plane managed by Databricks, and the data plane managed by your cloud account.</p>
+    <p>Databricks is a cloud-based unified analytics platform that combines Data Engineering, Data Science, ML & Business Intelligence Into a single environment. It is widely used for large-scale data processing and advanced analytics.</p>
+    <p>Databricks follows a two-layer architecture — the control plane managed by Databricks, while the Compute/Data Plane is hosted in the cloud environment (AWS, Azure, or Google Cloud)</p>
+    <p><strong>Managed Spark + Delta Lake + Lakehouse Platform + Governance + Enterprise Tooling</strong></p>
 
       <div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid #60A5FA;margin:14px 0;">
 
@@ -1994,7 +1996,7 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
     <div style="background:#1f2423;border:0.5px solid #93C5FD;border-radius:6px;padding:8px 10px;">
 
       <div style="font-size:12px;font-weight:500;color:#93C5FD;margin-bottom:6px;">
-        Data Plane — your cloud account
+        Compute/Data Plane — cloud account
       </div>
 
       <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.7;">
@@ -2010,15 +2012,15 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
   </div>
 
   <div style="padding:7px 12px;font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid #93C5FD;">
-    <strong>Control Plane:</strong> Lives in Databricks' cloud account. You never see this infrastructure. <br>
-      <strong>Workspace UI:</strong> Interface used to create notebooks, clusters, jobs and manage workspace resources. <br>
+    <strong>Control Plane:</strong> The Control Plane is responsible for managing user access, workspaces, job scheduling, and metadata storage. It operates as Software as a Service (SaaS) and is fully managed by Databricks.<br>
+      <strong>Workspace UI:</strong> Provides an interface to manage notebooks, clusters, jobs, and assets. Organizes projects and permissions within Databricks.<br>
       <strong>Job Scheduler &amp; Orchestrator:</strong> Responsible for scheduling, triggering and monitoring workflows and jobs. <br>
       <strong>Notebook &amp; IDE:</strong> Development environment used to write SQL, Python, PySpark, Scala and R code. <br>
       <strong>Unity Catalog:</strong> Centralized governance layer used for managing data access, permissions and metadata. <br>
-      <strong>IAM &amp; Access Control:</strong> Handles authentication, authorization and workspace-level security.
+      <strong>IAM &amp; Access Control:</strong>  Manages user identities and permissions. Handles authentication, authorization and workspace-level security.
     <br>
     <hr> <hr>
-    <strong>Data Plane:</strong> Lives in your Azure subscription. Your data never leaves this plane. <br>
+    <strong>Data Plane:</strong> The Compute Plane is where actual data processing and storage happens. Unlike the Control Plane (managed by Databricks), the Compute Plane is hosted inside the customer’s cloud environment. <br>
       <strong>Spark Clusters (VMs):</strong> Compute resources where Spark jobs and notebooks execute. <br>
       <strong>ADLS Gen2 / S3 / GCS:</strong> Cloud storage layer used for storing raw, processed and curated data. <br>
       <strong>Delta Lake Tables:</strong> Transactional storage layer that provides ACID properties, versioning and optimized analytics.<br>
@@ -2029,7 +2031,7 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
 
 
     <ul>
-      <li><strong>Cluster types:</strong> All-purpose clusters (interactive notebooks, development — always running, expensive) vs Job clusters (auto-created for a specific job run, auto-terminated after — cheaper, recommended for production).</li>
+      <li><strong>Cluster types:</strong> <b>All-purpose clusters</b> (interactive notebooks, development — always running, expensive) vs <b>Job clusters</b> (auto-created for a specific job run, auto-terminated after — cheaper, recommended for production).</li>
       <li><strong>Cluster modes:</strong> Standard (single-user), High Concurrency (multi-user, SQL focused), Single Node (driver only, no workers — for small local jobs).</li>
       <li><strong>Databricks Runtime (DBR):</strong> A packaged version of Spark + optimised libraries (Delta, MLflow, etc.). Each cluster picks a DBR version. Always use the latest LTS version in production for stability.</li>
       <li><strong>Repos:</strong> Native Git integration — connect notebooks directly to Azure DevOps or GitHub. Enables version control without leaving the workspace.</li>
