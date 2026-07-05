@@ -784,14 +784,14 @@
   <aside class="sidebar">
     
     <ul class="nav-list">
-      <li class="nav-item"><button onclick="show('intro')" class="active"><span class="nav-dot"></span>Intro<span class="nav-count">4</span></button></li>
+      <li class="nav-item"><button onclick="show('intro')" class="active"><span class="nav-dot"></span>Intro<span class="nav-count">6</span></button></li>
       <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy Set<span class="nav-count">14</span></button></li>
       <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">18</span></button></li>
       <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count">17</span></button></li>
       <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">11</span></button></li>
       <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">14</span></button></li>
-      <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta Lake<span class="nav-count">8</span></button></li>
-      <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>ADF<span class="nav-count">13</span></button></li>
+      <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta<span class="nav-count">9</span></button></li>
+      <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>ADF<span class="nav-count">15</span></button></li>
       <li class="nav-item"><button onclick="show('synapse')"><span class="nav-dot"></span>Synapse<span class="nav-count">12</span></button></li>
       <li class="nav-item"><button onclick="show('security')"><span class="nav-dot"></span>Security<span class="nav-count">6</span></button></li>
       <li class="nav-item"><button onclick="show('coding')"><span class="nav-dot"></span>Coding<span class="nav-count">28</span></button></li>
@@ -976,6 +976,161 @@
     <div class="callout tip"><span class="callout-icon">💡</span><div>If they ask "what challenges did you face?" — mention the SHIR disk space issue (logs filling up, causing intermittent timeouts), and the schema drift in source tables (new columns appearing without notice). Both were real incidents we resolved.</div></div>
   </div>
 </div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">5</div>
+    <div class="q-title-wrap">
+      <div class="q-title">🚨 What is the most common issue you face as a Data Engineer in day-to-day work?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"In my experience across the Citi project and personal projects, the issues that come up most frequently aren't the exotic ones — they're the same categories of problems that show up in almost every data pipeline eventually."</p>
+
+    <p><strong>1. Schema drift — the most silent killer:</strong></p>
+    <p>Source systems add, rename, or change the type of a column without telling the data engineering team. The pipeline either fails at write time (if schema enforcement is enabled — the good outcome) or silently accepts the change and produces wrong data downstream (the bad outcome). On the Citi project, this happened regularly when the SAS scripts were updated to include new report columns. My fix was to add schema validation at the Bronze layer that detects new or missing columns and sends an alert before any transformation runs.</p>
+
+    <p><strong>2. Data quality issues from the source:</strong></p>
+    <p>Null values in non-nullable columns, negative amounts where only positives are valid, duplicate primary keys, date formats that change across files, truncated strings. These never show up in dev (where data is clean samples) and always show up in production (where data is messy reality). I've learned to add explicit assertions in the Silver layer — zero-null checks on join keys, range checks on numeric columns, uniqueness checks on primary keys — rather than trusting source data quality.</p>
+
+    <p><strong>3. Pipeline scheduling and dependency issues:</strong></p>
+    <p>Downstream pipeline runs before upstream finishes, or a trigger fires while the previous run is still active. On the Citi project, the Databricks transformation job depends on ADF completing the ingestion first — if the ADF run was delayed by a network blip and the Databricks trigger fired on schedule, it would process stale data. I handled this with ADF dependency chains (Databricks activity runs only after Copy Activities succeed) and tumbling window triggers with overlap protection.</p>
+
+    <p><strong>4. Infrastructure issues — SHIR, network, credentials:</strong></p>
+    <p>Self-hosted Integration Runtime disk filling up, expired service principal credentials, Key Vault access policy changes after an infra team rotation, firewall rules blocking a new server. These are the 2 AM alerts that have nothing to do with data or code. My counter is proactive monitoring: Azure Monitor alerts on SHIR disk usage, key expiry alerts via Key Vault, and a runbook documenting every infra dependency so the on-call engineer knows where to look.</p>
+
+    <p><strong>5. The small things that compound:</strong></p>
+    <p>Small files accumulating over weeks making queries slow. Databricks clusters left running over the weekend burning cost. A hardcoded date filter from initial development that breaks when the data crosses a year boundary. None of these are dramatic incidents — they're quiet degradation that only someone actively monitoring notices.</p>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The most important career lesson from dealing with these: build for failure, not for the happy path. Every pipeline I write now assumes the source will send bad data, the infra will have hiccups, and the schedule will drift. Defensive engineering — validation, alerting, idempotency — is what separates a reliable pipeline from a fragile one."</div></div>
+  </div>
+</div>
+
+<!--
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">6</div>
+    <div class="q-title-wrap">
+      <div class="q-title">📋 Explain your specific role and responsibilities in your current project.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"I'm currently working at TCS on a Citibank engagement as an Azure Data Engineer. The project involves migrating legacy SAS-based data processing workloads to an Azure cloud-native architecture."</p>
+
+    <p><strong>My specific responsibilities:</strong></p>
+    <ul>
+      <li><strong>Pipeline design and development:</strong> I design and build the end-to-end ingestion and transformation pipelines. This includes ADF pipelines for extracting data from on-prem SQL Server via Self-Hosted Integration Runtime into ADLS Gen2, and Databricks PySpark notebooks for applying business transformations.</li>
+      <li><strong>SAS-to-PySpark migration:</strong> Translating existing SAS business logic into PySpark jobs. This involves understanding what the SAS script was computing, rewriting it as distributed Spark transformations, and validating that the output matches the legacy system row-by-row before cutover.</li>
+      <li><strong>Data quality and validation:</strong> Building validation frameworks at the Silver layer — schema checks, null assertions on key columns, row count reconciliation against source, and business rule validation. Any check failure fails the pipeline loudly with a clear error message rather than propagating bad data downstream.</li>
+      <li><strong>Orchestration and scheduling:</strong> Designing the ADF pipeline dependency chains — ensuring ingestion completes before transformation triggers, and transformation completes before Synapse views refresh. Scheduled via ADF triggers every Monday at 6 PM.</li>
+      <li><strong>Monitoring and alerting:</strong> Setting up Azure Monitor alerts for pipeline failures, SHIR health, and audit logging. Every pipeline run writes to a central audit table — pipeline name, run ID, rows in, rows out, status, error message — which feeds a monitoring dashboard.</li>
+      <li><strong>Performance optimization:</strong> Profiling Databricks jobs in Spark UI, fixing data skew and shuffle issues, right-sizing clusters, and ensuring efficient partitioning on Delta Lake tables for downstream query performance.</li>
+      <li><strong>CI/CD and deployment:</strong> Managing ADF Git integration, ARM template-based deployments across dev/test/prod environments, and ensuring no direct edits to production pipelines.</li>
+    </ul>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>Tailor this answer to the role you're interviewing for. If it's a platform-heavy role, emphasize architecture and optimization. If it's a delivery-focused role, emphasize the migration scope and delivery track record. Always end with a measurable outcome — "pipeline that used to take 4 hours in SAS now runs in 45 minutes on Databricks."</div></div>
+  </div>
+</div> -->
+
+<!-- Roles & responsibilities + production support -->
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">6</div>
+    <div class="q-title-wrap">
+      <div class="q-title">
+        📋 Explain your role, responsibilities and production support experience in your current project.
+      </div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+
+  <div class="q-body">
+
+    <p>
+      "I'm currently working at <strong>TCS</strong> on a <strong>Citibank</strong> engagement as an
+      <strong>Azure Data Engineer</strong>. The project focuses on migrating legacy SAS-based
+      data processing workloads to a cloud-native Azure platform using Azure Data Factory,
+      Databricks, Delta Lake, ADLS Gen2 and Synapse Analytics.
+    </p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin:14px 0;">
+
+      <!-- Development -->
+      <div style="border:1px solid var(--border);border-radius:10px;background:var(--surface2);padding:12px;">
+
+        <div style="font-size:14px;font-weight:600;color:#60A5FA;margin-bottom:10px;">
+          💻 Development Responsibilities
+        </div>
+        <ul>
+          <li><strong>Pipeline design and development:</strong> I design and build the end-to-end ingestion and transformation pipelines. This includes ADF pipelines for extracting data from on-prem SQL Server via Self-Hosted Integration Runtime into ADLS Gen2, and Databricks PySpark notebooks for applying business transformations.</li>
+          <li><strong>SAS-to-PySpark migration:</strong> Translating existing SAS business logic into PySpark jobs. This involves understanding what the SAS script was computing, rewriting it as distributed Spark transformations, and validating that the output matches the legacy system row-by-row before cutover.</li>
+          <li><strong>Data quality and validation:</strong> Building validation frameworks at the Silver layer — schema checks, null assertions on key columns, row count reconciliation against source, and business rule validation. Any check failure fails the pipeline loudly with a clear error message rather than propagating bad data downstream.</li>
+          <li><strong>Orchestration and scheduling:</strong> Designing the ADF pipeline dependency chains — ensuring ingestion completes before transformation triggers, and transformation completes before Synapse views refresh. Scheduled via ADF triggers every Monday at 6 PM.</li>
+          <li><strong>Monitoring and alerting:</strong> Setting up Azure Monitor alerts for pipeline failures, SHIR health, and audit logging. Every pipeline run writes to a central audit table — pipeline name, run ID, rows in, rows out, status, error message — which feeds a monitoring dashboard.</li>
+          <li><strong>Performance optimization:</strong> Profiling Databricks jobs in Spark UI, fixing data skew and shuffle issues, right-sizing clusters, and ensuring efficient partitioning on Delta Lake tables for downstream query performance.</li>
+          <li><strong>CI/CD and deployment:</strong> Managing ADF Git integration, ARM template-based deployments across dev/test/prod environments, and ensuring no direct edits to production pipelines.</li>
+        </ul>
+      </div>
+
+      <!-- Production -->
+      <div style="border:1px solid var(--border);border-radius:10px;background:var(--surface2);padding:12px;">
+
+        <div style="font-size:14px;font-weight:600;color:#34D399;margin-bottom:10px;">
+          🚀 Production Support Responsibilities
+        </div>
+
+        <ul>
+
+          <li><strong>Daily Monitoring:</strong> Monitor scheduled ADF pipelines and Databricks jobs to ensure successful execution.</li>
+
+          <li><strong>SLA Support:</strong> Track critical pipeline completion times and ensure business SLAs are met without delays.</li>
+
+          <li><strong>Incident Response:</strong> Analyze production alerts, identify root causes and coordinate with upstream/downstream teams to restore services quickly.</li>
+
+          <li><strong>Troubleshooting:</strong> Investigate pipeline failures, Spark job failures, SHIR connectivity issues, schema mismatches and data quality problems.</li>
+
+          <li><strong>Data Validation:</strong> Perform row-count validation, schema validation and business-rule verification before data reaches downstream consumers.</li>
+
+          <li><strong>Monitoring & Alerting:</strong> Configure Azure Monitor alerts, maintain audit logs and monitor pipeline health dashboards for proactive issue detection.</li>
+
+        </ul>
+
+      </div>
+
+      
+
+    </div>
+
+    <div style="border-radius:10px;border:1px solid #60A5FA;background:#DBEAFE15;padding:12px;margin-top:12px;">
+
+      <div style="font-weight:600;color:#60A5FA;margin-bottom:8px;">
+        🎯 Interview Closing Statement
+      </div>
+
+      <p>
+        Overall, my role involves designing and developing Azure data pipelines,
+        migrating legacy SAS workloads to Databricks, ensuring data quality,
+        optimizing Spark performance, managing deployments and supporting production
+        pipelines through continuous monitoring, SLA tracking, incident response,
+        troubleshooting and data validation. This ensures reliable and high-quality
+        data delivery for business users.
+      </p>
+
+    </div>
+    
+<div class="callout info">
+  <span class="callout-icon">🚀</span>
+  <div>
+    In addition to development activities, I also support production workloads by monitoring scheduled pipelines, ensuring SLA compliance, responding to production incidents, troubleshooting failures and validating data to maintain reliable and uninterrupted business operations.
+  </div>
+</div>
+  </div>
+</div>
+
+
+
 
 </div><!-- /intro -->
 
@@ -1842,10 +1997,63 @@ Pipeline(config).run()</code></pre>
     </div>
   </div>
 
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How do you implement a Watermark-based incremental load in ADF to avoid re-processing old data?</div><div class="q-tags"><span class="q-tag tag-pattern">Pattern</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p>A watermark is a "last processed" marker — usually a timestamp or integer ID. Each run fetches only records newer than this marker.</p>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">7</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you implement a Watermark-based incremental load in ADF to avoid re-processing old data?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"A watermark is a stored timestamp that tracks 'how far we've successfully processed.' Every run only loads data newer than the watermark, and after a successful run the watermark is updated. This is my default approach for any source table that has a reliable <code>updated_at</code> or <code>modified_date</code> column."</p>
+
+    <p><strong>Step 1 — Create the watermark control table:</strong></p>
+    <div class="split-pane sql-pane-card">
+      <div class="split-pane-header">&#x1F40D; SQL</div>
+    <pre><code class="language-sql">CREATE TABLE dbo.watermark_control (
+    table_name      VARCHAR(100) PRIMARY KEY,
+    last_load_date  DATETIME,
+    last_run_status VARCHAR(20));
+
+INSERT INTO dbo.watermark_control VALUES ('orders', '1900-01-01', 'success');</code></pre></div>
+
+    <p><strong>Step 2 — ADF pipeline design:</strong></p>
+    <ul>
+      <li><strong>Activity 1 — Lookup (Get Watermark):</strong> Query the control table to get <code>last_load_date</code> for the current table.</li>
+      <li><strong>Activity 2 — Copy Activity (Incremental Extract):</strong> Source query uses the watermark as a filter. Sink writes to ADLS as Parquet/Delta.</li>
+      <li><strong>Activity 3 — Stored Procedure (Update Watermark):</strong> On successful copy, update <code>last_load_date</code> to the current run timestamp. This only runs if Activity 2 succeeds — use the success dependency arrow in ADF.</li>
+    </ul>
+    <div class="split-pane sql-pane-card">
+      <div class="split-pane-header">&#x1F40D; SQL</div>
+    <pre><code class="language-sql">-- Lookup query (Activity 1)
+SELECT last_load_date
+FROM dbo.watermark_control
+WHERE table_name = '@{pipeline().parameters.tableName}'
+
+-- Copy Activity source query (Activity 2)
+-- Uses dynamic content expressions
+SELECT *
+FROM orders
+WHERE updated_at > '@{activity('LookupWatermark').output.firstRow.last_load_date}'
+AND   updated_at <= '@{utcNow()}'
+
+-- Stored Procedure (Activity 3 — runs only on success)
+UPDATE dbo.watermark_control
+SET last_load_date  = '@{utcNow()}',
+    last_run_status = 'success'
+WHERE table_name = '@{pipeline().parameters.tableName}'</code></pre></div>
+
+    <p><strong>Key design decisions:</strong></p>
+    <ul>
+      <li><strong>Use a closed-open window:</strong> Filter <code>> last_load_date AND <= current_run_time</code>. This avoids the edge case of records inserted exactly at the boundary being missed or double-counted.</li>
+      <li><strong>Store the current run time before extraction starts:</strong> Not after — if new records arrive during the extraction window, they'll be captured in the next run because the watermark was set to the extraction start time, not end time.</li>
+      <li><strong>Only update watermark on success:</strong> If the copy fails partway, the watermark stays at the last successful value. The next run will re-extract from the last successful point — some re-processing, but no data loss.</li>
+      <li><strong>Source must have a reliable timestamp:</strong> Watermark-based CDC only works if the source column is always populated and accurately reflects when the row was last modified. If the source has rows with NULL <code>updated_at</code>, they'll never be captured incrementally — handle these separately with a one-time full load.</li>
+    </ul>
+
+    <p>A watermark is a "last processed" marker — usually a timestamp or integer ID. Each run fetches only records newer than this marker.</p>
       <ol>
         <li>Create a <strong>watermark table</strong> in Azure SQL: <code>CREATE TABLE watermark (table_name VARCHAR, last_value DATETIME)</code></li>
         <li><strong>Lookup Activity</strong> — read the current watermark value for the target table.</li>
@@ -1853,16 +2061,62 @@ Pipeline(config).run()</code></pre>
         <li><strong>Copy Activity</strong> — source query uses both values: <code>WHERE updated_at > old_wm AND updated_at &lt;= new_max</code></li>
         <li><strong>Stored Procedure Activity</strong> — after successful copy, update the watermark to the new max value.</li>
       </ol>
-      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Capturing the new max <em>before</em> the copy starts prevents late-arriving records from being missed on subsequent runs.</div></div>
-    </div>
-  </div>
 
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"This is the most robust incremental pattern for ADF. The watermark table is your pipeline's memory — it's what allows a failed run to safely restart from exactly the right point without human intervention."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">8</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you implement CDC (Change Data Capture) in ADF?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"CDC is about capturing only the rows that changed — inserts, updates, and deletes — since the last extraction, instead of pulling the full table every time. In ADF, I implement CDC in two ways depending on what the source system supports."</p>
+
+    <p><strong>Approach 1 — Watermark-based CDC (most common):</strong></p>
+    <p>The source table has an <code>updated_at</code> or <code>modified_date</code> column. I store the last successfully loaded timestamp in a control table and use it as a filter on the next run — pulling only records newer than that watermark.</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; SQL</div>
+    <pre><code class="language-sql">-- Control table
+CREATE TABLE watermark (
+    table_name    VARCHAR(100) PRIMARY KEY,
+    last_load_date DATETIME
+);
+
+-- Incremental query in ADF Copy Activity source
+SELECT * FROM orders
+WHERE updated_at > '@{activity('GetWatermark').output.firstRow.last_load_date}'
+AND   updated_at <= '@{utcNow()}'
+
+-- After successful load — update watermark
+UPDATE watermark
+SET last_load_date = '@{utcNow()}'
+WHERE table_name = 'orders'</code></pre></div>
+    <p><strong>ADF pipeline flow:</strong> Lookup (get watermark) → Copy Activity (incremental extract using watermark filter) → Stored Procedure (update watermark on success).</p>
+
+    <p><strong>Approach 2 — Native CDC using SQL Server Change Tracking / CT:</strong></p>
+    <p>SQL Server has built-in CDC and Change Tracking features. ADF's Copy Activity natively supports these as a source — you enable CDC on the source table and ADF automatically queries the change tables to get inserts, updates, and deletes without you writing any SQL filter logic.</p>
+    <ul>
+      <li><strong>Change Tracking (CT):</strong> Lightweight — tracks which rows changed and the type of change (INSERT/UPDATE/DELETE), but not the old values. Enough for most ETL use cases.</li>
+      <li><strong>CDC (full):</strong> Tracks the actual before and after values for every change. More overhead on the source, but you can see what a column changed from and to — useful for audit trails.</li>
+    </ul>
+
+    <p><strong>Approach 3 — Soft deletes:</strong></p>
+    <p>Source system marks deleted rows with an <code>is_deleted = 1</code> flag and an <code>updated_at</code> timestamp instead of physically deleting them. The watermark-based extraction picks these up — and in the Silver layer, I use MERGE to apply the delete flag to the target table.</p>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Watermark-based CDC is my default choice — it works on any source with a reliable timestamp column and requires no special source system setup. Native SQL Server CDC/CT is better when you also need to capture deletes, since a watermark can't detect a physically deleted row."</div></div>
+  </div>
+</div>
   
 
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
-    <div class="q-num">8</div>
+    <div class="q-num">9</div>
     <div class="q-title-wrap">
       <div class="q-title">Explain how parameterization and dynamic content are handled in ADF pipelines.</div>
     </div>
@@ -1927,7 +2181,7 @@ Pipeline(config).run()</code></pre>
   
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">Describe how error handling and retry mechanisms work in ADF.</div><div class="q-tags"><span class="q-tag tag-debug">Reliability</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">Describe how error handling and retry mechanisms work in ADF.</div><div class="q-tags"><span class="q-tag tag-debug">Reliability</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ul>
         <li><strong>Activity retry:</strong> Each activity has configurable retry count (default 0) and retry interval. ADF re-runs the failed activity N times before marking it failed. Use for transient failures like network blips and throttling.</li>
@@ -1939,7 +2193,7 @@ Pipeline(config).run()</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">How would you securely migrate on-premises SQL Server data into ADLS Gen2?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span><span class="q-tag tag-arch">Migration</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">How would you securely migrate on-premises SQL Server data into ADLS Gen2?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span><span class="q-tag tag-arch">Migration</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ol>
         <li>Install <strong>SHIR</strong> on a machine in the on-prem network that can reach the SQL Server.</li>
@@ -1956,7 +2210,7 @@ Pipeline(config).run()</code></pre>
 
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">How do you handle schema drift in ADF?</div><div class="q-tags"><span class="q-tag tag-debug">Schema Drift</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">How do you handle schema drift in ADF?</div><div class="q-tags"><span class="q-tag tag-debug">Schema Drift</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Schema drift happens when source systems add, remove, or rename columns without telling you. In ADF, you handle it at two levels:</p>
       <p><strong>In Mapping Data Flow (the right place to handle drift):</strong></p>
@@ -1972,7 +2226,7 @@ Pipeline(config).run()</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">How do you manage Linked Services and Datasets in ADF at scale?</div><div class="q-tags"><span class="q-tag tag-pattern">Best Practice</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">How do you manage Linked Services and Datasets in ADF at scale?</div><div class="q-tags"><span class="q-tag tag-pattern">Best Practice</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ul>
         <li><strong>Parameterize everything:</strong> A single linked service per technology (one for Azure SQL, one for ADLS), parameterized with server, database, and container name. Datasets also parameterized with table name, file path, schema. This means one linked service handles 100 tables, not 100 linked services.</li>
@@ -1986,7 +2240,7 @@ Pipeline(config).run()</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">How do you deploy ADF across environments (Dev → Test → Prod)?</div><div class="q-tags"><span class="q-tag tag-arch">CI/CD</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">How do you deploy ADF across environments (Dev → Test → Prod)?</div><div class="q-tags"><span class="q-tag tag-arch">CI/CD</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ol>
         <li><strong>Connect ADF to Git (Azure DevOps or GitHub):</strong> All changes made in ADF Studio are committed to a feature branch. Dev ADF is the only one connected to Git.</li>
@@ -1999,6 +2253,100 @@ Pipeline(config).run()</code></pre>
       </ol>
     </div>
   </div>
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">15</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you set up CI/CD for Azure Data Factory using Git integration and ARM templates?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"CI/CD for ADF ensures that no one edits Production directly — every change goes through code review, automated validation, and a controlled deployment process. ADF makes this straightforward through native Git integration and ARM template publishing."</p>
+
+    <p><strong>Step 1 — Git Integration (Dev ADF only):</strong></p>
+    <ul>
+      <li>Connect only the Dev ADF to a Git repository (Azure DevOps or GitHub) — Test and Prod are never connected to Git directly.</li>
+      <li>All ADF artifacts — pipelines, datasets, linked services, triggers — are stored as JSON files in the repo. Every change made in the ADF Studio UI is committed to a feature branch.</li>
+      <li>Developers work in feature branches, raise PRs to the main/collaboration branch, and changes are reviewed like any code change.</li>
+    </ul>
+
+    <p><strong>Step 2 — Publishing (generates ARM templates):</strong></p>
+    <ul>
+      <li>When code is merged to the collaboration branch and the publish button is clicked in Dev ADF, ADF auto-generates ARM templates in the <code>adf_publish</code> branch — <code>ARMTemplateForFactory.json</code> and <code>ARMTemplateParametersForFactory.json</code>.</li>
+      <li>These ARM templates are the deployable artifact — they contain the complete definition of all ADF objects.</li>
+    </ul>
+
+    <p><strong>Step 3 — CI Pipeline (Azure DevOps):</strong></p>
+    <ul>
+      <li>Triggered on merge to main — validates the ARM templates are well-formed, runs any unit tests on transformation logic.</li>
+      <li>Publishes the ARM template as a build artifact ready for deployment.</li>
+    </ul>
+
+    <p><strong>Step 4 — CD Pipeline (Azure DevOps):</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; JSON</div>
+    <pre><code class="language-py"># Azure DevOps CD pipeline — simplified
+stages:
+  - stage: DeployTest
+    jobs:
+      - job: StopTriggers
+        steps:
+          - task: AzurePowerShell@5
+            inputs:
+              ScriptPath: PrePostDeploymentScript.ps1  # stop triggers before deploy
+              ScriptArguments: -armTemplate $(armTemplate) -ResourceGroupName $(rg_test)
+
+      - job: DeployARM
+        steps:
+          - task: AzureResourceManagerTemplateDeployment@3
+            inputs:
+              deploymentScope: Resource Group
+              resourceGroupName: $(rg_test)
+              templateLocation: Linked artifact
+              csmFile: ARMTemplateForFactory.json
+              csmParametersFile: ARMTemplateParameters_test.json  # test-specific values
+
+      - job: StartTriggers
+        steps:
+          - task: AzurePowerShell@5  # restart triggers after deploy
+
+  - stage: DeployProd
+    dependsOn: DeployTest
+    condition: succeeded()
+    jobs:
+      # Same steps, uses ARMTemplateParameters_prod.json</code></pre></div>
+
+    <p><strong>Environment-specific parameter files:</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; JSON</div>
+    <pre><code class="language-py">{
+  "parameters": {
+    "AzureSqlServer_connectionString": {
+      "value": "Server=prod-sql.database.windows.net;..."
+    },
+    "AzureDataLakeStorage_accountKey": {
+      "value": "@Microsoft.KeyVault(SecretUri=https://prod-kv.../secrets/adls-key)"
+    },
+    "AzureIntegrationRuntime_name": {
+      "value": "SHIR-PROD"
+    }
+  }
+}</code></pre></div>
+    <p>The parameter file replaces dev values (dev SQL server, dev ADLS, dev IR) with prod values — same ARM template, different parameter file per environment.</p>
+
+    <ul>
+      <li><strong>Stop triggers before deploy, restart after</strong> — Microsoft provides a <code>PrePostDeploymentScript.ps1</code> exactly for this. Never skip this step — deploying while a trigger is active can corrupt the deployment.</li>
+      <li><strong>Never edit Prod directly</strong> — even for urgent hotfixes, go through a hotfix branch → Dev ADF → publish → CD pipeline. The extra 10 minutes is worth the audit trail and safety.</li>
+    </ul>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The core principle: ADF artifacts are code, not config. They belong in Git, they get reviewed in PRs, and they get deployed through a pipeline — not by clicking publish directly in Production ADF Studio."</div></div>
+  </div>
+</div>
+
+
 </div><!-- /adf -->
 
 <!-- ════════════════════════════════════════════════════════
@@ -2666,29 +3014,29 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
         <div style="background:#E6F1FB;border:1px solid #B5D4F4;border-radius:8px;padding:10px 12px;">
           <div style="font-size:12px;color:#0C447C;margin-bottom:8px;font-weight:600;">⚡ Apache Spark</div>
           <div style="font-size:12.5px;color:#042C53;line-height:1.9;">
-            In-memory processing<br>
-            Up to 100x faster<br>
-            Lazy evaluation + DAG<br>
-            Supports batch + streaming<br>
-            ML, SQL, Graph, Streaming<br>
-            DataFrame / SQL API<br>
-            Scala, Python, Java, R<br>
-            Disk used only for spill<br>
-            Cache data across steps
+            • In-memory processing<br>
+            • Up to 100x faster<br>
+            • Lazy evaluation + DAG<br>
+            • Supports batch + streaming<br>
+            • ML, SQL, Graph, Streaming<br>
+            • DataFrame / SQL API<br>
+            • Scala, Python, Java, R<br>
+            • Disk used only for spill<br>
+            • Cache data across steps
           </div>
         </div>
         <div style="background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;padding:10px 12px;">
           <div style="font-size:12px;color:#854F0B;margin-bottom:8px;font-weight:600;">🐘 MapReduce</div>
           <div style="font-size:12.5px;color:#412402;line-height:1.9;">
-            Disk-based (HDFS) between steps<br>
-            Much slower — I/O bound<br>
-            Linear Map → Reduce flow<br>
-            Batch processing only<br>
-            Only Map and Reduce ops<br>
-            Low-level Java API<br>
-            Java only (originally)<br>
-            Every step writes to disk<br>
-            No caching across steps
+            • Disk-based (HDFS) between steps<br>
+            • Much slower — I/O bound<br>
+            • Linear Map → Reduce flow<br>
+            • Batch processing only<br>
+            • Only Map and Reduce ops<br>
+            • Low-level Java API<br>
+            • Java only (originally)<br>
+            • Every step writes to disk<br>
+            • No caching across steps
           </div>
         </div>
       </div>
@@ -3327,6 +3675,79 @@ df.withColumn("result", multiply_by_two(col("amount")))</code></pre></div></div>
     </div>
   </div>
 
+  
+
+<div class="q-card"> 
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">11</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Partitioning vs Bucketing — when do you use each?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Both are ways to physically organize data for performance — but they solve different problems and work at different levels."</p>
+
+    <p><strong>Partitioning:</strong> Splits data into separate folders/directories based on a column's values. When you query with a filter on the partition column, Spark skips entire folders that don't match — this is called partition pruning.</p>
+    <ul>
+      <li>Best for <strong>low cardinality columns</strong> — date, region, country, status. A column with 365 values = 365 folders, which is fine. A column with 10 million values = 10 million folders (the small file problem).</li>
+      <li>Most effective for range queries and time-based filtering — "give me all orders from January 2024."</li>
+      <li>Partition columns should be the ones you <strong>filter on most frequently</strong> in WHERE clauses.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Partitioning — creates folder structure on disk
+df.write.format("delta") \
+  .partitionBy("year", "month") \
+  .save("/mnt/delta/orders")
+# Creates: /year=2024/month=01/, /year=2024/month=02/ etc.
+
+# Query skips all other year/month folders — very fast
+spark.sql("SELECT * FROM orders WHERE year=2024 AND month=01")</code></pre>
+    </div>
+
+    <p><strong>Bucketing:</strong> Distributes data into a fixed number of files (buckets) based on a hash of the bucket column. All rows with the same hash value go into the same bucket file — so when two tables are bucketed on the same column, joining them doesn't require a shuffle because matching rows are already co-located.</p>
+    <ul>
+      <li>Best for <strong>high cardinality columns</strong> used in frequent joins — customer_id, order_id, product_id.</li>
+      <li>Most effective for join performance — if two large tables are both bucketed on the same join key with the same number of buckets, Spark skips the shuffle entirely.</li>
+      <li>Bucketing is a <strong>write-time</strong> decision — the data must be bucketed when written. You can't retroactively bucket existing data without rewriting it.</li>
+      <li>Bucketing only works with Hive/Spark tables (not with raw file paths) and the table metadata must be registered in the metastore.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Bucketing — distributes data by hash of customer_id into 64 buckets
+df.write.format("parquet") \
+  .bucketBy(64, "customer_id") \
+  .sortBy("customer_id") \
+  .saveAsTable("orders_bucketed")
+
+# Joining two bucketed tables on the same key — no shuffle needed
+orders    = spark.table("orders_bucketed")      # bucketed on customer_id
+customers = spark.table("customers_bucketed")   # bucketed on customer_id, same 64 buckets
+
+# Spark detects matching bucket structure — eliminates the shuffle stage
+result = orders.join(customers, "customer_id")</code></pre>
+    </div>
+
+    <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
+      <div style="padding:9px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-sec);">Quick comparison</div>
+      <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:#E6F1FB;border:1px solid #B5D4F4;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:#0C447C;margin-bottom:6px;font-weight:600;">Partitioning</div>
+          <div style="font-size:12.5px;color:#042C53;line-height:1.9;">• Folder-level split<br>• Low cardinality columns<br>• Best for filter/range queries<br>• Works on any file format<br>• Partition pruning benefit<br>• Use: date, region, status</div>
+        </div>
+        <div style="background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:#0F6E56;margin-bottom:6px;font-weight:600;">Bucketing</div>
+          <div style="font-size:12.5px;color:#04342C;line-height:1.9;">• Hash-based file split<br>• High cardinality columns<br>• Best for join performance<br>• Requires Hive metastore<br>• Shuffle elimination benefit<br>• Use: customer_id, order_id</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Use both together for optimal performance: partition by date (for time-range filters) and bucket by customer_id (for join performance). In practice on Databricks and Delta Lake, Z-Ordering has largely replaced bucketing for most use cases — same join performance benefit without the metastore dependency."</div></div>
+  </div>
+</div>
+
+<!--
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">Explain partitioning and bucketing in Apache Spark and when to use each.</div><div class="q-tags"><span class="q-tag tag-arch">Storage</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
@@ -3339,7 +3760,7 @@ df.withColumn("result", multiply_by_two(col("amount")))</code></pre></div></div>
     .saveAsTable("orders_bucketed")</code></pre></div></div>
       <p>Partitioning is for <strong>read-time pruning</strong> (filter performance). Bucketing is for <strong>join performance</strong> (shuffle elimination). They can be combined.</p>
     </div>
-  </div>
+  </div> -->
 
   <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
@@ -3563,7 +3984,7 @@ with ThreadPoolExecutor(max_workers=4) as executor:
 <!-- ════════════════════════════════════════════════════════
      DELTA LAKE
 ═══════════════════════════════════════════════════════════ -->
-<div id="delta" class="section">
+<div id="delta" class="section">   
   <div class="sec-header">
     <div class="sec-icon">&#x1F4C0;</div>
     <div><div class="sec-title">Delta Lake</div><div class="sec-desc">Row-level deletes, compaction, data skipping, Z-ordering, skew joins</div></div>
@@ -3629,9 +4050,51 @@ delta_table.alias("target").merge(
   </div>
 </div>
 
-  <div class="q-card">
+<div class="q-card">
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">2</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Delta Table vs Delta Lake — what's the actual difference?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"These two terms are often used interchangeably and it causes confusion. They're related but they describe different things — one is a framework, the other is a specific data object within it."</p>
+
+    <ul>
+      <li><strong>Delta Lake</strong> — the open-source storage framework. It's the technology, the protocol, the set of rules and capabilities. It defines how the transaction log works, how ACID transactions are implemented, how time travel is stored, how schema enforcement works. Delta Lake is what you install or enable — it's a library (<code>delta-core</code>) that adds capabilities on top of Apache Spark and cloud object storage (ADLS, S3, GCS).</li>
+      <li><strong>Delta Table</strong> — a specific table stored using the Delta Lake format. It's the data object — a specific folder on ADLS that contains Parquet files + a <code>_delta_log</code> transaction log directory. When you write a DataFrame with <code>.format("delta")</code>, you create a Delta Table. A Delta Lake installation can manage thousands of Delta Tables.</li>
+    </ul>
+
+    <div class="schema-box">
+      <strong>Analogy:</strong> Delta Lake is like a database engine (e.g., SQL Server). A Delta Table is like a specific table inside that database engine (e.g., <code>dbo.orders</code>).<br><br>
+      <strong>Another way:</strong> Delta Lake = the system. Delta Table = one object inside that system.
+    </div>
+    <div class="split-pane py-pane-card">
+    <div class="split-pane-header">&#x1F40D; PySpark</div>
+    <pre><code class="language-python"># Delta Lake — the framework (library installed on the cluster)
+# You configure it at the cluster or session level
+spark = SparkSession.builder \
+    .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
+    .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
+    .getOrCreate()
+
+# Delta Table — a specific table created using the Delta Lake format
+df.write.format("delta").save("/mnt/delta/orders")
+# This created ONE Delta Table at /mnt/delta/orders
+
+# You can have many Delta Tables managed by one Delta Lake setup
+df.write.format("delta").save("/mnt/delta/customers")
+df.write.format("delta").save("/mnt/delta/products")
+# Three Delta Tables, all governed by the same Delta Lake framework</code></pre></div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"In interviews, if someone says 'we store our data in Delta Lake' — they mean their data platform uses the Delta Lake storage format. If they say 'query the Delta Table' — they mean a specific table at a specific path. The distinction matters when someone asks 'how many Delta Lakes do you have?' — the answer is one framework, many tables within it."</div></div>
+  </div>
+</div>
+
+  <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">3</div>
     <div class="q-title-wrap">
       <div class="q-title">How do you implement Row-Level Deletions in Delta Lake without rewriting the entire partition?</div>
       <div class="q-tags"><span class="q-tag tag-arch">Delta Lake</span><span class="q-tag tag-pattern">Best Practice</span></div>
@@ -3703,7 +4166,7 @@ spark.sql("DELETE FROM orders WHERE order_id = 12345")</code></pre></div>
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
-    <div class="q-num">3</div>
+    <div class="q-num">4</div>
     <div class="q-title-wrap">
       <div class="q-title">How does the Medallion Architecture work, and what are its advantages?</div>
       <div class="q-tags"><span class="q-tag tag-arch">Architecture</span><span class="q-tag tag-fund">Core Concept</span></div>
@@ -3733,7 +4196,7 @@ spark.sql("DELETE FROM orders WHERE order_id = 12345")</code></pre></div>
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
-    <div class="q-num">4</div>
+    <div class="q-num">5</div>
     <div class="q-title-wrap">
       <div class="q-title">How does Delta Lake support streaming and batch together? What is Lambda vs Kappa architecture?</div>
     </div>
@@ -3775,7 +4238,7 @@ stream_df.writeStream \
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
-    <div class="q-num">5</div>
+    <div class="q-num">6</div>
     <div class="q-title-wrap">
       <div class="q-title">A streaming job is writing duplicate records to a Delta table. How would you prevent and resolve the issue?</div>
       <div class="q-tags"><span class="q-tag tag-debug">Scenario</span><span class="q-tag tag-pattern">Streaming</span></div>
@@ -3831,7 +4294,7 @@ df.writeStream.foreachBatch(upsert_batch) \
 
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Explain the Data Skipping mechanism in Delta Lake. How does it differ from traditional SQL indexing?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Explain the Data Skipping mechanism in Delta Lake. How does it differ from traditional SQL indexing?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>When you read from a Delta table with a filter (e.g., <code>WHERE event_date = '2024-01-15'</code>), Delta reads the transaction log's <strong>file-level statistics</strong> before scanning any data. For each Parquet file, the log stores: min value, max value, and null count per column.</p>
       <p>If a file's <code>event_date</code> range is 2024-01-10 to 2024-01-12, Delta knows it cannot possibly contain 2024-01-15 and <strong>skips it entirely</strong> — no I/O, no task created.</p>
@@ -3841,7 +4304,7 @@ df.writeStream.foreachBatch(upsert_batch) \
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How do you choose between Partitioning and Z-Ordering for a 10TB dataset?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture Decision</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How do you choose between Partitioning and Z-Ordering for a 10TB dataset?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture Decision</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>These solve different problems and work best together:</p>
       <p><strong>Partitioning</strong> creates physical directory splits. A query with <code>WHERE year=2024</code> reads only that folder — extremely effective for the partition column. Problem: high-cardinality columns (user_id with millions of values) → millions of tiny directories.</p>
@@ -3855,7 +4318,7 @@ df.writeStream.foreachBatch(upsert_batch) \
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">Explain Skew Join optimization in Spark 3.x and how to handle it manually when AQE is disabled.</div><div class="q-tags"><span class="q-tag tag-perf">Advanced</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">Explain Skew Join optimization in Spark 3.x and how to handle it manually when AQE is disabled.</div><div class="q-tags"><span class="q-tag tag-perf">Advanced</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>With AQE enabled:</strong> AQE monitors shuffle statistics mid-query. If a partition is more than 5x the median size (and larger than 256MB), AQE splits that partition into sub-partitions and processes them in parallel. Completely transparent — no code changes needed.</p>
       <p><strong>Manually without AQE (Salting):</strong></p>
