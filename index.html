@@ -872,7 +872,7 @@
       <div class="search-results-label" id="searchLabel"></div>
     </div>
     
-    <ul class="nav-list">
+    <ul class="nav-list" id="sidebarNav">
       <li class="nav-item"><button onclick="show('intro')" class="active"><span class="nav-dot"></span>Intro<span class="nav-count">6</span></button></li>
       <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy Set<span class="nav-count">14</span></button></li>
       <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">18</span></button></li>
@@ -11066,6 +11066,7 @@ function handleSearch(query) {
   const clearBtn = document.getElementById('searchClear');
   const label    = document.getElementById('searchLabel');
   const layout   = document.querySelector('.layout');
+  const sidebarNav = document.getElementById("sidebarNav");
 
   clearBtn.style.display = trimmed ? 'block' : 'none';
 
@@ -11076,6 +11077,7 @@ function handleSearch(query) {
 
   // Enter search mode
   layout.classList.add('search-active');
+  sidebarNav.style.display = "none";
 
   document.querySelectorAll(".star-box").forEach(box => {
     box.style.display = "none";
@@ -11123,6 +11125,7 @@ function handleSearch(query) {
 
 function clearSearch() {
   const layout   = document.querySelector('.layout');
+  const sidebarNav = document.getElementById("sidebarNav");
   const label    = document.getElementById('searchLabel');
   const clearBtn = document.getElementById('searchClear');
   const input    = document.getElementById('searchInput');
@@ -11131,6 +11134,7 @@ function clearSearch() {
   clearBtn.style.display = 'none';
   label.style.display    = 'none';
   layout.classList.remove('search-active');
+  sidebarNav.style.display = "";
 
   document.querySelectorAll(".star-box").forEach(box => {
     box.style.display = "";
