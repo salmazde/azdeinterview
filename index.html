@@ -16,6 +16,7 @@
 <style>
   /* ── Reset & Base ─────────────────────────────────────── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   .font-size-toggle {
   position: fixed;
   bottom: 16px;
@@ -753,6 +754,80 @@
     margin: 3px;
   }
 
+
+
+   /* ── Search Bar ───────────────────────────────────────── */
+  .search-wrap {
+    padding: 10px 10px 6px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .search-wrap-inner { position: relative; }
+  .search-input {
+    width: 100%;
+    padding: 8px 32px 8px 34px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s;
+    box-sizing: border-box;
+  }
+  .search-input:focus { border-color: var(--blue); }
+  .search-input::placeholder { color: var(--text-muted); }
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  .search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 16px;
+    padding: 0 4px;
+    display: none;
+    line-height: 1;
+  }
+  .search-results-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 2px 0;
+    display: none;
+  }
+
+  /* Search active state */
+  .search-active .section { display: block !important; }
+  .search-active .sec-header { display: none !important; }
+  .search-active .concept-group > .concept-label { display: none !important; }
+  .q-card.search-hidden { display: none !important; }
+
+  /* Highlight match */
+  .q-title mark {
+    background: #FFD43B;
+    color: #1A1A1A;
+    border-radius: 3px;
+    padding: 0 2px;
+  }
+  [data-theme="dark"] .q-title mark {
+    background: #9A7200;
+    color: #fff;
+  }
+
   
 </style>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
@@ -781,6 +856,21 @@
 
   <!-- Sidebar Nav -->
   <aside class="sidebar">
+    <div class="search-wrap">
+      <div class="search-wrap-inner">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          class="search-input"
+          id="searchInput"
+          placeholder="Search questions..."
+          oninput="handleSearch(this.value)"
+          autocomplete="off"
+        >
+        <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+      </div>
+      <div class="search-results-label" id="searchLabel"></div>
+    </div>
     
     <ul class="nav-list">
       <li class="nav-item"><button onclick="show('intro')" class="active"><span class="nav-dot"></span>Intro<span class="nav-count">6</span></button></li>
@@ -10969,6 +11059,98 @@ np.corrcoef([1,2,3,4], [2,4,5,4])       # correlation matrix</code></pre>
 </div><!-- /layout -->
 
 <script>
+
+
+function handleSearch(query) {
+  const trimmed  = query.trim();
+  const clearBtn = document.getElementById('searchClear');
+  const label    = document.getElementById('searchLabel');
+  const layout   = document.querySelector('.layout');
+
+  clearBtn.style.display = trimmed ? 'block' : 'none';
+
+  if (!trimmed) {
+    clearSearch();
+    return;
+  }
+
+  // Enter search mode
+  layout.classList.add('search-active');
+
+  document.querySelectorAll(".star-box").forEach(box => {
+    box.style.display = "none";
+    });
+
+  const keyword  = trimmed.toLowerCase();
+  const allCards = document.querySelectorAll('.q-card');
+  let matchCount = 0;
+
+  allCards.forEach(card => {
+    const titleEl = card.querySelector('.q-title');
+    if (!titleEl) { card.classList.add('search-hidden'); return; }
+
+    // Always work from the plain text — strip any previous marks first
+    const plainText = titleEl.textContent || titleEl.innerText || '';
+    const matches   = plainText.toLowerCase().includes(keyword);
+
+    if (matches) {
+      card.classList.remove('search-hidden');
+      matchCount++;
+      // Highlight keyword
+      const safe = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      titleEl.innerHTML = plainText.replace(
+        new RegExp(`(${safe})`, 'gi'),
+        '<mark>$1</mark>'
+      );
+    } else {
+      card.classList.add('search-hidden');
+      titleEl.textContent = plainText; // restore plain
+    }
+  });
+
+  // For each section: if all its cards are hidden, hide the section too
+  document.querySelectorAll('.section').forEach(sec => {
+    const hasVisible = [...sec.querySelectorAll('.q-card')]
+      .some(c => !c.classList.contains('search-hidden'));
+    sec.style.display = hasVisible ? 'block' : 'none';
+  });
+
+  label.style.display = 'block';
+  label.textContent = matchCount === 0
+    ? 'No questions found'
+    : `${matchCount} question${matchCount !== 1 ? 's' : ''} found`;
+}
+
+function clearSearch() {
+  const layout   = document.querySelector('.layout');
+  const label    = document.getElementById('searchLabel');
+  const clearBtn = document.getElementById('searchClear');
+  const input    = document.getElementById('searchInput');
+
+  input.value            = '';
+  clearBtn.style.display = 'none';
+  label.style.display    = 'none';
+  layout.classList.remove('search-active');
+
+  document.querySelectorAll(".star-box").forEach(box => {
+    box.style.display = "";
+});
+
+  // Restore all cards and remove highlights
+  document.querySelectorAll('.q-card').forEach(c => {
+    c.classList.remove('search-hidden');
+    const titleEl = c.querySelector('.q-title');
+    if (titleEl) titleEl.textContent = titleEl.textContent; // strip marks
+  });
+
+  // Restore section visibility — CSS .active class handles display
+  document.querySelectorAll('.section').forEach(s => {
+    s.style.display = '';
+  });
+}
+
+
+
 function toggleTheme() {
   const html = document.documentElement;
   const btn = document.getElementById('themeBtn');
