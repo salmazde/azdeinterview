@@ -1921,16 +1921,66 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
     </button>
   </div>
 
-  <!-- SDP nav placeholder -->
+  <!-- SDP nav -->
   <div class="drawer-nav" id="drawer-nav-sdp" style="display:none">
-    <div class="drawer-nav-label">SDP / DLT</div>
-    <button class="drawer-nav-item" onclick="closeDrawer()">Browse SDP sections ↓</button>
+    <div class="drawer-nav-label">Core Concepts</div>
+    <button class="drawer-nav-item active" onclick="sdpDrawerNav('overview')">● Overview & SDP Rebrand</button>
+    <button class="drawer-nav-item" onclick="sdpDrawerNav('table-types')">● Table Types</button>
+    <button class="drawer-nav-item" onclick="sdpDrawerNav('expectations')">● Expectations</button>
+    <button class="drawer-nav-item" onclick="sdpDrawerNav('cdc')">● CDC / APPLY CHANGES</button>
+
+    <div class="drawer-nav-label">Pipeline Engine</div>
+    <button class="drawer-nav-item" onclick="sdpDrawerNav('pipeline-modes')">● Pipeline Modes</button>
+    <button class="drawer-nav-item" onclick="sdpDrawerNav('schema')">● Schema Evolution</button>
+    <button class="drawer-nav-item" onclick="sdpDrawerNav('internals')">● Internals & DAG</button>
+
+    <div class="drawer-nav-label">Advanced Topics</div>
+    <button class="drawer-nav-item" onclick="sdpDrawerNav('new-api')">● New pyspark.pipelines API</button>
+    <button class="drawer-nav-item" onclick="sdpDrawerNav('unity-catalog')">● Unity Catalog + DAB</button>
+    <button class="drawer-nav-item" onclick="sdpDrawerNav('compare')">● DLT vs Alternatives</button>
+    <button class="drawer-nav-item" onclick="sdpDrawerNav('interview')">● Interview Questions</button>
   </div>
 
-  <!-- Wiki nav placeholder -->
+  <!-- Wiki nav -->
   <div class="drawer-nav" id="drawer-nav-wiki" style="display:none">
-    <div class="drawer-nav-label">Feature Wiki</div>
-    <button class="drawer-nav-item" onclick="closeDrawer()">Browse Wiki sections ↓</button>
+    <div class="drawer-nav-label">Ingestion Layer</div>
+    <button class="drawer-nav-item active" onclick="wikiDrawerNav('autoloader')">● Auto Loader</button>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('zerobus')">● Zerobus Ingest</button>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('lakeflowconnect')">● Lakeflow Connect</button>
+
+    <div class="drawer-nav-label">Transformation</div>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('structuredstreaming')">● Structured Streaming</button>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('dlt')">● Declarative Pipelines (DLT)</button>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('lakeflowdesigner')">● Lakeflow Designer</button>
+
+    <div class="drawer-nav-label">Orchestration</div>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('lakeflowjobs')">● Lakeflow Jobs</button>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('dab')">● Asset Bundles (DAB)</button>
+
+    <div class="drawer-nav-label">Delta Lake Internals</div>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('backfill')">● Safe Backfill Patterns</button>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('liquidclustering')">● Liquid Clustering</button>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('predictiveopt')">● Predictive Optimization</button>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('rocksdb')">● RocksDB State Store</button>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('autocdc')">● AutoCDC / Change Data Feed</button>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('aqe')">● Adaptive Query Execution</button>
+
+    <div class="drawer-nav-label">Storage & Governance</div>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('unitycatalog')">● Unity Catalog</button>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('lakebase')">● Lakebase (Postgres)</button>
+
+    <div class="drawer-nav-label">Intelligence & AI</div>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('genie')">● AI/BI Genie</button>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('lakebridge')">● Lakebridge (Migration)</button>
+
+    <div class="drawer-nav-label">Migration</div>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('ucxmigration')">● UCX: Hive → Unity Catalog</button>
+
+    <div class="drawer-nav-label">New in 2025–26</div>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('streamingrewind')">● Streaming Rewind (DBR 18.2)</button>
+
+    <div class="drawer-nav-label">Comparison</div>
+    <button class="drawer-nav-item" onclick="wikiDrawerNav('comparison')">● Feature Comparison</button>
   </div>
 </div>
 
@@ -10060,6 +10110,31 @@ function drawerSwitchModule(mod) {
     const nav = document.getElementById('drawer-nav-' + m);
     if (nav) nav.style.display = (m === mod) ? 'block' : 'none';
   });
+}
+
+function sdpDrawerNav(sectionId) {
+  // scroll SDP to section
+  const el = document.getElementById(sectionId) ||
+             document.querySelector(`#mod-sdp [id="${sectionId}"]`) ||
+             document.querySelector(`#mod-sdp a[href="#${sectionId}"]`);
+
+  // trigger the same scroll function SDP uses
+  if (typeof sdpScrollTo === 'function') sdpScrollTo(sectionId);
+
+  // update drawer active state
+  document.querySelectorAll('#drawer-nav-sdp .drawer-nav-item')
+    .forEach(i => i.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  closeDrawer();
+}
+
+function wikiDrawerNav(sectionId) {
+  if (typeof showSection === 'function') showSection(sectionId);
+
+  document.querySelectorAll('#drawer-nav-wiki .drawer-nav-item')
+    .forEach(i => i.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  closeDrawer();
 }
 
 function drawerNav(sectionId) {
