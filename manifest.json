@@ -1,8 +1,12 @@
+
+
 {
   "name": "Azure DE Interview Prep",
   "short_name": "AZ DE Prep",
   "description": "Azure Data Engineering Interview Guide",
+  "id": "/azdeinterview/",
   "start_url": "/azdeinterview/",
+  "scope": "/azdeinterview/",
   "display": "standalone",
   "background_color": "#0F2D4E",
   "theme_color": "#0F2D4E",
