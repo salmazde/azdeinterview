@@ -36,13 +36,30 @@
     top:0;
     z-index:9999;
     background:var(--bg);
-    padding:12px 0;
+    padding:0 0 4px;
     box-shadow:0 8px 24px rgba(0,0,0,.18);
 }
 .search-wrap {
-    padding:10px;
+    padding:0 10px 10px;
     position:relative;
     background:var(--surface);
+}
+
+.search-item{
+    position:relative;
+    padding:10px 12px;
+    cursor:pointer;
+    transition:.15s;
+}
+
+.search-item:not(:last-child)::after{
+    content:"";
+    position:absolute;
+    left:12px;
+    right:12px;
+    bottom:0;
+    height:1px;
+    background:var(--border);
 }
 
 .search-suggestions{
@@ -11946,6 +11963,7 @@ document.querySelectorAll(".q-title").forEach(title=>{
 });
 
 function updateSuggestions(keyword){
+  
   if(!suggestionsEnabled){
     return;
 }
@@ -12193,16 +12211,21 @@ function handleSearch(query) {
 }
 
 function clearSearch() {
+  const box   = document.getElementById("searchSuggestions");
   const layout   = document.querySelector('.layout');
   const label    = document.getElementById('searchLabel');
   const clearBtn = document.getElementById('searchClear');
   const input    = document.getElementById('searchInput');
 
-  input.value            = '';
+  input.value = "";
+  box.innerHTML = "";
+  box.style.display = "none";
   clearBtn.style.display = 'none';
   label.style.display    = 'none';
   layout.classList.remove('search-active');
 
+  suggestionIndex = -1;
+  input.blur();
   // Restore star-boxes
   document.querySelectorAll('.star-box').forEach(b => b.style.display = '');
 
