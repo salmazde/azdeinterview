@@ -896,8 +896,9 @@
     <h1>Azure <span>Data Engineering</span> Interview Guide</h1>
     <p class="hero-sub">Comprehensive Q&A reference covering architecture patterns, pipeline design, performance tuning, coding and best practices.</p>
     <div class="hero-stats">
+        <span>📅 Updated: <strong id="lastUpdated"></strong></span>
         <span>📚 <strong id="totalQuestions">0</strong> Questions</span>
-        <span>🧩 <strong id="totalSections">0</strong> Sections</span>
+        <!--<span>🧩 <strong id="totalSections">0</strong> Sections</span>-->
     </div>
   </div>
 </header>
@@ -11978,6 +11979,15 @@ function updateHeroStats() {
 }
 
 document.addEventListener("DOMContentLoaded", updateHeroStats);
+
+const d = new Date(document.lastModified);
+
+document.getElementById("lastUpdated").textContent =
+d.toLocaleDateString("en-GB",{
+    day:"2-digit",
+    month:"short",
+    year:"numeric"
+});
 
 refreshNumbers();
 </script>
