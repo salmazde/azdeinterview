@@ -223,13 +223,13 @@
 
 
   /* ── Hero Header ──────────────────────────────────────── */
-  .hero {
+  .hero{
     background: linear-gradient(135deg, var(--navy) 0%, #1a4a7a 50%, var(--blue) 100%);
-    color: #fff;
-    padding: 32px 40px -30px;
-    position: relative;
-    overflow: hidden;
-  }
+    color:#fff;
+    padding:28px 40px 8px;
+    position:relative;
+    overflow:hidden;
+}
   .hero::before {
     content: '';
     position: absolute;
@@ -271,16 +271,40 @@
   .hero-sub {
     font-size: 16px;
     color: rgba(255,255,255,.72);
-    max-width: 560px;
-    margin-bottom: 15px;
+    max-width: 1000px;
+    margin-bottom: 4px;
     line-height: 1.6;
   }
+
+  .hero-stats{
+    display:flex;
+    gap:22px;
+    margin-top:12px;
+    flex-wrap:wrap;
+}
+
+.hero-stats span{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 12px;
+    border-radius:18px;
+    background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.18);
+    font-size:13px;
+    color:rgba(255,255,255,.9);
+}
+
+.hero-stats strong{
+    color:#fff;
+    font-size:14px;
+}
   
   /* ── Layout ───────────────────────────────────────────── */
   .layout {
     max-width: 980px;
     margin: 0 auto;
-    padding: 32px 24px 64px;
+    padding:10px 24px 64px;
     display: grid;
     grid-template-columns: 220px 1fr;
     gap: 28px;
@@ -869,8 +893,12 @@
   <div class="hero-inner">
     <div class="hero-badge">&#x1F4CB; <a href="databricks.html" style="text-decoration: none; color: inherit;">Databricks</a> </div> 
     <div class="hero-badge">&#x1F4CB; <a href="old.html" style="text-decoration: none; color: inherit;">Old</a> </div> 
-    <h1>Azure <span>Data Engineering</span><br>Interview Guide</h1>
-    <p class="hero-sub">Comprehensive Q&A reference covering architecture patterns, pipeline design, performance tuning, coding and security best practices.</p>
+    <h1>Azure <span>Data Engineering</span> Interview Guide</h1>
+    <p class="hero-sub">Comprehensive Q&A reference covering architecture patterns, pipeline design, performance tuning, coding and best practices.</p>
+    <div class="hero-stats">
+        <span>📚 <strong id="totalQuestions">0</strong> Questions</span>
+        <span>🧩 <strong id="totalSections">0</strong> Sections</span>
+    </div>
   </div>
 </header>
 
@@ -11936,6 +11964,21 @@ function setFontSize(size) {
   document.querySelectorAll('.font-size-toggle button').forEach(b => b.classList.remove('active'));
   document.querySelector(`.font-size-toggle .fs-${size}`).classList.add('active');
 }
+
+function updateHeroStats() {
+
+    // Total Questions
+    const totalQuestions = document.querySelectorAll(".q-card").length;
+
+    // Total Sections
+    const totalSections = document.querySelectorAll(".section").length;
+
+    document.getElementById("totalQuestions").textContent = totalQuestions;
+    document.getElementById("totalSections").textContent = totalSections;
+}
+
+document.addEventListener("DOMContentLoaded", updateHeroStats);
+
 refreshNumbers();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
