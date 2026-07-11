@@ -882,7 +882,7 @@
       <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta<span class="nav-count">9</span></button></li>
       <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>ADF<span class="nav-count">15</span></button></li>
       <li class="nav-item"><button onclick="show('synapse')"><span class="nav-dot"></span>Synapse<span class="nav-count">12</span></button></li>
-      <li class="nav-item"><button onclick="show('security')"><span class="nav-dot"></span>Security<span class="nav-count">6</span></button></li>
+      <li class="nav-item"><button onclick="show('security')"><span class="nav-dot"></span>Security<span class="nav-count">5</span></button></li>
       <li class="nav-item"><button onclick="show('coding')"><span class="nav-dot"></span>Coding<span class="nav-count">28</span></button></li>
       <li class="nav-item"><button onclick="show('airflow')"><span class="nav-dot"></span>Airflow<span class="nav-count">8</span></button></li>
       <li class="nav-item"><button onclick="show('datamodel')"><span class="nav-dot"></span>Data Modelling<span class="nav-count">17</span></button></li>
@@ -928,6 +928,8 @@
     </div>
   </div>
 </div>
+
+
 
 <!-- WORK EXPERIENCE -->
 <div class="q-card">
@@ -1573,12 +1575,12 @@ assert set(expected_fields.keys()).issubset(set(df.columns)), "Missing expected 
   <div class="q-body">
     <p>"Queued usually means the pipeline is waiting for resources or permission to run, not that it's actually failing. I check these three things, in this order."</p>
 
-    <p><strong>1. Cluster / compute availability:</strong> If this is a Databricks job, I check whether the job cluster is still spinning up, or whether the cluster pool has hit its capacity limit. On Azure, sometimes the VM family we requested has a regional quota limit or is temporarily out of capacity — Databricks will queue the job until a node becomes available. I check the cluster event log for messages like "waiting for instance" or "pool exhausted."</p>
-
+    <!--<p><strong>1. Cluster / compute availability:</strong> If this is a Databricks job, I check whether the job cluster is still spinning up, or whether the cluster pool has hit its capacity limit. On Azure, sometimes the VM family we requested has a regional quota limit or is temporarily out of capacity — Databricks will queue the job until a node becomes available. I check the cluster event log for messages like "waiting for instance" or "pool exhausted."</p> -->
+    <p><strong>1. Cluster availability / resource contention:</strong> In Databricks, a queued job often means the cluster is starting up, all available spot instances are taken, or the cluster pool is exhausted. Check the cluster Events tab for startup errors or spot eviction notices. In ADF, check if the Integration Runtime is online — if SHIR is offline, activities queue indefinitely. I check the cluster event log for messages like "waiting for instance" or "pool exhausted.</p>
     <p><strong>2. Integration Runtime status (for ADF):</strong> If it's an ADF pipeline using a Self-Hosted IR, I check whether the SHIR machine is online and has free capacity. SHIR has a limited number of concurrent jobs it can run — if too many pipelines are queued on the same SHIR, new ones wait in line. I check the IR's node status in the ADF Studio Manage tab.</p>
-
     <p><strong>3. Concurrency limits:</strong> Both ADF and Databricks have concurrency caps — ADF has a limit on concurrent pipeline runs per subscription/factory, and Databricks workspaces have job concurrency limits. If too many other pipelines are running simultaneously, new ones queue until a slot frees up. I check how many other pipelines or jobs are currently active.</p>
-
+    <p><strong>4. Concurrency limits:</strong> In ADF, check if the pipeline concurrency setting is 1 and another instance is already running. In Synapse, check workload management — if all concurrency slots are consumed, new queries queue. Check <code>sys.dm_pdw_waits</code> and <code>sys.dm_pdw_exec_requests</code> for queued requests and what resources they are waiting for.</p>
+    <p><strong>5. Trigger or dependency issue:</strong> Is the pipeline waiting for a predecessor to complete? In ADF, check pipeline dependencies. Is a tumbling window trigger still processing historical windows one at a time? In Databricks, check if the job is waiting on a preceding task in a multi-task job that has not yet completed.</p>
     <ul>
       <li>If it's none of these — I also check for a <strong>circular or unresolved dependency</strong> in the trigger or pipeline dependency chain, which can cause a pipeline to wait indefinitely for a condition that will never be satisfied.</li>
     </ul>
@@ -2047,6 +2049,157 @@ Pipeline(config).run()</code></pre>
       <li><strong>Execute Pipeline Activity:</strong> Calls another pipeline from within the current one. I use this to break large pipelines into smaller modular child pipelines — ingestion pipeline, transformation pipeline, notification pipeline — and the parent pipeline orchestrates all three in sequence.</li>
     </ul>
     <div class="callout tip"><span class="callout-icon">💡</span><div>The combination I use most: <strong>Lookup → ForEach → Copy Activity</strong> inside ForEach. This is the metadata-driven pattern that loads all tables in parallel from a single config table. It replaced what used to be 50 individual hardcoded pipelines.</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What is the difference between Lookup Activity and Get Metadata Activity in ADF?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Both activities read information before the main pipeline logic runs — but they serve completely different purposes."</p>
+
+    <p><strong>Lookup Activity:</strong> Reads actual data — rows and column values — from a source (SQL table, file, stored procedure result). Returns a result set that you use to drive downstream logic. Think of it as running a SELECT query and using the result inside the pipeline.</p>
+    <ul>
+      <li>Returns: <code>firstRow</code> (single row) or <code>value</code> array (multiple rows, up to 5000)</li>
+      <li>Common uses: Get watermark value, get list of tables from a config table, get a count of rows to validate before processing, fetch a config parameter stored in SQL.</li>
+    </ul>
+    <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+    <pre><code class="language-sql"># Lookup output usage in dynamic content
+# Get watermark from control table
+@activity('LookupWatermark').output.firstRow.last_load_date
+
+# Loop through table list from config table
+@activity('LookupTables').output.value  # returns array of rows
+# Each item in ForEach:
+@item().table_name
+@item().watermark_col</code></pre></div>
+
+    <p><strong>Get Metadata Activity:</strong> Reads metadata about a file or folder — not the actual data content. Used to inspect properties like file existence, size, last modified date, or list of child items in a folder. Think of it as <code>ls -la</code> for your ADLS container.</p>
+    <ul>
+      <li>Returns: field values like <code>exists</code>, <code>size</code>, <code>lastModified</code>, <code>childItems</code>, <code>itemType</code>, <code>contentMD5</code></li>
+      <li>Common uses: Check if a file arrived before triggering the pipeline, get count of files in a landing folder, verify a file isn't empty (size > 0), dynamically list all files in a partition folder.</li>
+    </ul>
+    <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+    <pre><code class="language-sql"># Get Metadata output usage
+# Check file exists before copying
+@activity('CheckFile').output.exists
+
+# File size > 0 validation
+@greater(activity('GetFileInfo').output.size, 0)
+
+# List all files in a folder
+@activity('ListLandingFiles').output.childItems
+# Returns: [{"name":"orders_jan.csv","type":"File"}, ...]</code></pre></div>
+
+    <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
+      <div style="padding:9px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-sec);">Quick comparison</div>
+      <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:#E6F1FB;border:1px solid #B5D4F4;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:#0C447C;margin-bottom:6px;font-weight:600;">Lookup Activity</div>
+          <div style="font-size:12.5px;color:#042C53;line-height:1.9;">• Reads actual data rows<br>• Works on SQL, files, APIs<br>• Returns row values<br>• Use for: watermarks, config, table lists<br>• Max 5000 rows returned</div>
+        </div>
+        <div style="background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;color:#0F6E56;margin-bottom:6px;font-weight:600;">Get Metadata Activity</div>
+          <div style="font-size:12.5px;color:#04342C;line-height:1.9;">• Reads file/folder properties<br>• Works on ADLS, Blob, SFTP<br>• Returns metadata (size, exists...)<br>• Use for: file arrival checks, folder listing<br>• No data content returned</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>Common pattern combining both: <strong>Get Metadata</strong> checks if today's file arrived and is non-empty → <strong>If Condition</strong> gates on <code>exists = true AND size > 0</code> → <strong>Lookup</strong> gets the watermark → <strong>Copy Activity</strong> runs the extraction. This prevents pipelines from running on missing or empty source files.</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you implement parameterized pipelines and datasets in ADF?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Parameterization is what turns a hardcoded, single-purpose pipeline into a reusable generic one. The goal is to have one pipeline that can handle 50 tables, not 50 pipelines for 50 tables."</p>
+
+    <p><strong>Pipeline Parameters:</strong> Defined on the pipeline itself, passed in at trigger time or by a parent pipeline. Read-only inside the pipeline — they're inputs, not scratchpad values.</p>
+    <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+    <pre><code class="language-sql"># Pipeline parameter definition (in ADF JSON)
+{
+  "parameters": {
+    "tableName":      {"type": "string"},
+    "watermarkCol":   {"type": "string"},
+    "targetPath":     {"type": "string"},
+    "loadMode":       {"type": "string", "defaultValue": "append"}
+  }
+}
+
+# Reference inside the pipeline with dynamic content
+@pipeline().parameters.tableName
+@pipeline().parameters.watermarkCol
+@pipeline().parameters.targetPath
+
+# Used in a Copy Activity source query:
+SELECT *
+FROM @{pipeline().parameters.tableName}
+WHERE @{pipeline().parameters.watermarkCol}
+  > '@{activity('LookupWatermark').output.firstRow.last_load_date}'</code></pre></div>
+
+    <p><strong>Parameterized Datasets:</strong> Instead of creating one dataset per table, create one dataset with parameters for table name, schema, file path etc. The pipeline passes the parameter value to the dataset at runtime.</p>
+    <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+    <pre><code class="language-sql"># Parameterized dataset definition
+{
+  "parameters": {
+    "tableName": {"type": "string"},
+    "schemaName": {"type": "string", "defaultValue": "dbo"}
+  },
+  "typeProperties": {
+    "schema": "@dataset().schemaName",
+    "table":  "@dataset().tableName"
+  }
+}
+
+# In Copy Activity — pass parameters to the dataset
+# "dataset": {
+#   "referenceName": "ds_sql_parameterized",
+#   "type": "DatasetReference",
+#   "parameters": {
+#     "tableName":  {"value": "@pipeline().parameters.tableName"},
+#     "schemaName": {"value": "dbo"}
+#   }
+# }</code></pre></div>
+
+    <p><strong>The full metadata-driven pattern I use on Citi project:</strong></p>
+    <ul>
+      <li><strong>Config table in Azure SQL:</strong> stores table_name, watermark_col, target_path, load_mode, is_active per row.</li>
+      <li><strong>Master pipeline:</strong> Lookup activity reads all active rows → ForEach activity loops in parallel → calls generic child pipeline with row values as parameters.</li>
+      <li><strong>Generic child pipeline:</strong> accepts parameters, uses parameterized linked service and dataset, Copy Activity query built entirely from dynamic content expressions.</li>
+      <li><strong>Result:</strong> adding a new table = one row in the config table. Zero pipeline changes. Zero new datasets.</li>
+    </ul>
+    <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+    <pre><code class="language-sql"># ForEach item reference — used inside the child pipeline call
+{
+  "tableName":    "@item().table_name",
+  "watermarkCol": "@item().watermark_col",
+  "targetPath":   "@item().target_path",
+  "loadMode":     "@item().load_mode"
+}
+
+# Variables vs Parameters — quick distinction:
+# Parameters: set from OUTSIDE at run time — read-only inside pipeline
+# Variables:  created INSIDE the pipeline — can be updated during execution
+#             via Set Variable activity — useful for accumulating row counts,
+#             tracking loop state, building dynamic strings step by step</code></pre></div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The combination of Lookup → ForEach → parameterized child pipeline is the single most powerful pattern in ADF. Once you build it, you never write a new pipeline for a new source table again — it's just a config row. I built this on the Citi project and it reduced new table onboarding from 2 days to under 2 hours."</div></div>
   </div>
 </div>
 
@@ -2576,31 +2729,10 @@ WITH (FILE_TYPE = 'PARQUET', CREDENTIAL = ('Managed Identity'));</code></pre></d
     </div>
   </div>
 
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How would you implement data masking in Azure SQL for sensitive columns?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p><strong>Dynamic Data Masking (DDM)</strong> is applied at the column definition level. Users without the UNMASK permission see masked values. Data is not changed on disk — masking is applied at query time.</p>
-      <div class="split-grid">
-          <div class="split-pane sql-pane-card">
-            <div class="split-pane-header">&#x1F5C4; SQL</div>
-      <pre><code class="language-sql">-- Add masking to existing columns
-ALTER TABLE customers ALTER COLUMN email
-    ADD MASKED WITH (FUNCTION = 'email()');            -- aXXX@XXXX.com
-
-ALTER TABLE customers ALTER COLUMN phone
-    ADD MASKED WITH (FUNCTION = 'partial(0,"XXX-XXX-",4)'); -- XXX-XXX-1234
-
-ALTER TABLE customers ALTER COLUMN salary
-    ADD MASKED WITH (FUNCTION = 'default()');          -- 0 for numbers
-
--- Grant unmask to privileged role
-GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
-      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>DDM does not protect against WHERE clause inference attacks (<code>WHERE salary = 75000</code> still works). Combine with Column-Level Security (DENY SELECT on specific columns) for complete protection.</div></div>
-    </div>
-  </div>
+  
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">What is the Hierarchical Namespace (HNS) in ADLS Gen2 and how does it optimize big data operations?</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">What is the Hierarchical Namespace (HNS) in ADLS Gen2 and how does it optimize big data operations?</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Regular Azure Blob Storage is a flat namespace — "folders" are just prefixes in blob names. Operations like renaming or deleting a "folder" require enumerating and updating every blob with that prefix — O(n) operations at scale.</p>
       <p>ADLS Gen2 with HNS enabled creates a <strong>true hierarchical file system</strong> like HDFS. Directories are first-class objects with their own metadata. This enables:</p>
@@ -2615,7 +2747,7 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">Explain Synapse Serverless SQL Pools versus Dedicated SQL Pools — when do you use each?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">Explain Synapse Serverless SQL Pools versus Dedicated SQL Pools — when do you use each?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Serverless SQL Pool:</strong> No provisioned compute. Query files directly in ADLS (Parquet, CSV, JSON, Delta) using T-SQL with <code>OPENROWSET</code> or external tables. Pay per TB scanned. Great for ad-hoc exploration, data discovery, and building views for Power BI on top of the data lake. Limitation: no indexes or materialized aggregates — every query scans files.</p>
       <p><strong>Dedicated SQL Pool:</strong> You provision DWUs — dedicated compute and columnar storage (CCI). Supports indexes, statistics, materialized views, and workload management. Pay per DWU-hour. Best for repeated, complex BI queries with multi-user concurrency and SLA requirements.</p>
@@ -2624,7 +2756,7 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">What is workload management in Synapse and why is it important?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">What is workload management in Synapse and why is it important?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Without workload management, a single heavy query can starve all other users of DWU resources. Synapse workload management has three components:</p>
       <ul>
@@ -2636,7 +2768,7 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">How do you secure data in Azure Synapse Analytics?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">How do you secure data in Azure Synapse Analytics?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ul>
         <li><strong>Network:</strong> Deploy Synapse in a managed VNet. Use Private Endpoints to block public internet exposure. Apply Synapse Firewall rules to whitelist trusted IP ranges.</li>
@@ -3147,12 +3279,13 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
     <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Spark Architecture — Driver, Executors, Cluster Manager, DAG, Lazy Evaluation</div><div class="q-tags"><span class="q-tag tag-fund">Architecture</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <p>PySpark is the Python API for Apache Spark, used to process large-scale data across distributed systems.</p>
       <p>Spark follows a master–worker design. A Spark application runs a driver program on one node and executor processes on many worker nodes. The driver hosts the main function and creates the SparkContext (or SparkSession ), which is the entry point to Spark. The driver’s SparkContext connects to a cluster manager (e.g. YARN, Kubernetes, or Spark’s standalone manager) to acquire resources. The cluster manager allocates executors on worker machines; each executor is a JVM process that will run tasks and cache data partitions.</p>
       <p><strong>Core components:</strong></p>
       <ul>
-        <li><strong>Driver:</strong> The JVM process that runs your Spark application's <code>main()</code>. It creates the SparkContext, builds the DAG (Directed Acyclic Graph) of transformations, divides the DAG into stages and tasks, and schedules tasks on executors. The driver has a finite memory — never <code>collect()</code> large data to it.</li>
+        <li><strong>Driver:</strong> The JVM process that runs your Spark application's <code>main()</code> PySpark Code. It creates the SparkContext, builds the DAG (Directed Acyclic Graph) of transformations, divides the DAG into stages and tasks, and schedules tasks on executors. it coordinates work across the cluster. The driver has a finite memory — never <code>collect()</code> large data to it.</li>
         <li><strong>Executor:</strong> Worker JVM processes that run tasks. Each executor has a fixed number of CPU cores (tasks run in parallel = cores) and memory (execution + storage). Executors live for the lifetime of the application.</li>
-        <li><strong>Cluster Manager:</strong> Allocates resources (executors) to the Spark application. In Databricks: YARN (legacy) or Kubernetes. In standalone: Spark's built-in manager. The driver requests resources from the cluster manager.</li>
+        <li><strong>Cluster Manager:</strong> Allocates resources (executors) to the Spark application. It Manages worker nodes & it doesn't execute tasks. In Databricks: YARN (legacy) or Kubernetes. In standalone: Spark's built-in manager. The driver requests resources from the cluster manager.</li>
         <li><strong>DAG (Directed Acyclic Graph):</strong> Spark builds a logical plan of transformations lazily. When an action (<code>count()</code>, <code>write()</code>, <code>collect()</code>) is triggered, the Catalyst optimizer converts the logical plan into a physical plan, splits it into stages at shuffle boundaries, and each stage into tasks (one task per partition).</li>
         <li><strong>RDD → DataFrame → Dataset:</strong> RDDs are the low-level distributed data structure. DataFrames are RDDs with schema — the Catalyst optimizer can reason about them. Always use DataFrames/SQL in production, not raw RDDs.</li>
         <li><strong>Lazy evaluation:</strong> Transformations (<code>filter()</code>, <code>join()</code>, <code>select()</code>) don't execute immediately. They build the DAG. Only actions trigger actual computation. This allows Catalyst to optimize the full plan before executing anything.
@@ -3948,12 +4081,12 @@ df_large.join(broadcast(df_small), "key")</code></pre></div></div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">15</div><div class="q-title-wrap"><div class="q-title">How do you handle the Small File Problem in a Data Lake? Coalesce vs. repartition?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">15</div><div class="q-title-wrap"><div class="q-title">Coalesce vs. repartition?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Thousands of tiny files require a metadata call per file and Spark creates one task per file — 10,000 files = 10,000 tasks = scheduler and storage service overwhelm.</p>
       <ul>
         <li><strong>coalesce(N):</strong> Reduces partition count without a full shuffle. Very efficient. Output may be slightly uneven. Use when reducing files before writing and balanced output is not critical.</li>
-        <li><strong>repartition(N):</strong> Full shuffle — redistributes data evenly across N partitions. More expensive but produces balanced, evenly-sized output files.</li>
+        <li><strong>repartition(N):</strong> is used to Increase/Decrease partitions. Causes a full shuffle — redistributes data evenly across N partitions. More expensive but produces balanced, evenly-sized output files.</li>
       </ul>
       <div class="split-grid">
           <div class="split-pane py-pane-card">
@@ -4185,7 +4318,7 @@ df.write.format("delta").save("/mnt/delta/products")
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">3</div>
     <div class="q-title-wrap">
-      <div class="q-title">How do you implement Row-Level Deletions in Delta Lake without rewriting the entire partition?</div>
+      <div class="q-title">How do you implement Row Level Deletions in Delta Lake without rewriting the entire partition?</div>
       <div class="q-tags"><span class="q-tag tag-arch">Delta Lake</span><span class="q-tag tag-pattern">Best Practice</span></div>
     </div>
     <div class="q-chevron">▼</div>
@@ -4194,13 +4327,15 @@ df.write.format("delta").save("/mnt/delta/products")
     <p>"This is one of the things that makes Delta Lake genuinely different from plain Parquet. With Parquet, if you want to delete even a single row, you have to rewrite the entire file that contains it — which is expensive. Delta Lake gives you two approaches."</p>
     <p><strong>Approach 1 — Simple DELETE statement:</strong></p>
     <p>Delta supports SQL-style deletes directly:</p>
+    <div class="split-pane sql-pane-card">
+      <div class="split-pane-header">&#x1F5C4; SQL</div>
     <pre><code class="language-sql">-- Delete a specific customer's records (e.g. GDPR request)
 DELETE FROM orders
 WHERE customer_id = 'C1001';
 
 -- Or with a condition
 DELETE FROM orders
-WHERE order_date < '2022-01-01' AND status = 'cancelled';</code></pre>
+WHERE order_date < '2022-01-01' AND status = 'cancelled';</code></pre></div>
     <p>Internally, Delta reads the affected files, removes the matching rows, and writes new Parquet files with those rows excluded. The old files are marked as removed in the transaction log but not immediately deleted from storage — that's handled by VACUUM later.</p>
 
     <p><strong>Approach 2 — Deletion Vectors (newer, more efficient):</strong></p>
@@ -4210,12 +4345,14 @@ WHERE order_date < '2022-01-01' AND status = 'cancelled';</code></pre>
       <li>The actual file is only rewritten when you run <code>OPTIMIZE</code> — which you'd run anyway as part of maintenance.</li>
       <li>This makes individual row deletions much cheaper — you're writing a tiny bitmap instead of rewriting a 500MB Parquet file.</li>
     </ul>
+    <div class="split-pane sql-pane-card">
+      <div class="split-pane-header">&#x1F5C4; SQL</div>
     <pre><code class="language-sql">-- Enable deletion vectors on a table
 ALTER TABLE orders
 SET TBLPROPERTIES ('delta.enableDeletionVectors' = 'true');
 
 -- Now DELETE is fast — just writes a bitmap
-DELETE FROM orders WHERE customer_id = 'C1001';</code></pre>
+DELETE FROM orders WHERE customer_id = 'C1001';</code></pre></div>
     <div class="callout tip"><span class="callout-icon">💡</span><div>Real use case I'd mention: GDPR "right to be forgotten" requests. A customer asks to have all their data deleted. With deletion vectors, I can delete their rows across multiple Delta tables immediately without triggering expensive full file rewrites across the entire dataset.</div></div>
   </div>
 </div>
@@ -4428,6 +4565,280 @@ small = small_df.withColumn("salt", explode(array([lit(i) for i in range(N)]))) 
 result = big.join(small, "key_s").drop("salt", "key_s")</code></pre></div>
     </div>
   </div>
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">10</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you implement SCD (Slowly Changing Dimensions) in a streaming environment?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"SCD in batch is straightforward — you have the full dataset, you can compare and merge. In streaming, you only see new events as they arrive, so you need a state store to remember what you've already written. The pattern I use is <strong>MERGE in foreachBatch</strong> — it gives you the control of batch SCD logic but runs on every micro-batch."</p>
+
+    <p><strong>SCD Type 1 in Streaming (overwrite latest value):</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">from delta.tables import DeltaTable
+
+def upsert_scd1(batch_df, batch_id):
+    """SCD Type 1 — just overwrite with latest value, no history"""
+    delta_table = DeltaTable.forPath(spark, "/mnt/delta/dim_customer")
+
+    delta_table.alias("target").merge(
+        batch_df.alias("source"),
+        "target.customer_id = source.customer_id"
+    ).whenMatchedUpdateAll()    \
+     .whenNotMatchedInsertAll() \
+     .execute()
+
+stream = (spark.readStream
+    .format("kafka")
+    .option("subscribe", "customer-updates")
+    .load()
+    .select(from_json(col("value").cast("string"), schema).alias("data"))
+    .select("data.*")
+)
+
+stream.writeStream \
+    .foreachBatch(upsert_scd1) \
+    .option("checkpointLocation", "/mnt/checkpoints/dim_customer") \
+    .start()</code></pre>
+    </div>
+
+    <p><strong>SCD Type 2 in Streaming (keep full history with effective dates):</strong></p>
+    <p>This is more complex — when a record changes, I need to close the existing row (set <code>end_date</code>, <code>is_current=False</code>) and insert a new row with the new values. The MERGE handles this in one atomic operation per micro-batch.</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">from pyspark.sql.functions import current_timestamp, lit, col
+
+def upsert_scd2(batch_df, batch_id):
+    """SCD Type 2 — expire old row, insert new row with history"""
+    delta_table = DeltaTable.forPath(spark, "/mnt/delta/dim_customer_scd2")
+
+    # Step 1 — close the existing current rows that have changed
+    delta_table.alias("target").merge(
+        batch_df.alias("source"),
+        """target.customer_id = source.customer_id
+           AND target.is_current = true
+           AND (target.email != source.email
+                OR target.region != source.region)"""
+    ).whenMatchedUpdate(set={
+        "is_current":  lit(False),
+        "end_date":    current_timestamp()
+    }).execute()
+
+    # Step 2 — insert new rows for all incoming records
+    (batch_df
+        .withColumn("start_date",  current_timestamp())
+        .withColumn("end_date",    lit(None).cast("timestamp"))
+        .withColumn("is_current",  lit(True))
+        .write
+        .format("delta")
+        .mode("append")
+        .save("/mnt/delta/dim_customer_scd2")
+    )
+
+stream.writeStream \
+    .foreachBatch(upsert_scd2) \
+    .option("checkpointLocation", "/mnt/checkpoints/dim_customer_scd2") \
+    .start()</code></pre>
+    </div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The key insight for streaming SCD: foreachBatch converts each micro-batch into a static DataFrame, giving you full access to Delta MERGE semantics. You write batch SCD logic — it just runs automatically every few seconds or minutes."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">11</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How does Delta Lake handle schema evolution and versioning?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Delta Lake gives you two complementary controls — schema enforcement (reject changes you didn't ask for) and schema evolution (accept changes you explicitly allow). Both are managed through the transaction log, so every schema change is versioned and auditable."</p>
+
+    <p><strong>Schema Enforcement (default):</strong></p>
+    <p>By default, Delta rejects any write where the DataFrame schema doesn't match the table schema. This protects the table from silent corruption — a wrong data type or an unexpected column causes a hard failure at write time, not a downstream analytics bug days later.</p>
+
+    <p><strong>Schema Evolution — three scenarios:</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># ── 1. Adding new columns — mergeSchema ───────────────
+# Source now has a new column 'loyalty_score' not in target
+df_with_new_col.write \
+    .format("delta") \
+    .mode("append") \
+    .option("mergeSchema", "true") \  # new column gets added to table schema
+    .save("/mnt/delta/customers")
+
+# Or set globally for the session
+spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled", "true")
+
+# ── 2. Schema changes via ALTER TABLE (SQL) ────────────
+# Add a column
+spark.sql("""
+    ALTER TABLE customers
+    ADD COLUMNS (loyalty_score DOUBLE COMMENT 'Loyalty program score')
+""")
+
+# Change column type (widening only — e.g. INT → BIGINT)
+spark.sql("""
+    ALTER TABLE customers
+    ALTER COLUMN order_count TYPE BIGINT
+""")
+
+# Rename a column (requires column mapping mode)
+spark.sql("""
+    ALTER TABLE customers
+    RENAME COLUMN cust_name TO customer_name
+""")
+
+# Drop a column (requires column mapping mode)
+spark.sql("""
+    ALTER TABLE customers
+    DROP COLUMN legacy_field
+""")
+
+# ── 3. Enable Column Mapping (for rename/drop) ─────────
+spark.sql("""
+    ALTER TABLE customers SET TBLPROPERTIES (
+        'delta.columnMapping.mode' = 'name',
+        'delta.minReaderVersion'   = '2',
+        'delta.minWriterVersion'   = '5'
+    )
+""")</code></pre>
+    </div>
+
+    <p><strong>Schema Versioning:</strong> Every schema change is recorded in the transaction log as a separate commit with a new version number. You can see the full history:</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># See full history including schema changes
+spark.sql("DESCRIBE HISTORY customers").show(truncate=False)
+# Shows: version, timestamp, operation, operationParameters
+
+# Read the table as it was before a schema change
+old_df = spark.read \
+    .format("delta") \
+    .option("versionAsOf", 5) \
+    .load("/mnt/delta/customers")
+
+# Old version had the old schema — the new column will be null
+# for rows written before the column was added</code></pre>
+    </div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Schema enforcement is your safety net, schema evolution is your escape hatch. In production, I keep enforcement on (default) and only use mergeSchema or ALTER TABLE consciously when a source genuinely adds a new field — not as a way to bypass schema validation on bad data."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">12</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you implement SCD Type 2 using PySpark or Databricks SQL?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"SCD Type 2 keeps the full history of changes — when an attribute changes, the old row is 'closed' with an end date, and a new row is inserted with the new values and a new start date. Each row has <code>start_date</code>, <code>end_date</code>, and <code>is_current</code> columns."</p>
+
+    <div class="schema-box">
+      <strong>Target table — dim_customer_scd2:</strong><br>
+      <code>customer_id</code>, <code>name</code>, <code>region</code>, <code>email</code>,
+      <code>start_date</code>, <code>end_date</code>, <code>is_current</code>, <code>surrogate_key</code>
+    </div>
+
+    <p><strong>Method 1 — PySpark with Delta MERGE:</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">from delta.tables import DeltaTable
+from pyspark.sql.functions import (
+    current_timestamp, lit, col, sha2, concat_ws
+)
+
+# Incoming updates
+updates = spark.read.format("delta").load("/mnt/silver/customer_updates")
+
+# Add a surrogate key based on content
+updates = updates.withColumn(
+    "surrogate_key",
+    sha2(concat_ws("||", "customer_id", "region", "email"), 256)
+)
+
+target = DeltaTable.forPath(spark, "/mnt/delta/dim_customer_scd2")
+
+# Step 1 — expire rows where tracked columns changed
+target.alias("t").merge(
+    updates.alias("s"),
+    """t.customer_id = s.customer_id
+       AND t.is_current = true
+       AND t.surrogate_key != s.surrogate_key"""
+).whenMatchedUpdate(set={
+    "is_current": lit(False),
+    "end_date":   current_timestamp()
+}).execute()
+
+# Step 2 — insert new rows for changed records + brand new records
+new_rows = updates.alias("s").join(
+    target.toDF().filter(col("is_current") == True).alias("t"),
+    (col("s.customer_id") == col("t.customer_id")) &
+    (col("s.surrogate_key") == col("t.surrogate_key")),
+    "left_anti"   # only rows NOT already current
+)
+
+(new_rows
+    .withColumn("start_date",  current_timestamp())
+    .withColumn("end_date",    lit(None).cast("timestamp"))
+    .withColumn("is_current",  lit(True))
+    .write.format("delta").mode("append")
+    .save("/mnt/delta/dim_customer_scd2")
+)</code></pre>
+    </div>
+
+    <p><strong>Method 2 — Databricks SQL (cleaner for SQL-first teams):</strong></p>
+    <div class="split-pane sql-pane-card">
+      <div class="split-pane-header">&#x1F5C4; SQL</div>
+      <pre><code class="language-sql">-- Step 1: expire changed rows
+MERGE INTO dim_customer_scd2 AS target
+USING customer_updates AS source
+ON target.customer_id = source.customer_id
+   AND target.is_current = true
+   AND (target.region != source.region
+        OR target.email != source.email)
+WHEN MATCHED THEN UPDATE SET
+    target.is_current = false,
+    target.end_date   = current_timestamp();
+
+-- Step 2: insert new rows (changed + new customers)
+INSERT INTO dim_customer_scd2
+SELECT
+    source.customer_id,
+    source.name,
+    source.region,
+    source.email,
+    current_timestamp()  AS start_date,
+    NULL                 AS end_date,
+    true                 AS is_current,
+    sha2(concat_ws('||', source.customer_id,
+                   source.region, source.email), 256) AS surrogate_key
+FROM customer_updates AS source
+LEFT JOIN dim_customer_scd2 AS target
+    ON source.customer_id = target.customer_id
+   AND target.is_current = true
+   AND target.region  = source.region
+   AND target.email   = source.email
+WHERE target.customer_id IS NULL;  -- no matching current row = new or changed</code></pre>
+    </div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The surrogate key trick (sha2 hash of tracked columns) is the most efficient way to detect changes without comparing every column individually. If the hash matches, nothing changed — skip it. If it doesn't match, close the old row and insert a new one."</div></div>
+  </div>
+</div>
+
+
 </div><!-- /delta -->
 
 <!-- ════════════════════════════════════════════════════════
@@ -5432,7 +5843,7 @@ df = spark.read.format("delta").load("abfss://container@account.dfs.core.windows
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How do you implement Column-Level Security and Row-Level Security in a Lakehouse?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How do you implement Column Level Security and Row Level Security in a Lakehouse?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Column-Level Security (CLS):</strong> Prevent specific users or roles from reading specific columns entirely.</p>
       <pre><code class="language-sql">-- Synapse Dedicated Pool
@@ -5447,19 +5858,10 @@ REVOKE SELECT (ssn, credit_card) ON TABLE customers FROM analyst_role;</code></p
     </div>
   </div>
 
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Your pipeline is stuck in a Queued state. What are the top 3 things you would check?</div><div class="q-tags"><span class="q-tag tag-debug">Troubleshooting</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <ol>
-        <li><strong>Cluster availability / resource contention:</strong> In Databricks, a queued job often means the cluster is starting up, all available spot instances are taken, or the cluster pool is exhausted. Check the cluster Events tab for startup errors or spot eviction notices. In ADF, check if the Integration Runtime is online — if SHIR is offline, activities queue indefinitely.</li>
-        <li><strong>Concurrency limits:</strong> In ADF, check if the pipeline concurrency setting is 1 and another instance is already running. In Synapse, check workload management — if all concurrency slots are consumed, new queries queue. Check <code>sys.dm_pdw_waits</code> and <code>sys.dm_pdw_exec_requests</code> for queued requests and what resources they are waiting for.</li>
-        <li><strong>Trigger or dependency issue:</strong> Is the pipeline waiting for a predecessor to complete? In ADF, check pipeline dependencies. Is a tumbling window trigger still processing historical windows one at a time? In Databricks, check if the job is waiting on a preceding task in a multi-task job that has not yet completed.</li>
-      </ol>
-    </div>
-  </div>
+ 
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How do you handle Schema Evolution without breaking downstream Power BI reports?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">How do you handle Schema Evolution without breaking downstream Power BI reports?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Core principle: <strong>insulate consumers from upstream schema changes using a stable interface layer.</strong></p>
       <ul>
@@ -5469,6 +5871,29 @@ REVOKE SELECT (ssn, credit_card) ON TABLE customers FROM analyst_role;</code></p
         <li><strong>Column aliasing:</strong> If a source column is renamed, add an alias in the view to maintain backward compatibility during the transition period.</li>
         <li><strong>Schema change alerts:</strong> Add a validation step in your pipeline that compares the incoming schema to the expected schema and sends an alert before writing — giving you time to update the interface layer before new schema lands in production.</li>
       </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How would you implement data masking in Azure SQL for sensitive columns?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Dynamic Data Masking (DDM)</strong> is applied at the column definition level. Users without the UNMASK permission see masked values. Data is not changed on disk — masking is applied at query time.</p>
+      <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+      <pre><code class="language-sql">-- Add masking to existing columns
+ALTER TABLE customers ALTER COLUMN email
+    ADD MASKED WITH (FUNCTION = 'email()');            -- aXXX@XXXX.com
+
+ALTER TABLE customers ALTER COLUMN phone
+    ADD MASKED WITH (FUNCTION = 'partial(0,"XXX-XXX-",4)'); -- XXX-XXX-1234
+
+ALTER TABLE customers ALTER COLUMN salary
+    ADD MASKED WITH (FUNCTION = 'default()');          -- 0 for numbers
+
+-- Grant unmask to privileged role
+GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
+      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>DDM does not protect against WHERE clause inference attacks (<code>WHERE salary = 75000</code> still works). Combine with Column-Level Security (DENY SELECT on specific columns) for complete protection.</div></div>
     </div>
   </div>
 </div><!-- /security -->
@@ -7811,7 +8236,9 @@ first_dag()</code></pre></div>
     <div class="q-body">
       <p>PII (Personally Identifiable Information) masking ensures sensitive data (SSN, email, phone, credit card) is visible only to authorized users, even when the underlying data is stored in plain text.</p>
       <p><strong>Azure SQL / Synapse — Dynamic Data Masking (DDM):</strong></p>
-      <pre><code class="language-sql">-- Apply masking rule to column
+      <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+            <pre><code class="language-sql">-- Apply masking rule to column
 ALTER TABLE customers ALTER COLUMN email
   ADD MASKED WITH (FUNCTION = 'email()');      -- aXXX@XXXX.com
 ALTER TABLE customers ALTER COLUMN phone
@@ -7820,9 +8247,11 @@ ALTER TABLE customers ALTER COLUMN ssn
   ADD MASKED WITH (FUNCTION = 'default()');   -- XXXX
 
 -- Privileged users see real data
-GRANT UNMASK ON customers TO data_engineer_role;</code></pre>
+GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div>
       <p><strong>Databricks Unity Catalog — Column Masks (GA in DBR 12.2+):</strong></p>
-      <pre><code">-- Create a masking function
+      <div class="split-pane sql-pane-card">
+        <div class="split-pane-header">&#x1F5C4; SQL</div>
+      <pre><code class="language-sql">-- Create a masking function
 CREATE FUNCTION mask_email(email STRING, groups ARRAY&lt;STRING&gt;)
 RETURNS STRING
 RETURN CASE
@@ -7832,7 +8261,7 @@ END;
 
 -- Attach to column
 ALTER TABLE customers ALTER COLUMN email
-  SET MASK mask_email USING COLUMNS (current_user_groups());</code></pre>
+  SET MASK mask_email USING COLUMNS (current_user_groups());</code></pre></div>
       <p><strong>Lakehouse approach (encryption + masking):</strong></p>
       <ul>
         <li>Bronze: store PII as-is (raw landing, restricted access via ADLS ACLs).</li>
@@ -7886,12 +8315,15 @@ ALTER TABLE customers ALTER COLUMN email
         <li>Query with KQL (Kusto Query Language) in Log Analytics to build custom queries — e.g., pipelines that ran > 2x their normal duration, activity error rate > 5%.</li>
         <li>Create Alert Rules from KQL queries — trigger when query returns results.</li>
       </ol>
-      <pre><code">// KQL: Find all failed ADF pipeline runs in last 24h
+      <div class="split-pane SQL-pane-card">
+        <div class="split-pane-header">&#x1F4C4; SQL</div>
+      <pre><code>// KQL: Find all failed ADF pipeline runs in last 24h
 ADFPipelineRun
 | where TimeGenerated > ago(24h)
 | where Status == "Failed"
 | project PipelineName, Start, End, ErrorMessage
 | order by Start desc</code></pre>
+      </div>
       <p><strong>Layer 3 — Custom application-level metrics:</strong> Write audit rows from each pipeline (pipeline name, run ID, row count in/out, duration, status) to a SQL audit table. Build Power BI dashboard on top. Set row-count anomaly alerts (e.g., today's count &lt; 80% of 7-day average).</p>
       <p><strong>Layer 4 — Escalation path:</strong> Azure Action Group → email (low severity) → SMS (medium) → PagerDuty/OpsGenie (high/production SLA breach). Define on-call rotation and escalation rules clearly.</p>
     </div>
@@ -7955,6 +8387,8 @@ ADFPipelineRun
         <li><strong>Apache Deequ (Scala/PySpark):</strong> Amazon's data quality library built on Spark. Runs constraint checks on DataFrames at scale, computes metrics, stores results.</li>
         <li><strong>Custom PySpark checks:</strong> After each transformation, assert expected conditions — fail loudly with clear error messages rather than silently writing bad data.</li>
       </ul>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; PySpark</div>
       <pre><code class="language-python"># PySpark data quality check pattern
 def validate_df(df, name):
     checks = {
@@ -7964,7 +8398,7 @@ def validate_df(df, name):
     }
     failures = [k for k, v in checks.items() if not v]
     if failures:
-        raise ValueError(f"{name} failed checks: {failures}")</code></pre>
+        raise ValueError(f"{name} failed checks: {failures}")</code></pre></div>
     </div>
   </div>
 
@@ -8333,6 +8767,9 @@ def validate_df(df, name):
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Narrow vs Wide  &amp; Pyspark Job & Memory Optimization</div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+      <p><strong>Transformations</strong> define how data is processed in Spark. They do not execute immediately, They build the execution Plan.</p>
+      <p><Strong>Actions</Strong> trigger actual execution. They return results to the driver. They execute the full pipeline. Examples are <code>show()</code>, <code>count()</code>, <code>write()</code></p>
+      <hr>
       <p><strong>Narrow Transformations:</strong> When one child partition depends on only one parent partition. No data movement across executors — no shuffle. Processing stays local to executor — Fast.</p>
       <ul>
         <li>No Shuffle, No redistribution, No network transfer.</li>
@@ -8771,6 +9208,65 @@ OPTIMIZE orders;</code></pre></div>
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">13</div>
     <div class="q-title-wrap">
+      <div class="q-title">Time Travel and Versioning - when would you use them?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Delta Lake records every write, update, delete, and schema change as a new version in the transaction log. Time Travel lets you query the table as it looked at any previous version or timestamp — without any extra setup. It's automatic."</p>
+
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># ── View version history ───────────────────────────────
+spark.sql("DESCRIBE HISTORY orders").show(20, truncate=False)
+# Shows: version | timestamp | operation | operationParameters | numOutputRows
+
+# ── Query by version number ────────────────────────────
+df_v5 = spark.read \
+    .format("delta") \
+    .option("versionAsOf", 5) \
+    .load("/mnt/delta/orders")
+
+# ── Query by timestamp ─────────────────────────────────
+df_yesterday = spark.read \
+    .format("delta") \
+    .option("timestampAsOf", "2024-01-14 18:00:00") \
+    .load("/mnt/delta/orders")
+
+# SQL syntax
+spark.sql("SELECT * FROM orders VERSION AS OF 5")
+spark.sql("SELECT * FROM orders TIMESTAMP AS OF '2024-01-14 18:00:00'")
+
+# ── Restore a table to a previous version ─────────────
+spark.sql("RESTORE TABLE orders TO VERSION AS OF 5")
+spark.sql("RESTORE TABLE orders TO TIMESTAMP AS OF '2024-01-14'")
+
+# ── Compare two versions — useful for debugging ────────
+v_now  = spark.sql("SELECT * FROM orders VERSION AS OF 10")
+v_prev = spark.sql("SELECT * FROM orders VERSION AS OF 9")
+
+changed = v_now.exceptAll(v_prev)
+print(f"Rows that changed: {changed.count()}")</code></pre>
+    </div>
+
+    <p><strong>When I actually use it:</strong></p>
+    <ul>
+      <li><strong>Bad transformation run:</strong> A Gold layer mart gets overwritten with wrong aggregation logic. I RESTORE the table to the last good version — done in seconds, no re-ingestion from Bronze needed. I've used this on the NYC Taxi project after a faulty groupBy produced wrong borough totals.</li>
+      <li><strong>Audit and compliance:</strong> "What did the revenue table look like on the day the quarterly report was signed?" Query by timestamp — exact answer, no guessing.</li>
+      <li><strong>Debugging incremental logic:</strong> If my watermark-based pipeline loaded wrong data for a specific window, I can query that exact version, compare with the previous version, and see exactly what changed.</li>
+      <li><strong>Rollback after accidental DELETE:</strong> Someone runs DELETE without a WHERE clause. RESTORE gets the data back atomically. No backup restore process, no downtime.</li>
+    </ul>
+
+    <p><strong>How long is history kept?</strong> Delta retains old file versions until you run <code>VACUUM</code>. Default retention is 7 days — you can time travel up to 7 days back. Beyond that, VACUUM has cleaned up the old Parquet files even though the log entries still exist.</p>
+
+    <div class="callout warn"><span class="callout-icon">⚠️</span><div>Never run <code>VACUUM orders RETAIN 0 HOURS</code> — this deletes all old files immediately, breaking any active streaming readers and eliminating all time travel history. Always keep at least 7 days of retention.</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">14</div>
+    <div class="q-title-wrap">
       <div class="q-title">
         CDC (Change Data Capture) and CDF (Change Data Feed) in Databricks.
       </div>
@@ -8887,7 +9383,7 @@ SET TBLPROPERTIES (
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
-    <div class="q-num">14</div>
+    <div class="q-num">15</div>
     <div class="q-title-wrap">
       <div class="q-title">You need to process 10 GB of data using Spark. How would you determine the number of partitions, executors, cores and memory required for maximum parallelism?</div>
     </div>
@@ -11061,12 +11557,36 @@ np.corrcoef([1,2,3,4], [2,4,5,4])       # correlation matrix</code></pre>
 <script>
 
 
+// ── On page load — dynamic q-nums + dynamic nav counts ──
+function initPage() {
+  // 1. Dynamic q-num per section
+  document.querySelectorAll('.section').forEach(sec => {
+    const cards = sec.querySelectorAll('.q-card');
+    cards.forEach((card, idx) => {
+      const numEl = card.querySelector('.q-num');
+      if (numEl) numEl.textContent = idx + 1;
+    });
+  });
+
+  // 2. Dynamic nav-count — count q-cards per section
+  document.querySelectorAll('.nav-item button').forEach(btn => {
+    const match = btn.getAttribute('onclick') && btn.getAttribute('onclick').match(/show\(['"](\w+)['"]\)/);
+    if (!match) return;
+    const sectionId = match[1];
+    const section   = document.getElementById(sectionId);
+    if (!section) return;
+    const count  = section.querySelectorAll('.q-card').length;
+    const badge  = btn.querySelector('.nav-count');
+    if (badge) badge.textContent = count;
+  });
+}
+
 function handleSearch(query) {
-  const trimmed  = query.trim();
-  const clearBtn = document.getElementById('searchClear');
-  const label    = document.getElementById('searchLabel');
-  const layout   = document.querySelector('.layout');
-  const sidebarNav = document.getElementById("sidebarNav");
+  const trimmed    = query.trim();
+  const clearBtn   = document.getElementById('searchClear');
+  const label      = document.getElementById('searchLabel');
+  const layout     = document.querySelector('.layout');
+  const navItems   = document.querySelectorAll('#sidebarNav .nav-item');
 
   clearBtn.style.display = trimmed ? 'block' : 'none';
 
@@ -11075,29 +11595,31 @@ function handleSearch(query) {
     return;
   }
 
-  // Enter search mode
   layout.classList.add('search-active');
-  sidebarNav.style.display = "none";
 
-  document.querySelectorAll(".star-box").forEach(box => {
-    box.style.display = "none";
-    });
+  // Hide star-boxes (HR intro)
+  document.querySelectorAll('.star-box').forEach(b => b.style.display = 'none');
 
   const keyword  = trimmed.toLowerCase();
   const allCards = document.querySelectorAll('.q-card');
-  let matchCount = 0;
+
+  // Track matched section IDs and count per section
+  const sectionMatchCounts = {};
 
   allCards.forEach(card => {
     const titleEl = card.querySelector('.q-title');
     if (!titleEl) { card.classList.add('search-hidden'); return; }
 
-    // Always work from the plain text — strip any previous marks first
     const plainText = titleEl.textContent || titleEl.innerText || '';
     const matches   = plainText.toLowerCase().includes(keyword);
 
     if (matches) {
       card.classList.remove('search-hidden');
-      matchCount++;
+      // Track which section this card belongs to
+      const section = card.closest('.section');
+      if (section && section.id) {
+        sectionMatchCounts[section.id] = (sectionMatchCounts[section.id] || 0) + 1;
+      }
       // Highlight keyword
       const safe = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       titleEl.innerHTML = plainText.replace(
@@ -11106,26 +11628,49 @@ function handleSearch(query) {
       );
     } else {
       card.classList.add('search-hidden');
-      titleEl.textContent = plainText; // restore plain
+      titleEl.textContent = plainText;
     }
   });
 
-  // For each section: if all its cards are hidden, hide the section too
+  // Show/hide sections
   document.querySelectorAll('.section').forEach(sec => {
     const hasVisible = [...sec.querySelectorAll('.q-card')]
       .some(c => !c.classList.contains('search-hidden'));
     sec.style.display = hasVisible ? 'block' : 'none';
   });
 
+  // Update nav: show only matched sections, highlight them, update count
+  navItems.forEach(li => {
+    const btn   = li.querySelector('button');
+    if (!btn) return;
+    const match = btn.getAttribute('onclick') &&
+                  btn.getAttribute('onclick').match(/show\(['"](\w+)['"]\)/);
+    if (!match) { li.style.display = 'none'; return; }
+
+    const sectionId = match[1];
+    const badge     = btn.querySelector('.nav-count');
+
+    if (sectionMatchCounts[sectionId]) {
+      li.style.display = '';
+      btn.classList.add('active');
+      if (badge) badge.textContent = sectionMatchCounts[sectionId];
+    } else {
+      li.style.display = 'none';
+      btn.classList.remove('active');
+    }
+  });
+
+  const totalMatches = Object.values(sectionMatchCounts).reduce((a, b) => a + b, 0);
   label.style.display = 'block';
-  label.textContent = matchCount === 0
+  label.textContent   = totalMatches === 0
     ? 'No questions found'
-    : `${matchCount} question${matchCount !== 1 ? 's' : ''} found`;
+    : `${totalMatches} question${totalMatches !== 1 ? 's' : ''} found`;
+
+    refreshNumbers();
 }
 
 function clearSearch() {
   const layout   = document.querySelector('.layout');
-  const sidebarNav = document.getElementById("sidebarNav");
   const label    = document.getElementById('searchLabel');
   const clearBtn = document.getElementById('searchClear');
   const input    = document.getElementById('searchInput');
@@ -11134,25 +11679,97 @@ function clearSearch() {
   clearBtn.style.display = 'none';
   label.style.display    = 'none';
   layout.classList.remove('search-active');
-  sidebarNav.style.display = "";
 
-  document.querySelectorAll(".star-box").forEach(box => {
-    box.style.display = "";
-});
+  // Restore star-boxes
+  document.querySelectorAll('.star-box').forEach(b => b.style.display = '');
 
   // Restore all cards and remove highlights
   document.querySelectorAll('.q-card').forEach(c => {
     c.classList.remove('search-hidden');
     const titleEl = c.querySelector('.q-title');
-    if (titleEl) titleEl.textContent = titleEl.textContent; // strip marks
+    if (titleEl) titleEl.textContent = titleEl.textContent;
   });
 
-  // Restore section visibility — CSS .active class handles display
-  document.querySelectorAll('.section').forEach(s => {
-    s.style.display = '';
+  // Restore sections
+  document.querySelectorAll('.section').forEach(s => s.style.display = '');
+
+  // Restore nav — show all, reset counts to real totals, restore active
+  document.querySelectorAll('#sidebarNav .nav-item').forEach(li => {
+    li.style.display = '';
+    const btn   = li.querySelector('button');
+    if (!btn) return;
+    btn.classList.remove('active');
+    const match = btn.getAttribute('onclick') &&
+                  btn.getAttribute('onclick').match(/show\(['"](\w+)['"]\)/);
+    if (!match) return;
+    const section = document.getElementById(match[1]);
+    if (!section) return;
+    const badge = btn.querySelector('.nav-count');
+    if (badge) badge.textContent = section.querySelectorAll('.q-card').length;
   });
+
+  // Re-activate the currently visible section's nav button
+  const activeSection = document.querySelector('.section.active');
+  if (activeSection) {
+    const activeBtn = document.querySelector(
+      `#sidebarNav button[onclick*="show('${activeSection.id}')"]`
+    );
+    if (activeBtn) activeBtn.classList.add('active');
+  }
+  refreshNumbers();
 }
 
+function refreshNumbers() {
+
+    // ---------- Question numbering ----------
+    document.querySelectorAll(".section").forEach(section => {
+
+        let num = 1;
+
+        section.querySelectorAll(".q-card").forEach(card => {
+
+            if(card.classList.contains("search-hidden"))
+                return;
+
+            const qNum = card.querySelector(".q-num");
+
+            if(qNum){
+                qNum.textContent = num++;
+            }
+
+        });
+
+    });
+
+    // ---------- Navigation counts ----------
+    document.querySelectorAll(".nav-item").forEach(nav => {
+
+        const btn = nav.querySelector("button");
+
+        if(!btn) return;
+
+        const match = btn.getAttribute("onclick")
+            ?.match(/show\('(.+?)'\)/);
+
+        if(!match) return;
+
+        const section = document.getElementById(match[1]);
+
+        if(!section) return;
+
+        const count = [...section.querySelectorAll(".q-card")]
+            .filter(card => !card.classList.contains("search-hidden"))
+            .length;
+
+        const badge = nav.querySelector(".nav-count");
+
+        if(badge){
+            badge.textContent = count;
+        }
+
+    });
+
+}
 
 
 function toggleTheme() {
@@ -11166,6 +11783,8 @@ function toggleTheme() {
     btn.textContent = '☀️ Light';
   }
 }
+
+
 
 function show(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -11202,6 +11821,7 @@ function setFontSize(size) {
   document.querySelectorAll('.font-size-toggle button').forEach(b => b.classList.remove('active'));
   document.querySelector(`.font-size-toggle .fs-${size}`).classList.add('active');
 }
+refreshNumbers();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
