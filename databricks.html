@@ -10150,5 +10150,28 @@ function drawerNav(sectionId) {
 // Sync drawer tabs when module switches via desktop tabs
 const _origSwitchModule = switchModule;
 </script>
+
+      <script>
+if ("serviceWorker" in navigator) {
+
+    window.addEventListener("load", () => {
+
+        navigator.serviceWorker
+            .register("./service-worker.js")
+            .then(() => {
+
+                console.log("PWA Ready");
+
+            })
+            .catch(err => {
+
+                console.log(err);
+
+            });
+
+    });
+
+}
+</script>
 </body>
 </html>
