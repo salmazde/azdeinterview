@@ -23,9 +23,25 @@ self.addEventListener("install", event => {
 
     event.waitUntil(
 
-        caches.open(CACHE_NAME)
+        caches.open(CACHE_NAME).then(async cache => {
 
-            .then(cache => cache.addAll(STATIC_FILES))
+            for (const file of STATIC_FILES) {
+
+                try {
+
+                    await cache.add(file);
+
+                    console.log("✅ Cached:", file);
+
+                } catch (err) {
+
+                    console.error("❌ Failed:", file, err);
+
+                }
+
+            }
+
+        })
 
     );
 
