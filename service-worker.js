@@ -1,121 +1,61 @@
-const CACHE_NAME = "azde-prep-v1.0.1";
+const CACHE_NAME = "azde-prep-v2";
 
-const STATIC_FILES = [
-
-    "./",
-    "./index.html",
-    "./databricks.html",
-    "./databricks_old.html",
-    "./old.html",
-
-    "./manifest.json",
-
-    "./icon-192.png"
-
-];
-
-
-// INSTALL
-
-self.addEventListener("install", event => {
-
+// Install
+self.addEventListener("install", (event) => {
     self.skipWaiting();
-
-    event.waitUntil(
-
-        caches.open(CACHE_NAME).then(async cache => {
-
-            for (const file of STATIC_FILES) {
-
-                try {
-
-                    await cache.add(file);
-
-                    console.log("✅ Cached:", file);
-
-                } catch (err) {
-
-                    console.error("❌ Failed:", file, err);
-
-                }
-
-            }
-
-        })
-
-    );
-
 });
 
-
-// ACTIVATE
-
-self.addEventListener("activate", event => {
-
-    event.waitUntil(
-
-        caches.keys().then(keys =>
-
-            Promise.all(
-
-                keys.map(key => {
-
-                    if (key !== CACHE_NAME)
-
-                        return caches.delete(key);
-
-                })
-
-            )
-
-        )
-
-    );
-
-    self.clients.claim();
-
+// Activate
+self.addEventListener("activate", (event) => {
+    event.waitUntil(self.clients.claim());
 });
 
-
-// FETCH
-// FETCH
-
-self.addEventListener("fetch", event => {
+// Fetch
+self.addEventListener("fetch", (event) => {
 
     if (event.request.method !== "GET") return;
 
     const url = new URL(event.request.url);
 
-    // Ignore Chrome extensions, wallets, analytics, etc.
+    // Ignore Chrome extensions, wallets, etc.
     if (url.origin !== self.location.origin) return;
 
     event.respondWith(
 
-        caches.match(event.request).then(cacheResponse => {
+        caches.match(event.request).then(async (cached) => {
 
-            if (cacheResponse) {
-                return cacheResponse;
+            // Serve from cache
+            if (cached) {
+                return cached;
             }
 
-            return fetch(event.request).then(networkResponse => {
+            try {
 
-                if (!networkResponse || networkResponse.status !== 200) {
-                    return networkResponse;
+                const response = await fetch(event.request);
+
+                // Cache only successful responses
+                if (response.ok) {
+
+                    const cache = await caches.open(CACHE_NAME);
+
+                    cache.put(event.request, response.clone());
+
                 }
 
-                const clone = networkResponse.clone();
+                return response;
 
-                caches.open(CACHE_NAME).then(cache => {
-                    cache.put(event.request, clone);
-                });
+            } catch (err) {
 
-                return networkResponse;
+                // Offline fallback
+                if (event.request.mode === "navigate") {
 
-            }).catch(() => {
+                    return caches.match("/azdeinterview/index.html");
 
-                return caches.match("./index.html");
+                }
 
-            });
+                throw err;
+
+            }
 
         })
 
