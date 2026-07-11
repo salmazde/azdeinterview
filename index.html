@@ -876,6 +876,117 @@
     color: #fff;
   }
 
+
+/* ================================
+   CODE COPY
+================================ */
+
+
+.copy-btn{
+    border:none;
+    cursor:pointer;
+    background:#2563EB;
+    color:#fff;
+    padding:5px 10px;
+    border-radius:6px;
+    font-size:12px;
+    font-weight:600;
+    transition:.2s;
+}
+
+.copy-btn:hover{
+    background:#1D4ED8;
+}
+
+.copy-btn.copied{
+    background:#16A34A;
+}
+
+
+/* ==============================
+   Theme Switch
+============================== */
+
+.suggestion-toggle{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    padding:6px 14px;
+
+    background:var(--surface);
+
+    border:1px solid var(--border);
+
+    border-radius:999px;
+
+    color:var(--text);
+
+    font-size:13px;
+    font-weight:500;
+}
+
+.theme-switch{
+    position:relative;
+    width:46px;
+    height:24px;
+}
+
+.theme-switch input{
+    display:none;
+}
+
+.theme-slider{
+
+    position:absolute;
+    inset:0;
+
+    border-radius:999px;
+
+    cursor:pointer;
+
+    background:var(--surface2);
+
+    border:1px solid var(--border);
+
+    transition:.25s;
+}
+
+.theme-slider::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:18px;
+    height:18px;
+
+    top:2px;
+    left:2px;
+
+    border-radius:50%;
+
+    background:#8B949E;
+
+    transition:.25s;
+
+}
+
+.theme-switch input:checked + .theme-slider{
+
+    background:rgba(96,165,250,.18);
+
+    border-color:var(--blue);
+
+}
+
+.theme-switch input:checked + .theme-slider::before{
+
+    transform:translateX(22px);
+
+    background:var(--blue);
+
+}
   
 </style>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
@@ -899,6 +1010,11 @@
         <span>📅 Updated: <strong id="lastUpdated"></strong></span>
         <span>📚 <strong id="totalQuestions">0</strong> Questions</span>
         <!--<span>🧩 <strong id="totalSections">0</strong> Sections</span>-->
+        <div class="suggestion-toggle">
+          Search <label class="theme-switch">
+          <input type="checkbox" id="suggestionToggle" checked onchange="toggleSuggestions(this.checked)">
+          <span class="theme-slider"></span></label>
+        </div>
     </div>
   </div>
 </header>
@@ -919,6 +1035,7 @@
           oninput="handleSearch(this.value)"
           autocomplete="off"
         >
+        <div id="searchSuggestions" class="search-suggestions"></div>
         <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
       </div>
       <div class="search-results-label" id="searchLabel"></div>
@@ -3001,7 +3118,9 @@ WITH (FILE_TYPE = 'PARQUET', CREDENTIAL = ('Managed Identity'));</code></pre></d
       <li>If they are, it immediately runs a background compaction job on just the newly written files — merging them into fewer, larger files.</li>
       <li>It only compacts the files from the recent write, not the entire table — so it's fast and doesn't block other operations.</li>
     </ul>
+    
     <div class="split-pane sql-pane-card">
+      <div class="split-pane-header">&#x1F5C4; SQL</div>
     <pre><code class="language-sql">-- Enable Auto-Compaction on a Delta table
 ALTER TABLE orders
 SET TBLPROPERTIES ('delta.autoOptimize.autoCompact' = 'true');
@@ -11725,7 +11844,184 @@ function initPage() {
   });
 }
 
+let suggestionIndex = -1;
+
+const allQuestions = [];
+
+document.querySelectorAll(".q-title").forEach(title=>{
+
+    const card=title.closest(".q-card");
+
+    const section=title.closest(".section");
+
+    allQuestions.push({
+
+        text:title.textContent.trim(),
+
+        card,
+
+        section,
+
+        sectionName:section.id
+
+    });
+
+});
+
+function updateSuggestions(keyword){
+  if(!suggestionsEnabled){
+    return;
+}
+
+    const box=document.getElementById("searchSuggestions");
+
+    box.innerHTML="";
+
+    suggestionIndex=-1;
+
+    if(!keyword.trim()){
+
+        box.style.display="none";
+
+        return;
+
+    }
+
+    const matches=allQuestions
+        .filter(q=>q.text.toLowerCase().includes(keyword.toLowerCase()))
+        .slice(0,8);
+
+    if(matches.length===0){
+
+        box.style.display="none";
+
+        return;
+
+    }
+
+    matches.forEach((q,i)=>{
+
+        const div=document.createElement("div");
+
+        div.className="search-item";
+
+        const regex=new RegExp(`(${keyword})`,"ig");
+
+        div.innerHTML=`
+            <span>${q.text.replace(regex,"<mark>$1</mark>")}</span>
+            <small>${q.sectionName}</small>
+        `;
+
+        div.onclick=()=>{
+
+            document.getElementById("searchInput").value=q.text;
+
+            box.style.display="none";
+
+            handleSearch(q.text);
+
+        };
+
+        box.appendChild(div);
+
+    });
+
+    box.style.display="block";
+
+}
+
+const input=document.getElementById("searchInput");
+
+input.addEventListener("keydown",e=>{
+
+    const box=document.getElementById("searchSuggestions");
+
+    const items=[...box.querySelectorAll(".search-item")];
+
+    if(!items.length) return;
+
+    if(e.key==="ArrowDown"){
+
+        e.preventDefault();
+
+        suggestionIndex=(suggestionIndex+1)%items.length;
+
+    }
+
+    else if(e.key==="ArrowUp"){
+
+        e.preventDefault();
+
+        suggestionIndex--;
+
+        if(suggestionIndex<0)
+            suggestionIndex=items.length-1;
+
+    }
+
+    else if(e.key==="Enter"){
+
+        if(suggestionIndex>=0){
+
+            e.preventDefault();
+
+            items[suggestionIndex].click();
+
+        }
+
+    }
+
+    else if(e.key==="Escape"){
+
+        box.style.display="none";
+
+        return;
+
+    }
+
+    items.forEach(i=>i.classList.remove("active"));
+
+    if(suggestionIndex>=0)
+        items[suggestionIndex].classList.add("active");
+
+});
+
+document.addEventListener("click",e=>{
+
+    if(!e.target.closest(".search-wrap")){
+
+        document.getElementById("searchSuggestions").style.display="none";
+
+    }
+
+});
+
+let suggestionsEnabled = true;
+
+function toggleSuggestions(){
+
+    suggestionsEnabled = !suggestionsEnabled;
+
+    const btn = document.getElementById("toggleSuggestions");
+
+    if(suggestionsEnabled){
+
+        btn.innerHTML = "💡 Suggestions: ON";
+        btn.classList.remove("off");
+
+    }else{
+
+        btn.innerHTML = "💡 Suggestions: OFF";
+        btn.classList.add("off");
+
+        document.getElementById("searchSuggestions").style.display = "none";
+
+    }
+
+}
+
 function handleSearch(query) {
+  updateSuggestions(query);
   const trimmed    = query.trim();
   const clearBtn   = document.getElementById('searchClear');
   const label      = document.getElementById('searchLabel');
@@ -11915,7 +12211,6 @@ function refreshNumbers() {
 
 }
 
-
 function toggleTheme() {
   const html = document.documentElement;
   const btn = document.getElementById('themeBtn');
@@ -11927,8 +12222,6 @@ function toggleTheme() {
     btn.textContent = '☀️ Light';
   }
 }
-
-
 
 function show(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -11972,13 +12265,65 @@ function updateHeroStats() {
     const totalQuestions = document.querySelectorAll(".q-card").length;
 
     // Total Sections
-    const totalSections = document.querySelectorAll(".section").length;
+    //const totalSections = document.querySelectorAll(".section").length;
 
     document.getElementById("totalQuestions").textContent = totalQuestions;
-    document.getElementById("totalSections").textContent = totalSections;
+    //document.getElementById("totalSections").textContent = totalSections;
 }
 
-document.addEventListener("DOMContentLoaded", updateHeroStats);
+function initializeCopyButtons(){
+
+    document.querySelectorAll(".split-pane").forEach(pane=>{
+
+        const pre = pane.querySelector("pre");
+        const header = pane.querySelector(".split-pane-header");
+
+        if(!pre || !header) return;
+
+        if(header.querySelector(".copy-btn")) return;
+
+        header.style.display="flex";
+        header.style.justifyContent="space-between";
+        header.style.alignItems="center";
+
+        const btn=document.createElement("button");
+
+        btn.className="copy-btn";
+        btn.innerHTML="📋 Copy";
+
+        btn.onclick=async()=>{
+
+            await navigator.clipboard.writeText(pre.innerText);
+
+            btn.innerHTML="✅ Copied";
+
+            btn.classList.add("copied");
+
+            setTimeout(()=>{
+
+                btn.innerHTML="📋 Copy";
+                btn.classList.remove("copied");
+
+            },1500);
+
+        };
+
+        header.appendChild(btn);
+
+    });
+
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    updateHeroStats();
+
+    if (typeof Prism !== "undefined") {
+        Prism.highlightAll();
+    }
+
+    initializeCopyButtons();
+});
 
 const d = new Date(document.lastModified);
 
