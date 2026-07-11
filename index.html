@@ -1023,7 +1023,7 @@
     <h1>Azure <span>Data Engineering</span> Interview Guide</h1>
     <p class="hero-sub">Comprehensive Q&A reference covering architecture patterns, pipeline design, performance tuning, coding and best practices.</p>
     <div class="hero-stats">
-        <span>📅 Updated: <strong id="lastUpdated"></strong></span>
+        <span>📅: <strong id="lastUpdated"></strong></span>
         <span>📚 <strong id="totalQuestions">0</strong> Questions</span>
         <!--<span>🧩 <strong id="totalSections">0</strong> Sections</span>-->
         <div class="suggestion-toggle">
@@ -12361,11 +12361,12 @@ if ("serviceWorker" in navigator) {
 
     window.addEventListener("load", () => {
 
-        navigator.serviceWorker
-            .register("./service-worker.js")
+       navigator.serviceWorker
+       .register("/azdeinterview/service-worker.js")
             .then(() => {
 
                 console.log("PWA Ready");
+                 fetch(location.href);
 
             })
             .catch(err => {
