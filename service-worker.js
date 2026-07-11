@@ -78,38 +78,46 @@ self.addEventListener("activate", event => {
 
 
 // FETCH
+// FETCH
 
 self.addEventListener("fetch", event => {
 
     if (event.request.method !== "GET") return;
 
+    const url = new URL(event.request.url);
+
+    // Ignore Chrome extensions, wallets, analytics, etc.
+    if (url.origin !== self.location.origin) return;
+
     event.respondWith(
 
-        caches.match(event.request)
+        caches.match(event.request).then(cacheResponse => {
 
-            .then(cacheResponse => {
+            if (cacheResponse) {
+                return cacheResponse;
+            }
 
-                if (cacheResponse)
+            return fetch(event.request).then(networkResponse => {
 
-                    return cacheResponse;
+                if (!networkResponse || networkResponse.status !== 200) {
+                    return networkResponse;
+                }
 
-                return fetch(event.request)
+                const clone = networkResponse.clone();
 
-                    .then(networkResponse => {
+                caches.open(CACHE_NAME).then(cache => {
+                    cache.put(event.request, clone);
+                });
 
-                        const clone = networkResponse.clone();
+                return networkResponse;
 
-                        caches.open(CACHE_NAME)
+            }).catch(() => {
 
-                            .then(cache => cache.put(event.request, clone));
+                return caches.match("./index.html");
 
-                        return networkResponse;
+            });
 
-                    })
-
-                    .catch(() => caches.match("./index.html"));
-
-            })
+        })
 
     );
 
