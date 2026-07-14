@@ -31,6 +31,62 @@
 <link rel="shortcut icon" href="icon-192.png">
 <style>
 
+.refresh-toggle{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:6px 14px;
+
+    background:var(--surface);
+
+    border:1px solid var(--border);
+
+    border-radius:999px;
+
+    color:var(--text);
+
+    font-size:13px;
+
+    font-weight:500;
+
+}
+
+.refresh-toggle button{
+
+    border:none;
+
+    background:transparent;
+
+    color:inherit;
+
+    font:inherit;
+
+    cursor:pointer;
+
+    padding:0;
+
+}
+
+.refresh-toggle:hover{
+
+    border-color:var(--blue);
+
+    background:rgba(96,165,250,.08);
+
+    transition:.25s;
+
+}
+
+.refresh-toggle button:hover{
+
+    color:var(--blue);
+
+}
+
 .search-item-title{
     display:flex;
     align-items:flex-start;
@@ -1136,13 +1192,17 @@
     <h1>Azure <span>Data Engineering</span> Interview Guide</h1>
     <p class="hero-sub">Comprehensive Q&A reference covering architecture patterns, pipeline design, performance tuning, coding and best practices.</p>
     <div class="hero-stats">
-        <span>📅: <strong id="lastUpdated">13 Jul 2026</strong></span>
+        <!-- <span>📅: <strong id="lastUpdated">13 Jul 2026</strong></span> -->
         <span>📚 <strong id="totalQuestions">0</strong></span>
         <!--<span>🧩 <strong id="totalSections">0</strong> Sections</span>-->
         <div class="suggestion-toggle">
           🕵🏻<label class="theme-switch">
           <input type="checkbox" id="suggestionToggle" checked onchange="toggleSuggestions(this.checked)">
           <span class="theme-slider"></span></label>
+        </div>
+
+        <div class="refresh-toggle">
+            <button onclick="refreshApplication()">⭮ Refresh</button>
         </div>
     </div>
   </div>
@@ -14338,6 +14398,38 @@ const d = new Date(document.lastModified);
 //    year:"numeric"
 //});
 
+async function refreshApplication() {
+
+    // Remove browser caches
+    if ("caches" in window) {
+
+        const keys = await caches.keys();
+
+        await Promise.all(
+            keys.map(key => caches.delete(key))
+        );
+
+    }
+
+    // Update Service Worker
+    if ("serviceWorker" in navigator) {
+
+        const registrations =
+            await navigator.serviceWorker.getRegistrations();
+
+        await Promise.all(
+            registrations.map(reg => reg.unregister())
+        );
+
+    }
+
+    // Force latest page
+    location.replace(
+        location.pathname + "?v=" + Date.now()
+    );
+
+}
+
 refreshNumbers();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
@@ -14358,6 +14450,7 @@ if ("serviceWorker" in navigator) {
             });
     });
 }
+
 </script>
 
 </body>
