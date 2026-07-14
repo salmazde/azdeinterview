@@ -1172,6 +1172,7 @@
       <li class="nav-item"><button onclick="show('hr')"><span class="nav-dot"></span>HR<span class="nav-count"></span></button></li>
       <li class="nav-item"><button onclick="show('python')"><span class="nav-dot"></span>Python<span class="nav-count"></span></button></li>
       <li class="nav-item"><button onclick="show('pandas')"><span class="nav-dot"></span>Adv-Py<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('pycode')"><span class="nav-dot"></span>💻 Py-Code<span class="nav-count"></span></button></li>
     </ul>
   </aside>
 
@@ -13033,6 +13034,864 @@ np.corrcoef([1,2,3,4], [2,4,5,4])       # correlation matrix</code></pre>
 
 </div><!-- /pandas -->
 
+
+
+<!-- ════════════════════════════════════════════════════════
+     Python Coding Questions — solved with and without built-in libraries
+═══════════════════════════════════════════════════════════ -->
+<div id="pycode" class="section">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#E8F5E9">💻</div>
+    <div>
+      <div class="sec-title">Py-Code</div>
+      <div class="sec-desc">Top 20 Python coding questions — solved with and without built-in libraries</div>
+    </div>
+  </div>
+
+  <!-- Q1 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">1</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Given a string, find the length of the longest substring without repeating characters.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>"abcabcbb"</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>3</code> → "abc"</div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Without library — sliding window approach
+def longest_substring(s):
+    start   = 0
+    max_len = 0
+    seen    = {}
+
+    for end, char in enumerate(s):
+        if char in seen and seen[char] >= start:
+            start = seen[char] + 1
+        seen[char] = end
+        max_len = max(max_len, end - start + 1)
+
+    return max_len
+
+print(longest_substring("abcabcbb"))   # 3
+print(longest_substring("pwwkew"))     # 3 → "wke"
+print(longest_substring("bbbbb"))      # 1
+
+# With library — using collections
+from collections import OrderedDict
+
+def longest_substring_lib(s):
+    window = OrderedDict()
+    max_len = 0
+    for char in s:
+        if char in window:
+            window.move_to_end(char)
+            while next(iter(window)) != char:
+                window.popitem(last=False)
+            window.popitem(last=False)
+        window[char] = True
+        max_len = max(max_len, len(window))
+    return max_len
+
+print(longest_substring_lib("abcabcbb"))   # 3</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">2</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Find the frequency (count) of each character in a string.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>"salman"</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>{'s':1, 'a':2, 'l':1, 'm':1, 'n':1}</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Without library
+def char_frequency(s):
+    freq = {}
+    for ch in s:
+        freq[ch] = freq.get(ch, 0) + 1
+    return freq
+
+print(char_frequency("salman"))
+# {'s': 1, 'a': 2, 'l': 1, 'm': 1, 'n': 1}
+
+# With library
+from collections import Counter
+print(Counter("salman"))
+# Counter({'a': 2, 's': 1, 'l': 1, 'm': 1, 'n': 1})
+
+# Most common 2 characters
+c = Counter("salman")
+print(c.most_common(2))   # [('a', 2), ('s', 1)]</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">3</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Remove duplicates from a list without changing the order/position of elements.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>[3, 1, 4, 1, 5, 9, 2, 6, 5, 3]</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>[3, 1, 4, 5, 9, 2, 6]</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Without library — using set to track seen
+def remove_dupes(lst):
+    seen   = set()
+    result = []
+    for item in lst:
+        if item not in seen:
+            result.append(item)
+            seen.add(item)
+    return result
+
+print(remove_dupes([3, 1, 4, 1, 5, 9, 2, 6, 5, 3]))
+# [3, 1, 4, 5, 9, 2, 6]
+
+# Note: set() alone does NOT preserve order
+# set([3,1,4,1,5]) → {1, 3, 4, 5} — order not guaranteed
+
+# With library — dict.fromkeys (Python 3.7+ preserves order)
+lst = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3]
+result = list(dict.fromkeys(lst))
+print(result)   # [3, 1, 4, 5, 9, 2, 6]</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">4</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Check if a string is a palindrome.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>"racecar"</code> → <code>True</code> &nbsp;|&nbsp; <code>"hello"</code> → <code>False</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Without library — two pointer approach
+def is_palindrome(s):
+    s = s.lower().replace(" ", "")
+    left, right = 0, len(s) - 1
+    while left < right:
+        if s[left] != s[right]:
+            return False
+        left  += 1
+        right -= 1
+    return True
+
+print(is_palindrome("racecar"))       # True
+print(is_palindrome("A man a plan"))  # True
+print(is_palindrome("hello"))         # False
+
+# With library — slicing (Pythonic one liner)
+def is_palindrome_lib(s):
+    s = s.lower().replace(" ", "")
+    return s == s[::-1]
+
+print(is_palindrome_lib("racecar"))   # True</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q5 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">5</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Find the second largest number in a list without sorting.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>[10, 5, 20, 8, 15]</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>15</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Without library — single pass O(n)
+def second_largest(lst):
+    first = second = float('-inf')
+    for n in lst:
+        if n > first:
+            second = first
+            first  = n
+        elif n > second and n != first:
+            second = n
+    return second if second != float('-inf') else None
+
+print(second_largest([10, 5, 20, 8, 15]))   # 15
+print(second_largest([10, 10, 10]))          # None (no distinct second)
+
+# With library
+nums = [10, 5, 20, 8, 15]
+unique_sorted = sorted(set(nums), reverse=True)
+print(unique_sorted[1])   # 15</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q6 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">6</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Check if two strings are anagrams of each other.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>"listen"</code>, <code>"silent"</code> → <code>True</code> &nbsp;|&nbsp; <code>"hello"</code>, <code>"world"</code> → <code>False</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Without library
+def is_anagram(s1, s2):
+    s1 = s1.lower().replace(" ", "")
+    s2 = s2.lower().replace(" ", "")
+    if len(s1) != len(s2):
+        return False
+    freq = {}
+    for ch in s1:
+        freq[ch] = freq.get(ch, 0) + 1
+    for ch in s2:
+        freq[ch] = freq.get(ch, 0) - 1
+        if freq[ch] < 0:
+            return False
+    return True
+
+print(is_anagram("listen", "silent"))   # True
+print(is_anagram("hello", "world"))     # False
+
+# With library
+from collections import Counter
+def is_anagram_lib(s1, s2):
+    return Counter(s1.lower()) == Counter(s2.lower())
+
+print(is_anagram_lib("listen", "silent"))   # True</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q7 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">7</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Reverse words in a sentence without reversing the characters in each word.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>"Azure Data Engineer"</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>"Engineer Data Azure"</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Without library
+def reverse_words(sentence):
+    words  = []
+    word   = ""
+    for ch in sentence + " ":
+        if ch == " " and word:
+            words.append(word)
+            word = ""
+        elif ch != " ":
+            word += ch
+    return " ".join(reversed(words))
+
+print(reverse_words("Azure Data Engineer"))
+# "Engineer Data Azure"
+
+# With library — one liner
+s = "Azure Data Engineer"
+print(" ".join(s.split()[::-1]))
+# "Engineer Data Azure"</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q8 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">8</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Find all pairs in a list that sum to a given target.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>[2, 4, 3, 7, 1, 5]</code>, target = <code>6</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>[(2,4), (1,5)]</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Without library — hash set O(n)
+def find_pairs(lst, target):
+    seen   = set()
+    pairs  = []
+    for n in lst:
+        complement = target - n
+        if complement in seen:
+            pairs.append((complement, n))
+        seen.add(n)
+    return pairs
+
+print(find_pairs([2, 4, 3, 7, 1, 5], 6))
+# [(2, 4), (1, 5)]
+
+# With library — itertools combinations
+from itertools import combinations
+lst = [2, 4, 3, 7, 1, 5]
+pairs = [(a, b) for a, b in combinations(lst, 2) if a + b == 6]
+print(pairs)   # [(2, 4), (1, 5)]</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q9 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">9</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Flatten a nested dictionary into a single-level dictionary.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>{"a": 1, "b": {"c": 2, "d": {"e": 3}}}</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>{"a":1, "b.c":2, "b.d.e":3}</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Without library — recursive
+def flatten_dict(d, parent_key="", sep="."):
+    items = {}
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.update(flatten_dict(v, new_key, sep))
+        else:
+            items[new_key] = v
+    return items
+
+nested = {"a": 1, "b": {"c": 2, "d": {"e": 3}}}
+print(flatten_dict(nested))
+# {'a': 1, 'b.c': 2, 'b.d.e': 3}
+
+# Real ETL use — flatten JSON API response
+api_response = {
+    "user": {"id": 101, "name": "Salman"},
+    "order": {"id": 5001, "amount": 500}
+}
+print(flatten_dict(api_response))
+# {'user.id': 101, 'user.name': 'Salman', 'order.id': 5001, 'order.amount': 500}</code></pre>
+      </div>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>This is one of the most common real ETL tasks — REST API responses come as deeply nested JSON, and you need to flatten them before loading into a DataFrame or database table.</div></div>
+    </div>
+  </div>
+
+  <!-- Q10 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">10</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Group a list of records (dict) by a specific key.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> List of employee dicts &nbsp;|&nbsp; <strong>Output:</strong> Employees grouped by department</div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">employees = [
+    {"name": "Alice", "dept": "Sales",  "salary": 70000},
+    {"name": "Bob",   "dept": "HR",     "salary": 60000},
+    {"name": "Carol", "dept": "Sales",  "salary": 80000},
+    {"name": "Dave",  "dept": "HR",     "salary": 65000},
+    {"name": "Eve",   "dept": "Tech",   "salary": 90000},
+]
+
+# Without library
+def group_by(records, key):
+    groups = {}
+    for rec in records:
+        group_key = rec[key]
+        if group_key not in groups:
+            groups[group_key] = []
+        groups[group_key].append(rec)
+    return groups
+
+result = group_by(employees, "dept")
+for dept, emps in result.items():
+    print(f"{dept}: {[e['name'] for e in emps]}")
+# Sales: ['Alice', 'Carol']
+# HR:    ['Bob', 'Dave']
+# Tech:  ['Eve']
+
+# With library
+from itertools import groupby
+from operator import itemgetter
+
+sorted_emps = sorted(employees, key=itemgetter("dept"))
+for dept, group in groupby(sorted_emps, key=itemgetter("dept")):
+    print(f"{dept}: {[e['name'] for e in group]}")</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q11 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">11</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Write a function to read a CSV file and return rows where a column value exceeds a threshold — without using Pandas.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Task:</strong> Read <code>orders.csv</code>, return all rows where <code>amount > 500</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import csv
+
+# Without Pandas
+def filter_csv(filepath, col, threshold):
+    results = []
+    with open(filepath, "r", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            try:
+                if float(row[col]) > threshold:
+                    results.append(row)
+            except (ValueError, KeyError):
+                pass   # skip rows with missing/invalid value
+    return results
+
+rows = filter_csv("orders.csv", "amount", 500)
+for row in rows:
+    print(row)
+
+# With Pandas
+import pandas as pd
+df = pd.read_csv("orders.csv")
+filtered = df[df["amount"] > 500]
+print(filtered)</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q12 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">12</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Write a generator function to read a large file line by line and yield only non-empty lines.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Without library — generator (memory efficient)
+def read_lines(filepath):
+    with open(filepath, "r") as f:
+        for line in f:
+            stripped = line.strip()
+            if stripped:       # skip empty lines
+                yield stripped
+
+for line in read_lines("large_file.txt"):
+    process(line)
+
+# Extend — yield in chunks for batch ETL
+def read_chunks(filepath, chunk_size=1000):
+    chunk = []
+    with open(filepath, "r") as f:
+        for line in f:
+            stripped = line.strip()
+            if stripped:
+                chunk.append(stripped)
+                if len(chunk) == chunk_size:
+                    yield chunk
+                    chunk = []
+    if chunk:
+        yield chunk   # last partial chunk
+
+for batch in read_chunks("orders.txt", chunk_size=500):
+    df = process_batch(batch)
+    write_to_delta(df)</code></pre>
+      </div>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>Generators are the correct answer for "how would you process a 10GB file in Python?" — they never load the entire file into memory. Each <code>yield</code> produces one line/chunk on demand.</div></div>
+    </div>
+  </div>
+
+  <!-- Q13 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">13</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Find the most frequently occurring element in a list.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>[1, 3, 2, 3, 4, 3, 2, 1, 3]</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>3</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">nums = [1, 3, 2, 3, 4, 3, 2, 1, 3]
+
+# Without library
+def most_frequent(lst):
+    freq = {}
+    for n in lst:
+        freq[n] = freq.get(n, 0) + 1
+    return max(freq, key=freq.get)
+
+print(most_frequent(nums))   # 3
+
+# With library
+from collections import Counter
+c = Counter(nums)
+print(c.most_common(1)[0][0])   # 3
+
+# If you need top N most frequent
+print(c.most_common(2))   # [(3, 4), (2, 2)]</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q14 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">14</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Merge two sorted lists into one sorted list without using sort().</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>[1, 3, 5, 7]</code> and <code>[2, 4, 6, 8]</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>[1, 2, 3, 4, 5, 6, 7, 8]</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Without library — two pointer merge O(n+m)
+def merge_sorted(a, b):
+    result = []
+    i = j  = 0
+    while i < len(a) and j < len(b):
+        if a[i] <= b[j]:
+            result.append(a[i]); i += 1
+        else:
+            result.append(b[j]); j += 1
+    result.extend(a[i:])
+    result.extend(b[j:])
+    return result
+
+print(merge_sorted([1,3,5,7], [2,4,6,8]))
+# [1, 2, 3, 4, 5, 6, 7, 8]
+
+# With library
+import heapq
+print(list(heapq.merge([1,3,5,7], [2,4,6,8])))
+# [1, 2, 3, 4, 5, 6, 7, 8]</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q15 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">15</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Rotate a list by k positions to the right.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>[1, 2, 3, 4, 5]</code>, k=<code>2</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>[4, 5, 1, 2, 3]</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python"># Without library — slicing
+def rotate_right(lst, k):
+    n = len(lst)
+    k = k % n   # handle k > len
+    return lst[-k:] + lst[:-k]
+
+print(rotate_right([1, 2, 3, 4, 5], 2))   # [4, 5, 1, 2, 3]
+print(rotate_right([1, 2, 3, 4, 5], 7))   # [4, 5, 1, 2, 3] (7 % 5 = 2)
+
+# Rotate left by k
+def rotate_left(lst, k):
+    k = k % len(lst)
+    return lst[k:] + lst[:k]
+
+print(rotate_left([1, 2, 3, 4, 5], 2))   # [3, 4, 5, 1, 2]
+
+# With library — using deque
+from collections import deque
+d = deque([1, 2, 3, 4, 5])
+d.rotate(2)
+print(list(d))   # [4, 5, 1, 2, 3]</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q16 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">16</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Write a function to validate if a JSON string is valid and parse it safely.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import json
+
+def parse_json_safe(json_str):
+    try:
+        data = json.loads(json_str)
+        return data, None
+    except json.JSONDecodeError as e:
+        return None, str(e)
+
+# Valid JSON
+data, err = parse_json_safe('{"order_id": 1, "amount": 500}')
+print(data)   # {'order_id': 1, 'amount': 500}
+
+# Invalid JSON
+data, err = parse_json_safe('{"order_id": 1, amount: 500}')
+print(err)    # Expecting property name enclosed in double quotes
+
+# Real ETL use — process list of JSON strings (e.g. Kafka messages)
+messages = [
+    '{"id":1,"status":"completed"}',
+    '{"id":2,"status":"pending"}',
+    'INVALID',
+    '{"id":3,"status":"failed"}',
+]
+
+valid, dead_letter = [], []
+for msg in messages:
+    data, err = parse_json_safe(msg)
+    if data:
+        valid.append(data)
+    else:
+        dead_letter.append({"raw": msg, "error": err})
+
+print(f"Valid: {len(valid)}, Dead letter: {len(dead_letter)}")</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q17 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">17</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Write a decorator that retries a function up to N times on exception.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">import time
+import functools
+
+# Without library — custom retry decorator
+def retry(max_attempts=3, delay=2, exceptions=(Exception,)):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as e:
+                    print(f"Attempt {attempt}/{max_attempts} failed: {e}")
+                    if attempt < max_attempts:
+                        time.sleep(delay)
+            raise Exception(f"{func.__name__} failed after {max_attempts} attempts")
+        return wrapper
+    return decorator
+
+# Usage
+@retry(max_attempts=3, delay=1)
+def fetch_api_data(url):
+    import requests
+    response = requests.get(url, timeout=5)
+    response.raise_for_status()
+    return response.json()
+
+@retry(max_attempts=3, delay=2, exceptions=(ConnectionError, TimeoutError))
+def connect_to_db(conn_str):
+    return create_connection(conn_str)
+
+# With library — tenacity
+# pip install tenacity
+from tenacity import retry, stop_after_attempt, wait_fixed
+
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
+def fetch_data():
+    pass</code></pre>
+      </div>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>In data engineering, retry decorators are essential for flaky API calls, database connections, and cloud storage operations. Always add exponential backoff (<code>delay * 2**attempt</code>) in production — prevents hammering a struggling service.</div></div>
+    </div>
+  </div>
+
+  <!-- Q18 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">18</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Given a list of transactions, calculate the running total (cumulative sum) without using any library.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>Input:</strong> <code>[100, 200, -50, 300, -100]</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>[100, 300, 250, 550, 450]</code></div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">transactions = [100, 200, -50, 300, -100]
+
+# Without library
+def running_total(lst):
+    result  = []
+    running = 0
+    for val in lst:
+        running += val
+        result.append(running)
+    return result
+
+print(running_total(transactions))
+# [100, 300, 250, 550, 450]
+
+# With library — itertools.accumulate
+import itertools
+print(list(itertools.accumulate(transactions)))
+# [100, 300, 250, 550, 450]
+
+# Running max (useful for high watermark tracking)
+print(list(itertools.accumulate(transactions, max)))
+# [100, 200, 200, 300, 300]
+
+# In Pandas
+import pandas as pd
+s = pd.Series(transactions)
+print(s.cumsum().tolist())   # [100, 300, 250, 550, 450]</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q19 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">19</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Given a list of dictionaries (records), sort them by multiple keys — first by department ascending, then by salary descending.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">employees = [
+    {"name": "Alice", "dept": "Sales", "salary": 70000},
+    {"name": "Bob",   "dept": "HR",    "salary": 60000},
+    {"name": "Carol", "dept": "Sales", "salary": 80000},
+    {"name": "Dave",  "dept": "HR",    "salary": 65000},
+    {"name": "Eve",   "dept": "Tech",  "salary": 90000},
+]
+
+# Without library — manual comparison (bubble sort approach)
+# Python's built-in sorted() uses no external library
+result = sorted(
+    employees,
+    key=lambda e: (e["dept"], -e["salary"])
+    # dept ASC → natural string order
+    # salary DESC → negate the value
+)
+
+for e in result:
+    print(f"{e['dept']:8} | {e['name']:6} | {e['salary']}")
+# HR       | Dave   | 65000
+# HR       | Bob    | 60000
+# Sales    | Carol  | 80000
+# Sales    | Alice  | 70000
+# Tech     | Eve    | 90000
+
+# Same with itemgetter (slightly faster for large lists)
+from operator import itemgetter
+result2 = sorted(employees, key=itemgetter("dept", "salary"))
+
+# Pandas equivalent
+import pandas as pd
+df = pd.DataFrame(employees)
+df.sort_values(["dept", "salary"], ascending=[True, False])</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q20 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">20</div>
+      <div class="q-title-wrap">
+        <div class="q-title">Write a function to detect and remove outliers from a list of numbers using the IQR method — without Pandas.</div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <div class="schema-box"><strong>IQR method:</strong> Outliers are values below Q1 − 1.5×IQR or above Q3 + 1.5×IQR</div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; Python</div>
+        <pre><code class="language-python">def remove_outliers(data):
+    sorted_data = sorted(data)
+    n    = len(sorted_data)
+
+    # Calculate Q1 and Q3
+    q1   = sorted_data[n // 4]
+    q3   = sorted_data[(3 * n) // 4]
+    iqr  = q3 - q1
+
+    lower = q1 - 1.5 * iqr
+    upper = q3 + 1.5 * iqr
+
+    cleaned = [x for x in data if lower <= x <= upper]
+    removed = [x for x in data if x < lower or x > upper]
+
+    print(f"Lower bound: {lower}, Upper bound: {upper}")
+    print(f"Removed outliers: {removed}")
+    return cleaned
+
+data = [10, 12, 11, 13, 500, 9, 10, 11, 12, -300, 13]
+print(remove_outliers(data))
+# Lower bound: -6.5, Upper bound: 30.5
+# Removed outliers: [500, -300]
+# [10, 12, 11, 13, 9, 10, 11, 12, 13]
+
+# With library — Pandas + NumPy
+import pandas as pd
+s = pd.Series(data)
+Q1, Q3 = s.quantile(0.25), s.quantile(0.75)
+IQR    = Q3 - Q1
+cleaned = s[(s >= Q1 - 1.5*IQR) & (s <= Q3 + 1.5*IQR)]
+print(cleaned.tolist())</code></pre>
+      </div>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>This is a data quality question disguised as a coding question. In a real ETL pipeline, outlier detection runs at the Silver layer — flag suspicious records, route them to a dead-letter path, and let a data steward review before including them in Gold layer aggregations.</div></div>
+    </div>
+  </div>
+
+</div><!-- /pycode -->
 
   </main>
 </div><!-- /layout -->
