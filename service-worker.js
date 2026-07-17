@@ -1,4 +1,4 @@
-const CACHE_NAME = "azde-prep-v2";
+const CACHE_NAME = "azde-prep-v2.5";
 
 // Install
 self.addEventListener("install", (event) => {
