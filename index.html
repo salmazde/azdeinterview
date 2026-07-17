@@ -1188,7 +1188,7 @@
 <header class="hero">
   <div class="hero-inner">
     <div class="hero-badge">&#x1F4CB; <a href="databricks.html" style="text-decoration: none; color: inherit;">Databricks</a> </div> 
-    <div class="hero-badge">&#x1F4CB; <a href="old.html" style="text-decoration: none; color: inherit;">Old</a> </div> 
+    <!--<div class="hero-badge">&#x1F4CB; <a href="old.html" style="text-decoration: none; color: inherit;">Old</a> </div> -->
     <h1>Azure <span>Data Engineering</span> Interview Guide</h1>
     <p class="hero-sub">Comprehensive Q&A reference covering architecture patterns, pipeline design, performance tuning, coding and best practices.</p>
     <div class="hero-stats">
@@ -1202,7 +1202,7 @@
         </div>
 
         <div class="refresh-toggle">
-            <button onclick="refreshApplication()">⭮ Refresh</button>
+            <button onclick="refreshApplication()">🔄 Refresh</button>
         </div>
     </div>
   </div>
@@ -6435,6 +6435,352 @@ ON customers(customer_id);
 
   </div>
 </div> -->
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Explain DDL and DML statements in SQL with examples — CREATE, ALTER, DROP, TRUNCATE, INSERT, UPDATE, DELETE, SELECT</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+
+    <p>"DDL (Data Definition Language) defines the structure of the database — tables, columns, constraints. DML (Data Manipulation Language) works with the data inside those structures — inserting, updating, deleting, and querying rows."</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;">
+      <div style="background:#E6F1FB;border:1px solid #B5D4F4;border-radius:8px;padding:10px 12px;">
+        <div style="font-size:12px;font-weight:700;color:#0C447C;margin-bottom:6px;">DDL — Data Definition Language</div>
+        <div style="font-size:12.5px;color:#042C53;line-height:1.9;">
+          Defines structure, not data.<br>
+          Auto-commits — cannot rollback.<br>
+          <strong>Commands:</strong> CREATE, ALTER, DROP, TRUNCATE, RENAME
+        </div>
+      </div>
+      <div style="background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 12px;">
+        <div style="font-size:12px;font-weight:700;color:#0F6E56;margin-bottom:6px;">DML — Data Manipulation Language</div>
+        <div style="font-size:12.5px;color:#04342C;line-height:1.9;">
+          Works with data inside tables.<br>
+          Can be rolled back (transactional).<br>
+          <strong>Commands:</strong> INSERT, UPDATE, DELETE, SELECT
+        </div>
+      </div>
+    </div>
+
+    <div class="split-pane sql-pane-card">
+    <div class="split-pane-header">&#x1F5C4; SQL</div>
+    <pre><code class="language-sql">-- ══════════════════════════════════════════════
+--  DDL — CREATE
+-- ══════════════════════════════════════════════
+
+-- Create a new table with constraints
+CREATE TABLE employees (
+    employee_id   INT           PRIMARY KEY,
+    first_name    VARCHAR(50)   NOT NULL,
+    last_name     VARCHAR(50)   NOT NULL,
+    email         VARCHAR(100)  UNIQUE,
+    department_id INT,
+    salary        DECIMAL(10,2) DEFAULT 0.00,
+    hire_date     DATE          NOT NULL,
+    is_active     BIT           DEFAULT 1,
+    created_at    DATETIME      DEFAULT GETDATE()
+);
+
+-- Create with foreign key constraint
+CREATE TABLE departments (
+    department_id   INT          PRIMARY KEY,
+    department_name VARCHAR(100) NOT NULL,
+    manager_id      INT
+);
+
+ALTER TABLE employees
+ADD CONSTRAINT fk_dept
+FOREIGN KEY (department_id) REFERENCES departments(department_id);
+
+-- Create table from SELECT (CTAS — Create Table As Select)
+-- Copies structure AND data from existing table
+CREATE TABLE employees_backup AS
+SELECT * FROM employees;
+
+-- Create with only structure, no data
+CREATE TABLE employees_staging AS
+SELECT * FROM employees WHERE 1 = 0;
+
+-- Create index for performance
+CREATE INDEX idx_emp_dept   ON employees(department_id);
+CREATE UNIQUE INDEX idx_email ON employees(email);
+
+
+-- ══════════════════════════════════════════════
+--  DDL — ALTER
+-- ══════════════════════════════════════════════
+
+-- ── Add a new column ───────────────────────────
+ALTER TABLE employees
+ADD phone_number VARCHAR(20);
+
+-- Add multiple columns at once
+ALTER TABLE employees
+ADD middle_name  VARCHAR(50),
+    date_of_birth DATE;
+
+-- ── Modify column data type or size ────────────
+ALTER TABLE employees
+ALTER COLUMN first_name VARCHAR(100);   -- SQL Server
+
+-- MySQL / Azure Synapse syntax:
+ALTER TABLE employees
+MODIFY COLUMN first_name VARCHAR(100);
+
+-- ── Rename a COLUMN ────────────────────────────
+-- SQL Server
+EXEC sp_rename 'employees.phone_number', 'mobile', 'COLUMN';
+
+-- PostgreSQL / MySQL 8+
+ALTER TABLE employees
+RENAME COLUMN phone_number TO mobile;
+
+-- ── Rename a TABLE ─────────────────────────────
+-- SQL Server
+EXEC sp_rename 'employees', 'staff';
+
+-- PostgreSQL / MySQL
+ALTER TABLE employees RENAME TO staff;
+
+-- Rename back for the rest of examples
+ALTER TABLE staff RENAME TO employees;
+
+-- ── Add a column with a constraint ─────────────
+ALTER TABLE employees
+ADD CONSTRAINT chk_salary CHECK (salary >= 0);
+
+-- ── Drop a column ──────────────────────────────
+ALTER TABLE employees
+DROP COLUMN middle_name;
+
+-- ── Drop a constraint ──────────────────────────
+ALTER TABLE employees
+DROP CONSTRAINT chk_salary;
+
+-- ── Set/Remove DEFAULT value ───────────────────
+-- SQL Server — set default
+ALTER TABLE employees
+ADD CONSTRAINT df_salary DEFAULT 30000 FOR salary;
+
+-- SQL Server — remove default
+ALTER TABLE employees
+DROP CONSTRAINT df_salary;
+
+-- MySQL
+ALTER TABLE employees
+ALTER COLUMN salary SET DEFAULT 30000;
+ALTER TABLE employees
+ALTER COLUMN salary DROP DEFAULT;
+
+-- ── Add NOT NULL to existing column ────────────
+UPDATE employees SET phone_number = 'N/A' WHERE phone_number IS NULL;
+ALTER TABLE employees ALTER COLUMN phone_number VARCHAR(20) NOT NULL;
+
+
+-- ══════════════════════════════════════════════
+--  DDL — TRUNCATE
+-- ══════════════════════════════════════════════
+
+-- Removes ALL rows instantly — cannot filter, cannot rollback (DDL)
+-- Resets identity/auto-increment counter
+-- Much faster than DELETE on large tables — no row-by-row logging
+TRUNCATE TABLE employees_staging;
+
+-- Use case: clear a staging table before each load
+TRUNCATE TABLE orders_staging;
+-- Then reload fresh data from source
+INSERT INTO orders_staging SELECT * FROM source_orders;
+
+
+-- ══════════════════════════════════════════════
+--  DDL — DROP
+-- ══════════════════════════════════════════════
+
+-- Removes the entire table — structure AND data — permanently
+DROP TABLE employees_backup;
+
+-- Safe drop — only drops if the table exists (no error if missing)
+DROP TABLE IF EXISTS employees_temp;
+
+-- Drop index
+DROP INDEX idx_emp_dept ON employees;
+
+-- Drop constraint
+ALTER TABLE employees
+DROP CONSTRAINT fk_dept;
+
+
+-- ══════════════════════════════════════════════
+--  DML — INSERT
+-- ══════════════════════════════════════════════
+
+-- Insert a single row — specify columns explicitly (best practice)
+INSERT INTO employees (employee_id, first_name, last_name, email, department_id, salary, hire_date)
+VALUES (1, 'Alice', 'Smith', 'alice@company.com', 10, 75000, '2022-01-15');
+
+-- Insert multiple rows in one statement
+INSERT INTO employees (employee_id, first_name, last_name, email, department_id, salary, hire_date)
+VALUES
+    (2, 'Bob',   'Jones', 'bob@company.com',   20, 60000, '2021-06-01'),
+    (3, 'Carol', 'White', 'carol@company.com', 10, 80000, '2020-03-10'),
+    (4, 'Dave',  'Brown', 'dave@company.com',  30, 90000, '2019-11-20');
+
+-- Insert from another table (copy rows)
+INSERT INTO employees_staging (employee_id, first_name, last_name, salary)
+SELECT employee_id, first_name, last_name, salary
+FROM employees
+WHERE hire_date >= '2022-01-01';
+
+-- Insert with default values
+INSERT INTO employees (employee_id, first_name, last_name, hire_date)
+VALUES (5, 'Eve', 'Taylor', GETDATE());
+-- salary will use DEFAULT 0.00, is_active will use DEFAULT 1
+
+
+-- ══════════════════════════════════════════════
+--  DML — UPDATE
+-- ══════════════════════════════════════════════
+
+-- Update a single column for one row
+UPDATE employees
+SET    salary = 82000
+WHERE  employee_id = 3;
+
+-- Update multiple columns at once
+UPDATE employees
+SET    salary      = 95000,
+       department_id = 10,
+       is_active   = 1
+WHERE  employee_id = 4;
+
+-- Update all rows in a department (10% raise)
+UPDATE employees
+SET    salary = salary * 1.10
+WHERE  department_id = 10;
+
+-- Update using a subquery — give raise to employees earning less than avg
+UPDATE employees
+SET    salary = salary * 1.05
+WHERE  salary < (SELECT AVG(salary) FROM employees);
+
+-- ⚠ Always use WHERE in UPDATE — without it, every row gets updated
+-- UPDATE employees SET salary = 0  ← this zeros out every salary!
+
+
+-- ══════════════════════════════════════════════
+--  DML — DELETE
+-- ══════════════════════════════════════════════
+
+-- Delete a specific row
+DELETE FROM employees
+WHERE  employee_id = 5;
+
+-- Delete rows matching a condition
+DELETE FROM employees
+WHERE  is_active = 0
+AND    hire_date < '2018-01-01';
+
+-- Delete using a subquery — remove employees from a closed department
+DELETE FROM employees
+WHERE  department_id IN (
+    SELECT department_id FROM departments
+    WHERE  department_name = 'Legacy Division'
+);
+
+-- DELETE vs TRUNCATE:
+-- DELETE removes rows one by one, logs each row, CAN be rolled back
+-- TRUNCATE removes all rows at once, minimal logging, CANNOT be rolled back
+-- DELETE with WHERE = selective. TRUNCATE = all rows only, no filter
+
+
+-- ══════════════════════════════════════════════
+--  DML — SELECT (the most used command)
+-- ══════════════════════════════════════════════
+
+-- Basic SELECT
+SELECT employee_id, first_name, last_name, salary
+FROM   employees
+WHERE  is_active = 1
+ORDER BY salary DESC;
+
+-- SELECT with alias
+SELECT
+    employee_id                              AS emp_id,
+    first_name + ' ' + last_name            AS full_name,
+    ROUND(salary / 12.0, 2)                 AS monthly_salary,
+    DATEDIFF(YEAR, hire_date, GETDATE())    AS years_of_service
+FROM employees;
+
+-- SELECT with JOIN
+SELECT
+    e.employee_id,
+    e.first_name,
+    e.last_name,
+    d.department_name,
+    e.salary
+FROM       employees   e
+INNER JOIN departments d ON e.department_id = d.department_id
+WHERE      e.is_active = 1
+ORDER BY   d.department_name, e.salary DESC;
+
+-- SELECT with aggregation
+SELECT
+    d.department_name,
+    COUNT(e.employee_id)   AS headcount,
+    AVG(e.salary)          AS avg_salary,
+    MAX(e.salary)          AS max_salary,
+    MIN(e.salary)          AS min_salary,
+    SUM(e.salary)          AS total_payroll
+FROM       employees   e
+INNER JOIN departments d ON e.department_id = d.department_id
+WHERE      e.is_active = 1
+GROUP BY   d.department_name
+HAVING     COUNT(e.employee_id) > 1
+ORDER BY   total_payroll DESC;
+
+-- SELECT with CTE
+WITH dept_avg AS (
+    SELECT department_id, AVG(salary) AS avg_sal
+    FROM   employees
+    GROUP BY department_id
+)
+SELECT e.first_name, e.salary, d.avg_sal,
+       e.salary - d.avg_sal AS diff_from_avg
+FROM   employees e
+JOIN   dept_avg d ON e.department_id = d.department_id;
+
+-- SELECT with window function
+SELECT
+    employee_id,
+    first_name,
+    department_id,
+    salary,
+    RANK()        OVER (PARTITION BY department_id ORDER BY salary DESC) AS dept_rank,
+    SUM(salary)   OVER (PARTITION BY department_id)                      AS dept_total,
+    ROUND(salary * 100.0 / SUM(salary) OVER (PARTITION BY department_id), 2) AS pct_of_dept
+FROM employees
+WHERE is_active = 1;</code></pre> </div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>
+      <strong>Key distinctions to mention in interviews:</strong><br>
+      <strong>TRUNCATE vs DELETE:</strong> TRUNCATE is DDL (auto-commit, no WHERE, resets identity). DELETE is DML (can rollback, supports WHERE, logs every row).<br>
+      <strong>DROP vs TRUNCATE:</strong> DROP removes the table itself. TRUNCATE keeps the table but empties it.<br>
+      <strong>ALTER vs UPDATE:</strong> ALTER changes the structure (columns, types, constraints). UPDATE changes the data values inside rows.
+    </div></div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>
+      <strong>Delete: </strong> Use DELETE when you need to remove specific records or require the ability to rollback changes.<br>
+      <strong>Truncate: </strong> Use TRUNCATE when you need to quickly empty a table while keeping its structure and constraints intact. <br>
+      <strong>DROP: </strong> Use DROP when you want to permanently eliminate the table and all its associated metadata from the database. 
+    </div> </div>
+  </div>
+</div>
 
 
 <div class="q-card">
