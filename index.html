@@ -1620,6 +1620,61 @@
   </div>
 
 
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How would you migrate a legacy ETL system to Databricks?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"This is exactly what I'm doing on the current project — migrating legacy SAS scripts to Azure Databricks. The key principle: don't lift and shift, redesign. Translating bad legacy code into PySpark just gives you bad PySpark code."</p>
+    <p><strong>Phase 1 — Understand before touching anything:</strong></p>
+    <ul>
+      <li>Document what the legacy system actually does — not what it's supposed to do. Run the legacy job and capture: source tables, business logic, output schema, row counts, aggregation totals. These become your validation baseline.</li>
+      <li>Identify dependencies — what does this job depend on? What depends on this job? Migrating in the wrong order breaks downstream consumers.</li>
+      <li>Classify jobs by complexity — simple column mappings and filters vs complex business logic with hundreds of conditional branches. Migrate simple ones first to build confidence and velocity.</li>
+    </ul>
+    <p><strong>Phase 2 — Build the new pipeline in parallel (don't cut over yet):</strong></p>
+    <ul>
+      <li>Stand up the new Databricks pipeline alongside the legacy system — both running, outputs compared.</li>
+      <li>For each migrated job, run validation: row count match, column-by-column aggregate match, sample row comparison. Only sign off when outputs are provably identical on a full production dataset.</li>
+      <li>Build Bronze/Silver/Gold Medallion layers from scratch — don't replicate the legacy structure just because it's familiar.</li>
+    </ul>
+    <p><strong>Phase 3 — Cutover:</strong></p>
+    <ul>
+      <li>Cutover one module at a time, not everything at once. If module A fails after cutover, roll back just that module while keeping the rest on the new system.</li>
+      <li>Run legacy and new systems in parallel for a defined validation window (typically 2–4 weeks) before decommissioning legacy.</li>
+      <li>Have a rollback plan — keep legacy runnable until you're confident the new system is stable in production.</li>
+    </ul>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The biggest risk in a migration isn't technical — it's validation. If you can't prove the new output is identical to the old output on real production data, stakeholders won't trust the new system. Invest heavily in automated reconciliation before cutover."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">What is your approach to designing a fault-tolerant, scalable ETL/ELT pipeline in Azure? What tools and tradeoffs?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Core design principles:</strong></p>
+      <ul>
+        <li><strong>Idempotency:</strong> Every pipeline run must be safe to re-run. Use watermarks, MERGE, or partition overwrite — never append-only without dedup.</li>
+        <li><strong>Modularity:</strong> Break pipelines into discrete stages (ingest, validate, transform, load). Each stage independently testable and restartable. Failure in Gold layer shouldn't require re-ingesting Bronze.</li>
+        <li><strong>Retry + dead-letter:</strong> Configure retry policies (3 attempts, exponential backoff) on every activity. Route bad records to a dead-letter path in ADLS, not pipeline failure.</li>
+        <li><strong>Checkpointing:</strong> For streaming — mandatory. For batch — use ADF pipeline activity dependencies to resume from last successful stage, not restart from scratch.</li>
+        <li><strong>Observability:</strong> Every pipeline writes audit logs (start/end time, row counts, status, error). Azure Monitor alerts on failure. Log Analytics for pattern analysis.</li>
+      </ul>
+      <p><strong>Tool choices and tradeoffs:</strong></p>
+      <ul>
+        <li><strong>ADF (orchestration):</strong> Managed, UI-driven, easy CI/CD. Tradeoff: limited complex logic — move that to Databricks notebooks.</li>
+        <li><strong>Databricks (transformation):</strong> Powerful, scalable Spark. Tradeoff: more expensive than ADF Data Flows; requires Spark expertise.</li>
+        <li><strong>Delta Lake (storage format):</strong> ACID, time travel, schema enforcement. Tradeoff: overhead vs raw Parquet for very simple pipelines.</li>
+        <li><strong>Synapse (serving):</strong> Excellent for BI workloads and multi-user concurrency. Tradeoff: DWU cost is always-on; Serverless SQL is cheaper for ad-hoc but slower for repeated queries.</li>
+      </ul>
+    </div>
+  </div>
+
+
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">X</div>
@@ -1661,6 +1716,87 @@
     </ul>
 
     <div class="callout tip"><span class="callout-icon">💡</span><div>"Key design decision: fail individual source tables, not the entire batch. If source A fails, sources B through Z should still complete. This is why each source runs in its own child pipeline with its own error handling, rather than being steps in a single linear pipeline."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Design an incremental data pipeline instead of full reloads using Delta Lake?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Full reloads re-process everything every run — expensive, slow, and puts unnecessary load on source systems. Incremental pipelines only process what's new or changed since the last run. Delta Lake makes this clean and reliable."</p>
+    <p><strong>Pattern 1 — Watermark-based incremental (most common):</strong></p>
+    <ul>
+      <li>Source table has an <code>updated_at</code> or <code>modified_date</code> column.</li>
+      <li>Store the last successfully loaded timestamp in a control table.</li>
+      <li>Each run: extract only rows newer than the watermark, transform, MERGE into Delta target, update watermark on success.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">from delta.tables import DeltaTable
+from pyspark.sql.functions import lit, current_timestamp, max as _max
+
+# Step 1 — Get last watermark
+watermark_df = spark.sql("""
+    SELECT last_load_date FROM control.watermark
+    WHERE table_name = 'orders'
+""")
+last_load = watermark_df.first()["last_load_date"]
+
+# Step 2 — Extract only new/changed records
+new_data = (spark.read
+    .format("jdbc")
+    .option("url", jdbc_url)
+    .option("query",
+        f"SELECT * FROM orders WHERE updated_at > '{last_load}'")
+    .load()
+)
+
+# Step 3 — MERGE into Delta target (upsert — not append)
+delta_target = DeltaTable.forPath(spark, "/mnt/delta/silver/orders")
+delta_target.alias("target").merge(
+    new_data.alias("source"),
+    "target.order_id = source.order_id"
+).whenMatchedUpdateAll() \
+ .whenNotMatchedInsertAll() \
+ .execute()
+
+# Step 4 — Update watermark on success
+new_watermark = new_data.agg(_max("updated_at")).first()[0]
+spark.sql(f"""
+    UPDATE control.watermark
+    SET last_load_date = '{new_watermark}'
+    WHERE table_name   = 'orders'
+""")</code></pre>
+    </div>
+    <p><strong>Pattern 2 — Delta Change Data Feed (for Delta-to-Delta):</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Enable CDF on source Delta table
+spark.sql("""
+    ALTER TABLE silver.orders
+    SET TBLPROPERTIES (delta.enableChangeDataFeed = true)
+""")
+
+# Read only changes since last processed version
+changes = (spark.read
+    .format("delta")
+    .option("readChangeFeed", "true")
+    .option("startingVersion", last_processed_version)
+    .table("silver.orders")
+)
+
+# _change_type column: insert / update_preimage / update_postimage / delete
+inserts_updates = changes.filter(
+    col("_change_type").isin(["insert", "update_postimage"])
+)
+deletes = changes.filter(col("_change_type") == "delete")</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Watermark + MERGE is my default pattern — works on any source with a reliable timestamp. Delta CDF is better when both source and target are Delta tables and you need to capture deletes without complex CDC setup."</div></div>
   </div>
 </div>
 
@@ -2026,7 +2162,6 @@ with ThreadPoolExecutor(max_workers=4) as executor:
 
 
 
-
 <!-- ════════════════════════════════════════════════════════
      GENERAL
 ═══════════════════════════════════════════════════════════ -->
@@ -2063,6 +2198,121 @@ with ThreadPoolExecutor(max_workers=4) as executor:
       </ol>
     </div>
   </div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Your Spark job is running very slow on large datasets — how would you troubleshoot and optimize it?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Whenever I see a slow Spark job, my first rule is — don't guess, look at the Spark UI. Every answer is in there."</p>
+    <p><strong>Step 1 — Spark UI diagnosis:</strong></p>
+    <ul>
+      <li><strong>Stages tab:</strong> Find the stage taking longest. Click into it.</li>
+      <li><strong>Task duration variance:</strong> If most tasks finish in 2s but one takes 40 mins — data skew. One executor is getting all the heavy rows.</li>
+      <li><strong>Shuffle read/write size:</strong> If it exploded — joins or groupBys are moving too much data across executors.</li>
+      <li><strong>Spill to disk:</strong> Non-zero spill means executors are running out of memory. Disk is 100x slower than RAM.</li>
+      <li><strong>GC time:</strong> High GC time = JVM memory pressure. Too many objects being created and garbage collected.</li>
+    </ul>
+    <p><strong>Step 2 — Fix based on what you found:</strong></p>
+    <ul>
+      <li><strong>Data skew → Salting:</strong> Add a random salt to the skewed key, groupBy on salted key, then re-aggregate to remove salt.</li>
+      <li><strong>Shuffle explosion → Broadcast join:</strong> If one side is small enough (<10MB default), broadcast it — eliminates the shuffle entirely.</li>
+      <li><strong>Spill → Fix partition size:</strong> Target 128MB–256MB per partition. Too large = spill. Too small = overhead from thousands of tasks.</li>
+      <li><strong>UDFs → Replace with native functions:</strong> Python UDFs serialize row-by-row between JVM and Python — extremely slow. Replace with <code>regexp_replace</code>, <code>to_date</code>, <code>coalesce</code> etc.</li>
+      <li><strong>Enable AQE:</strong> <code>spark.sql.adaptive.enabled=true</code> — Spark dynamically adjusts shuffle partitions, skew join handling, and join strategies at runtime. Low effort, high impact.</li>
+      <li><strong>Push filters early:</strong> Always filter before joins, not after. Less data in the join = less shuffle.</li>
+      <li><strong>Select only needed columns:</strong> Never <code>SELECT *</code> and drop later. Column pruning at read time reduces data scanned from disk.</li>
+      <li><strong>Cache strategically:</strong> If the same DataFrame is referenced multiple times, <code>df.cache()</code> after the first transformation. Without it, Spark recomputes it from scratch every time.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Enable AQE globally
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
+
+# Broadcast join — eliminates shuffle for small table
+from pyspark.sql.functions import broadcast
+result = large_df.join(broadcast(small_lookup_df), "customer_id")
+
+# Fix data skew with salting
+from pyspark.sql.functions import col, rand, floor
+SALT_BUCKETS = 10
+
+skewed_df = skewed_df.withColumn("salt", (rand() * SALT_BUCKETS).cast("int"))
+other_df  = other_df.crossJoin(
+    spark.range(SALT_BUCKETS).withColumnRenamed("id", "salt")
+)
+
+joined = skewed_df.join(other_df,
+    (skewed_df["customer_id"] == other_df["customer_id"]) &
+    (skewed_df["salt"] == other_df["salt"])
+)
+
+# View execution plan to spot issues
+df.explain(True)   # True = full plan with cost info</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"My rule: always compare Spark UI from the last good run vs the slow run side by side. The difference in stage timings, shuffle sizes, and task counts usually points to the problem within 10 minutes — no guessing."</div></div>
+  </div>
+</div>
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">A pipeline fails midway — how do you ensure fault tolerance and recovery?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Fault tolerance is something I design in upfront — not something I scramble for after a failure. The key principle: every step must be idempotent, meaning running it twice gives the same result as running it once."</p>
+    <p><strong>Design principles for fault-tolerant pipelines:</strong></p>
+    <ul>
+      <li><strong>Idempotent writes — MERGE instead of append:</strong> If a step reruns, it shouldn't create duplicate rows. MERGE on natural key means re-running the same batch produces the same result.</li>
+      <li><strong>Checkpoint every stage:</strong> Write intermediate results to Delta after each logical stage (Bronze → Silver → Gold). If Gold fails, rerun only Gold — Bronze and Silver are already committed and verified.</li>
+      <li><strong>Watermark control table:</strong> Only update the watermark after the full pipeline succeeds — not mid-run. If the job fails after writing Bronze but before writing Silver, the watermark stays at the last successful value, so the next run re-extracts that window and retries Silver.</li>
+      <li><strong>Structured Streaming checkpoints:</strong> For streaming pipelines, the checkpoint tracks exactly which source offsets were processed. Crash + restart = resume from checkpoint without missing or duplicating records.</li>
+      <li><strong>ADF retry policies:</strong> Set 3 retries with exponential backoff on every activity. Most transient failures (network blips, SHIR timeouts) resolve on retry without any human intervention.</li>
+      <li><strong>Dead-letter path:</strong> Route bad records that fail validation to a separate ADLS path with the error reason logged — don't let one bad row fail the entire batch.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Idempotent write — MERGE instead of append
+from delta.tables import DeltaTable
+
+def safe_write(batch_df, target_path, pk_col):
+    """Always safe to rerun — no duplicate rows"""
+    target = DeltaTable.forPath(spark, target_path)
+    target.alias("t").merge(
+        batch_df.alias("s"),
+        f"t.{pk_col} = s.{pk_col}"
+    ).whenMatchedUpdateAll() \
+     .whenNotMatchedInsertAll() \
+     .execute()
+
+# Partition overwrite — idempotent for date-partitioned tables
+spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+df.write.format("delta") \
+    .partitionBy("process_date") \
+    .mode("overwrite") \
+    .save("/mnt/delta/silver/orders")
+# Rerunning today's date partition produces same result — no duplicates
+
+# Streaming fault tolerance — checkpoint is the recovery mechanism
+stream = (df.writeStream
+    .format("delta")
+    .option("checkpointLocation", "/mnt/checkpoints/orders")
+    .trigger(processingTime="10 minutes")
+    .start("/mnt/delta/silver/orders")
+)</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Recovery speed is determined by how small your failure blast radius is. If Bronze, Silver, and Gold are separate Delta tables written independently with their own watermarks, a Gold failure costs you one Gold rerun. If everything is one monolithic pipeline, a Gold failure costs you a full re-extraction from source."</div></div>
+  </div>
+</div>
 
   <!-- Q6 -->
   <div class="q-card">
@@ -2239,6 +2489,83 @@ assert set(expected_fields.keys()).issubset(set(df.columns)), "Missing expected 
   </div>
 </div>
    
+   <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you handle schema evolution in a production data pipeline?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Schema evolution — columns being added, renamed, or changed in a source system — is one of the most common causes of silent data corruption or pipeline failures. My approach: detect it early, handle it explicitly, never let it pass through silently."</p>
+    <p><strong>Layer 1 — Detect at Bronze ingestion:</strong></p>
+    <ul>
+      <li>Compare incoming schema against expected schema before writing. New columns, dropped columns, or type changes are caught immediately.</li>
+      <li>Alert the team — don't auto-accept unknown schema changes without human review first.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">from pyspark.sql.types import StructType
+
+expected_schema = StructType.fromJson(
+    spark.read.json("/mnt/config/orders_schema.json").schema.jsonValue()
+)
+
+def validate_schema(df, expected, table_name):
+    expected_cols = {f.name: f.dataType for f in expected.fields}
+    actual_cols   = {f.name: f.dataType for f in df.schema.fields}
+
+    new_cols     = set(actual_cols)  - set(expected_cols)
+    missing_cols = set(expected_cols) - set(actual_cols)
+    type_changes = {
+        c for c in expected_cols
+        if c in actual_cols and actual_cols[c] != expected_cols[c]
+    }
+
+    if new_cols or missing_cols or type_changes:
+        msg = (f"Schema drift detected in {table_name}!\n"
+               f"New columns: {new_cols}\n"
+               f"Missing: {missing_cols}\n"
+               f"Type changes: {type_changes}")
+        send_alert(msg)   # email / Teams notification
+        raise ValueError(msg)
+    return df
+
+# ── If new columns are expected and safe to accept ────
+# Controlled schema evolution with mergeSchema
+df.write.format("delta") \
+    .mode("append") \
+    .option("mergeSchema", "true") \
+    .save("/mnt/delta/bronze/orders")
+
+# ── Add column explicitly ─────────────────────────────
+spark.sql("""
+    ALTER TABLE silver.orders
+    ADD COLUMNS (loyalty_score DOUBLE COMMENT 'Added 2024-06')
+""")
+
+# ── Rename column (requires column mapping) ────────────
+spark.sql("""
+    ALTER TABLE silver.orders SET TBLPROPERTIES (
+        'delta.columnMapping.mode' = 'name'
+    )
+""")
+spark.sql("ALTER TABLE silver.orders RENAME COLUMN cust_name TO customer_name")
+
+# ── Version schema changes — DESCRIBE HISTORY ─────────
+spark.sql("DESCRIBE HISTORY silver.orders LIMIT 10").show(truncate=False)</code></pre>
+    </div>
+    <p><strong>Best practices for production:</strong></p>
+    <ul>
+      <li>Store expected schema as a JSON file in a config path — it's your contract with the source system. Version-control it alongside your pipeline code.</li>
+      <li>On new column addition that's approved — add it explicitly with ALTER TABLE, not silently via mergeSchema. This keeps the change auditable.</li>
+      <li>Never change a column's data type from wider to narrower (BIGINT to INT) without a data migration — existing data may not fit.</li>
+      <li>For downstream consumers (BI tools, other pipelines), communicate schema changes as part of a release process — not as a surprise.</li>
+    </ul>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Schema drift is one of the most common root causes of wrong data in BI reports. A column silently becomes a string that used to be an integer, aggregations start returning wrong results, and nobody notices for a week. Explicit schema validation at Bronze is the prevention."</div></div>
+  </div>
+</div>
 
   <!-- Q2 -->
   <div class="q-card">
@@ -2282,6 +2609,66 @@ assert set(expected_fields.keys()).issubset(set(df.columns)), "Missing expected 
     </div>
   </div>
 
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">You receive duplicate data from a source system. How would you handle this?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Duplicates from source systems are very common — network retries, at-least-once delivery, CDC reprocessing. I treat deduplication as a design requirement, not an edge case."</p>
+    <p><strong>Step 1 — Understand why duplicates are happening:</strong></p>
+    <ul>
+      <li>Is the source system sending true duplicates (same event twice) or near-duplicates (same record with updated timestamps)?</li>
+      <li>Is it a one-time historical issue or ongoing? Impacts whether you need a permanent dedup strategy or a one-time fix.</li>
+    </ul>
+    <p><strong>Step 2 — Deduplicate at Bronze (catch early):</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">from pyspark.sql.functions import row_number, col
+from pyspark.sql.window import Window
+
+# Method 1 — dropDuplicates on natural key (simplest)
+df_deduped = df.dropDuplicates(["order_id"])
+
+# Method 2 — keep LATEST record per key (when updated_at exists)
+window = Window.partitionBy("order_id").orderBy(col("updated_at").desc())
+df_deduped = (df
+    .withColumn("rn", row_number().over(window))
+    .filter(col("rn") == 1)
+    .drop("rn")
+)
+
+# Method 3 — MERGE at write time (idempotent — prevents duplicates landing)
+from delta.tables import DeltaTable
+
+DeltaTable.forPath(spark, "/mnt/delta/bronze/orders") \
+    .alias("t").merge(
+        df.alias("s"),
+        "t.order_id = s.order_id"
+    ).whenMatchedUpdateAll() \
+     .whenNotMatchedInsertAll() \
+     .execute()
+
+# Method 4 — Streaming dedup with watermark
+(df.withWatermark("event_time", "10 minutes")
+   .dropDuplicates(["event_id"])
+   .writeStream
+   .format("delta")
+   .option("checkpointLocation", "/mnt/checkpoints/orders")
+   .start("/mnt/delta/bronze/orders")
+)</code></pre>
+    </div>
+    <p><strong>Step 3 — Validate dedup worked:</strong></p>
+    <ul>
+      <li>After writing, assert: <code>total_rows == distinct_rows_on_pk</code>. If this fails, the dedup logic has a bug.</li>
+      <li>Log: how many duplicates were found and removed per run — if the number is consistently high, escalate to the source team to fix upstream.</li>
+    </ul>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"MERGE is my preferred long-term solution — it makes deduplication a write-time property of the pipeline rather than a cleanup step. If duplicates arrive, MERGE updates the existing record instead of creating a new one. No separate dedup job needed."</div></div>
+  </div>
+</div>
   
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">You received duplicate records in streaming data — how do you handle deduplication?</div><div class="q-tags"><span class="q-tag tag-pattern">Streaming</span></div></div><div class="q-chevron">▼</div></div>
@@ -2779,27 +3166,7 @@ WHERE @{pipeline().parameters.watermarkCol}
   </div>
 </div>
 
-   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">What is your approach to designing a fault-tolerant, scalable ETL/ELT pipeline in Azure? What tools and tradeoffs?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p><strong>Core design principles:</strong></p>
-      <ul>
-        <li><strong>Idempotency:</strong> Every pipeline run must be safe to re-run. Use watermarks, MERGE, or partition overwrite — never append-only without dedup.</li>
-        <li><strong>Modularity:</strong> Break pipelines into discrete stages (ingest, validate, transform, load). Each stage independently testable and restartable. Failure in Gold layer shouldn't require re-ingesting Bronze.</li>
-        <li><strong>Retry + dead-letter:</strong> Configure retry policies (3 attempts, exponential backoff) on every activity. Route bad records to a dead-letter path in ADLS, not pipeline failure.</li>
-        <li><strong>Checkpointing:</strong> For streaming — mandatory. For batch — use ADF pipeline activity dependencies to resume from last successful stage, not restart from scratch.</li>
-        <li><strong>Observability:</strong> Every pipeline writes audit logs (start/end time, row counts, status, error). Azure Monitor alerts on failure. Log Analytics for pattern analysis.</li>
-      </ul>
-      <p><strong>Tool choices and tradeoffs:</strong></p>
-      <ul>
-        <li><strong>ADF (orchestration):</strong> Managed, UI-driven, easy CI/CD. Tradeoff: limited complex logic — move that to Databricks notebooks.</li>
-        <li><strong>Databricks (transformation):</strong> Powerful, scalable Spark. Tradeoff: more expensive than ADF Data Flows; requires Spark expertise.</li>
-        <li><strong>Delta Lake (storage format):</strong> ACID, time travel, schema enforcement. Tradeoff: overhead vs raw Parquet for very simple pipelines.</li>
-        <li><strong>Synapse (serving):</strong> Excellent for BI workloads and multi-user concurrency. Tradeoff: DWU cost is always-on; Serverless SQL is cheaper for ad-hoc but slower for repeated queries.</li>
-      </ul>
-    </div>
-  </div>
-
+   
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Under what networking conditions must you use a Self-Hosted Integration Runtime (SHIR) instead of Azure IR?</div><div class="q-tags"><span class="q-tag tag-arch">Networking</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
@@ -2995,9 +3362,6 @@ WHERE table_name = 'orders'</code></pre></div>
 </div>
 
 
-
-  
-
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">Describe how error handling and retry mechanisms work in ADF.</div><div class="q-tags"><span class="q-tag tag-debug">Reliability</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
@@ -3009,6 +3373,69 @@ WHERE table_name = 'orders'</code></pre></div>
       </ul>
     </div>
   </div>
+
+  <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you monitor and alert on failures in production pipelines?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Monitoring is not optional in production. If I find out a pipeline failed because a business user noticed their report is wrong, that's a monitoring failure — not just a pipeline failure."</p>
+    <p><strong>1. Audit logging — every run writes a record:</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">from datetime import datetime
+
+def write_audit(pipeline_name, run_id, rows_in, rows_out,
+                status, error_msg=None):
+    audit = [{
+        "pipeline_name": pipeline_name,
+        "run_id":        run_id,
+        "rows_in":       rows_in,
+        "rows_out":      rows_out,
+        "status":        status,       # success / failed / partial
+        "error_message": error_msg,
+        "run_date":      datetime.now().strftime("%Y-%m-%d"),
+        "run_timestamp": datetime.now().isoformat()
+    }]
+    df = spark.createDataFrame(audit)
+    df.write.format("delta").mode("append") \
+        .save("/mnt/delta/audit/pipeline_runs")
+
+# Usage
+try:
+    df = transform(source_df)
+    write_to_target(df)
+    write_audit("orders_silver", run_id,
+                source_df.count(), df.count(), "success")
+except Exception as e:
+    write_audit("orders_silver", run_id, 0, 0, "failed", str(e))
+    raise</code></pre>
+    </div>
+    <p><strong>2. ADF built-in monitoring:</strong></p>
+    <ul>
+      <li>ADF Monitor tab shows every pipeline run, activity-level status, duration, rows copied, and error messages. Use this for first-level diagnosis.</li>
+      <li>Set up ADF diagnostic logs → Log Analytics workspace. Enables custom KQL queries on pipeline history.</li>
+    </ul>
+    <p><strong>3. Azure Monitor alerts:</strong></p>
+    <ul>
+      <li>Alert rule: ADF pipeline run status = Failed → send email/Teams notification within 5 minutes.</li>
+      <li>Alert rule: Databricks job status = Failed → same.</li>
+      <li>Alert rule: SHIR disk usage > 80% → proactive, prevents the SHIR-disk-full issue before it causes pipeline failures.</li>
+      <li>Alert rule: Pipeline duration > N minutes → catches jobs that are running but taking abnormally long (data growth, new skew).</li>
+    </ul>
+    <p><strong>4. Data quality monitoring:</strong></p>
+    <ul>
+      <li>Row count variance alert — if today's Silver load is <70% of yesterday's count without a known reason, alert.</li>
+      <li>Null rate monitoring — track null rate per key column over time. A spike in null rate signals a broken source.</li>
+      <li>Build a simple Power BI dashboard on top of the audit Delta table — operations team sees green/red pipeline status without needing ADF access.</li>
+    </ul>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Good monitoring answers three questions for any pipeline run: did it run, did it complete in the expected time, and did it produce the expected output? Cover all three and you'll catch 95% of issues before the business does."</div></div>
+  </div>
+</div>
 
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">How would you securely migrate on-premises SQL Server data into ADLS Gen2?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span><span class="q-tag tag-arch">Migration</span></div></div><div class="q-chevron">▼</div></div>
@@ -3896,7 +4323,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
     </div>
   </div>
 
-  <div class="q-card">
+  <!--<div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">A job works in Dev but fails in Production — how would you debug it?</div><div class="q-tags"><span class="q-tag tag-debug">Debugging</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>This is one of the most common real-world scenarios. Check these differences between Dev and Prod:</p>
@@ -3911,7 +4338,39 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
       </ol>
       <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>Replicate Prod in Dev: run the job on a Prod data sample (not Dev data) on a Dev cluster with Prod-sized cluster config. This narrows down whether it's a data issue or an environment issue.</div></div>
     </div>
+  </div>-->
+
+  <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">A job works in dev but fails in production — how would you debug it?</div>
+    </div>
+    <div class="q-chevron">▼</div>
   </div>
+  <div class="q-body">
+    <p>"This is one of the most frustrating problems — and it almost always comes down to differences between the two environments that aren't immediately obvious."</p>
+    <p><strong>My debugging checklist — things that differ between dev and prod:</strong></p>
+    <ul>
+      <li><strong>Data volume:</strong> Dev usually runs on a sample — 10K rows. Prod has 100M rows. A job that runs fine in 2 minutes on 10K rows can OOM or time out on 100M rows. Check for memory spill, skew, or missing partitioning that only becomes visible at scale.</li>
+      <li><strong>Cluster configuration:</strong> Dev cluster is often smaller — fewer workers, smaller instance types, different Databricks Runtime version. Check if the prod cluster matches what the job actually needs. Also check if AQE and auto-scaling are configured differently.</li>
+      <li><strong>Permissions and secrets:</strong> Dev service principal may have broader access. Prod service principal may be missing a role on ADLS, Key Vault, or a specific schema. Check the exact error — "Access Denied" at a specific path tells you exactly what's missing.</li>
+      <li><strong>Environment-specific config:</strong> Hardcoded paths pointing to dev ADLS paths, dev SQL Server, or dev Key Vault scope accidentally left in the production deployment. Check ADF ARM template parameter files — the right parameter file must be used per environment.</li>
+      <li><strong>Schema differences:</strong> Prod database might have a slightly different schema than dev — an extra column, a different data type, or a column name change that happened in prod but wasn't replicated to dev.</li>
+      <li><strong>Dependency timing:</strong> In dev, you manually trigger steps in order. In prod, triggers fire on schedule and upstream data may not be ready when the downstream job starts.</li>
+      <li><strong>Dependencies:</strong> Does Prod have a library version mismatch? Is the Python wheel version on the Prod cluster the same as Dev?</li>
+
+    </ul>
+    <p><strong>How I actually debug it:</strong></p>
+    <ul>
+      <li>Read the full error message carefully — the stack trace usually says exactly what failed and at which line.</li>
+      <li>Run the failing notebook on the prod cluster with a small prod data sample (filter to one day, one region) — reproduces the failure without the scale issue.</li>
+      <li>Compare <code>df.explain()</code> between dev and prod — the physical plan often reveals why it works on small data but breaks at scale.</li>
+      <li>Add <code>df.printSchema()</code> and <code>df.show(5)</code> after each major transformation to pinpoint exactly where the data goes wrong.</li>
+    </ul>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The fastest path to the answer is almost always: what is different between dev and prod? I make a checklist — data volume, cluster config, permissions, connection strings, schema — and go through each one systematically. The culprit is usually the second or third item."</div></div>
+  </div>
+</div>
 </div><!-- /databricks -->
 
 <!-- ════════════════════════════════════════════════════════
@@ -4263,6 +4722,65 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
       <p>Enable: <code>spark.conf.set("spark.sql.adaptive.enabled", "true")</code>. In Databricks, AQE is enabled by default from DBR 7.3+.</p>
     </div>
   </div>
+
+   <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Coalesce vs. repartition?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Both resize the number of partitions, but they work very differently — and choosing the wrong one at the wrong time can hurt performance significantly."</p>
+    <p>Thousands of tiny files require a metadata call per file and Spark creates one task per file — 10,000 files = 10,000 tasks = scheduler and storage service overwhelm.</p>
+      
+    
+    <ul>
+      <li><strong>coalesce(n):</strong> Reduces partition count by merging existing partitions — no shuffle. Fast and cheap. BUT it can only reduce, never increase, and the resulting partitions are often uneven in size because it just combines adjacent partitions rather than redistributing data evenly.</li>
+      <li><strong>repartition(n):</strong> Fully redistributes all data across n partitions using a shuffle — data is evenly distributed. Can increase or decrease partition count. More expensive (full shuffle) but results in balanced partitions.</li>
+    </ul>
+    <p><strong>When repartition() wins:</strong></p>
+    <p>Imagine a pipeline that ingests 12 months of raw data. The source data is heavily skewed — January has 50 million rows, December has 500K rows. After loading, you have 12 partitions — massively uneven.</p>
+    <ul>
+      <li>Using <code>coalesce()</code> to reduce from 12 to 4 just merges adjacent partitions — you'd still have one enormous partition (Jan + Feb) and one tiny one. The downstream join or aggregation would be just as skewed.</li>
+      <li>Using <code>repartition(100)</code> reshuffles all 50M rows evenly across 100 partitions — each partition ends up with ~500K rows regardless of which month the data came from. The downstream aggregation parallelizes evenly across all 100 tasks.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Example Code
+df.coalesce(10).write.parquet("output/")      # cheap, slightly uneven
+df.repartition(10).write.parquet("output/")   # expensive, perfectly even
+      
+# Scenario: 12 months of data, Jan has 50M rows, Dec has 500K rows
+df = spark.read.format("delta").load("/mnt/bronze/sales_history")
+
+# Check partition sizes — very uneven
+df.rdd.glom().map(len).collect()
+# [50000000, 48000000, 3000000, ..., 500000]  ← massively skewed
+
+# coalesce — fast but keeps the skew
+df_coalesced = df.coalesce(4)
+# Result: one partition still has 98M rows → one slow task
+
+# repartition — shuffle but balanced
+df_repartitioned = df.repartition(100)
+# Result: ~500K rows per partition → 100 tasks finish at similar time
+
+# Check after repartition
+df_repartitioned.rdd.glom().map(len).collect()
+# [503000, 498000, 501000, ...]  ← balanced
+
+# Repartition by column — co-locates same customer_id on same partition
+# Great before a groupBy on customer_id — eliminates the shuffle in the groupBy
+df_by_customer = df.repartition(200, "customer_id")
+grouped = df_by_customer.groupBy("customer_id").sum("amount")
+# groupBy on an already-partitioned-by-customer_id df = no shuffle needed</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div><strong>Rule of thumb:</strong> Use <code>coalesce()</code> at the end of a pipeline to reduce small output files before writing — cheap, no shuffle. Use <code>repartition()</code> when you need even distribution before a heavy operation (join, groupBy) or when increasing partition count — worth the shuffle cost for the downstream benefit.</div></div>
+    <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>In Delta Lake: use the <code>OPTIMIZE</code> command which compacts small files into larger ones (default ~1GB) via bin-packing. Schedule nightly alongside <strong>Auto-Compaction</strong> for real-time mitigation.</div></div>
+  </div>
+</div>
 
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Data Skewness in a PySpark cluster</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
@@ -5320,22 +5838,9 @@ df_large.join(broadcast(df_small), "key")</code></pre></div></div>
     </div>
   </div>
 
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">15</div><div class="q-title-wrap"><div class="q-title">Coalesce vs. repartition?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p>Thousands of tiny files require a metadata call per file and Spark creates one task per file — 10,000 files = 10,000 tasks = scheduler and storage service overwhelm.</p>
-      <ul>
-        <li><strong>coalesce(N):</strong> Reduces partition count without a full shuffle. Very efficient. Output may be slightly uneven. Use when reducing files before writing and balanced output is not critical.</li>
-        <li><strong>repartition(N):</strong> is used to Increase/Decrease partitions. Causes a full shuffle — redistributes data evenly across N partitions. More expensive but produces balanced, evenly-sized output files.</li>
-      </ul>
-      <div class="split-grid">
-          <div class="split-pane py-pane-card">
-            <div class="split-pane-header">&#x1F40D; PySpark</div>
-      <pre><code class="language-python">df.coalesce(10).write.parquet("output/")      # cheap, slightly uneven
-df.repartition(10).write.parquet("output/")   # expensive, perfectly even</code></pre></div></div>
-      <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>In Delta Lake: use the <code>OPTIMIZE</code> command which compacts small files into larger ones (default ~1GB) via bin-packing. Schedule nightly alongside <strong>Auto-Compaction</strong> for real-time mitigation.</div></div>
-    </div>
-  </div>
+  
+
+ 
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
@@ -5648,6 +6153,62 @@ spark.sql("DELETE FROM orders WHERE order_id = 12345")</code></pre></div>
     </div>
   </div>-->
 
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Your queries are slow on Delta tables — what optimization techniques would you apply?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Slow Delta queries almost always come down to one of three things — too many small files, no partition pruning, or poor data skipping. I check them in that order."</p>
+    <ul>
+      <li><strong>Check file count first:</strong> <code>DESCRIBE DETAIL table_name</code> — if <code>numFiles</code> is in the thousands for a modest table, small file problem. Run OPTIMIZE.</li>
+      <li><strong>OPTIMIZE:</strong> Compacts thousands of small files into fewer large ones (target ~1GB each). Dramatically reduces task scheduling overhead and scan time.</li>
+      <li><strong>Z-ORDER on high-cardinality filter columns:</strong> If queries frequently filter on <code>customer_id</code> or <code>product_id</code> but those aren't your partition columns, Z-ORDER by them. Delta stores min/max stats per file — after Z-ORDER, a filter on <code>customer_id = 'C001'</code> skips 95% of files instead of scanning all of them.</li>
+      <li><strong>Partitioning for range queries:</strong> If queries always filter on date, partition by year/month. A query for January 2024 only opens that one folder.</li>
+      <li><strong>Data skipping:</strong> Delta automatically collects file-level statistics (min, max, null count) for the first 32 columns. Make sure your most-filtered columns are in those first 32.</li>
+      <li><strong>Auto-Compaction:</strong> Enable for tables with frequent small writes (streaming, hourly loads) — auto-runs compaction in background after each write without manual OPTIMIZE scheduling.</li>
+      <li><strong>Liquid Clustering:</strong> For tables where your filter patterns change over time — more flexible than static partitioning, can redefine clustering columns without rewriting data.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark / SQL</div>
+      <pre><code class="language-sql">-- Step 1: Diagnose — check file count and size
+DESCRIBE DETAIL silver.orders;
+-- Look at: numFiles, sizeInBytes, averageFileSize
+
+-- Step 2: OPTIMIZE to compact small files
+OPTIMIZE silver.orders;
+-- Before: 5000 files × 5MB = slow
+-- After:  25 files × 1GB = fast
+
+-- Step 3: OPTIMIZE + Z-ORDER on frequent filter columns
+OPTIMIZE silver.orders ZORDER BY (customer_id, order_date);
+
+-- Step 4: Enable Auto-Compaction for streaming/frequent write tables
+ALTER TABLE silver.orders
+SET TBLPROPERTIES (
+    'delta.autoOptimize.autoCompact'    = 'true',
+    'delta.autoOptimize.optimizeWrite'  = 'true'  -- coalesces partitions on write
+);
+
+-- Step 5: Check data skipping stats
+DESCRIBE DETAIL silver.orders;
+
+-- Step 6: VACUUM to remove stale files that inflate metadata scan
+VACUUM silver.orders RETAIN 168 HOURS;
+
+-- Step 7: Review query plan for missing partition pruning
+EXPLAIN FORMATTED
+SELECT * FROM silver.orders
+WHERE order_date BETWEEN '2024-01-01' AND '2024-01-31';</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"I always check file count before anything else — <code>DESCRIBE DETAIL</code> takes 2 seconds. If numFiles is > 1000 for a table that should have 10, that's your answer before you've spent an hour investigating anything else."</div></div>
+  </div>
+</div>
+
+
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
@@ -5720,6 +6281,59 @@ stream_df.writeStream \
   </div>
 </div>
 
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you handle late-arriving data in pipelines?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Late-arriving data is data that arrives after the time window it belongs to has already been processed. It's very common in event-based systems — mobile apps go offline and batch events when reconnected, IoT devices have network delays, third-party systems send corrections hours later."</p>
+    <p><strong>In batch pipelines:</strong></p>
+    <ul>
+      <li><strong>Use event time, not processing time:</strong> Partition by <code>event_date</code> (when the event happened), not <code>load_date</code> (when we processed it). Late-arriving events for Jan 15 get written to the Jan 15 partition even if they arrive on Jan 17.</li>
+      <li><strong>Dynamic partition overwrite:</strong> When late data arrives for a past date, use dynamic partition overwrite — it rewrites only the affected date partition, not the entire table. Combined with MERGE, this handles both late inserts and late updates.</li>
+      <li><strong>Lookback window:</strong> Instead of processing only yesterday, always reprocess the last N days (e.g., 3 days). Any late data arriving within that window gets captured. Balance freshness vs reprocessing cost.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Batch — dynamic partition overwrite handles late data
+spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+df.write.format("delta") \
+    .partitionBy("event_date") \
+    .mode("overwrite") \
+    .save("/mnt/delta/silver/events")
+# If event_date=2024-01-15 has late arrivals on 2024-01-17,
+# only that partition gets rewritten — Jan 16 stays untouched
+
+# Streaming — watermark handles late-arriving events
+from pyspark.sql.functions import col, window
+
+(stream_df
+    .withWatermark("event_time", "2 hours")   # wait 2hrs for late events
+    .groupBy(
+        window("event_time", "1 hour"),
+        "customer_id"
+    )
+    .agg(sum("amount").alias("total"))
+    .writeStream
+    .outputMode("update")
+    .option("checkpointLocation", "/mnt/checkpoints/events")
+    .start("/mnt/delta/gold/hourly_totals")
+)
+# Events arriving up to 2 hours late are included in their correct window
+# Events arriving after 2 hours → dropped (window already closed)</code></pre>
+    </div>
+    <p><strong>In streaming pipelines:</strong></p>
+    <ul>
+      <li><strong>Watermark:</strong> Define how long Spark waits for late events before closing a window. <code>withWatermark("event_time", "2 hours")</code> — late events within 2 hours are included. After 2 hours, the window closes and state is cleaned up.</li>
+      <li><strong>Tradeoff:</strong> Larger watermark = more late data captured, but Spark holds more state in memory and results are less "real-time." Tune based on actual observed latency in your source system.</li>
+    </ul>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The right answer depends on the SLA. For a daily batch report, a 3-day lookback catches virtually all late data. For a real-time dashboard, a 30-minute watermark is usually enough. I always ask: what's the maximum realistic delay in this source? Set the watermark to 1.5× that."</div></div>
+  </div>
+</div>
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
@@ -6782,6 +7396,74 @@ WHERE is_active = 1;</code></pre> </div>
   </div>
 </div>
 
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Explain GROUP BY vs HAVING with example.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Both work together in aggregation queries, but they operate at different stages of the SQL execution order — and that difference is the key."</p>
+    <ul>
+      <li><strong>GROUP BY:</strong> Groups rows that have the same values in specified columns into summary rows. Runs after WHERE (which filters individual rows) but before SELECT and HAVING.</li>
+      <li><strong>HAVING:</strong> Filters the groups produced by GROUP BY. Runs after grouping and aggregation — so it can use aggregate functions like SUM, COUNT, AVG. WHERE cannot use aggregate functions because it runs before grouping exists.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; SQL</div>
+      <pre><code class="language-sql">-- Sample data: orders(order_id, customer_id, amount, status)
+
+-- GROUP BY — aggregate rows by customer
+SELECT
+    customer_id,
+    COUNT(*)        AS total_orders,
+    SUM(amount)     AS total_spent,
+    AVG(amount)     AS avg_order
+FROM orders
+GROUP BY customer_id;
+-- One row per customer — all their orders collapsed into summary
+
+-- WHERE filters BEFORE grouping — on individual rows
+-- HAVING filters AFTER grouping — on the group result
+SELECT
+    customer_id,
+    COUNT(*)    AS total_orders,
+    SUM(amount) AS total_spent
+FROM orders
+WHERE status = 'completed'          -- ① filter individual rows first
+GROUP BY customer_id                -- ② then group the filtered rows
+HAVING SUM(amount) > 10000          -- ③ then filter the groups
+ORDER BY total_spent DESC;
+
+-- Why you CANNOT use aggregate in WHERE:
+-- This is WRONG:
+SELECT customer_id, SUM(amount)
+FROM orders
+WHERE SUM(amount) > 10000   -- ❌ ERROR — WHERE runs before GROUP BY exists
+GROUP BY customer_id;
+
+-- This is CORRECT:
+SELECT customer_id, SUM(amount)
+FROM orders
+GROUP BY customer_id
+HAVING SUM(amount) > 10000;  -- ✅ HAVING runs after GROUP BY
+
+-- Real example: departments with more than 5 employees earning > 50K
+SELECT
+    department_id,
+    COUNT(*)    AS headcount,
+    AVG(salary) AS avg_salary
+FROM employees
+WHERE salary > 50000            -- only consider employees earning > 50K
+GROUP BY department_id
+HAVING COUNT(*) > 5             -- only departments with more than 5 such employees
+ORDER BY avg_salary DESC;</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div><strong>Memory trick:</strong> WHERE = filter rows (before grouping). HAVING = filter groups (after grouping). If your condition uses an aggregate function (SUM, COUNT, AVG, MAX, MIN) → it must go in HAVING. If it filters on a raw column value → it goes in WHERE.</div></div>
+  </div>
+</div>
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
@@ -13578,6 +14260,58 @@ print(result)   # [3, 1, 4, 5, 9, 2, 6]</code></pre>
     </div>
   </div>
 
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Find the top K frequent elements in an array.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <div class="schema-box"><strong>Input:</strong> <code>[1, 1, 1, 2, 2, 3]</code>, k=<code>2</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>[1, 2]</code></div>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python"># Without library — manual frequency count + partial sort
+def top_k_frequent(nums, k):
+    freq = {}
+    for n in nums:
+        freq[n] = freq.get(n, 0) + 1
+    # Sort by frequency descending, take top k keys
+    sorted_keys = sorted(freq, key=freq.get, reverse=True)
+    return sorted_keys[:k]
+
+print(top_k_frequent([1, 1, 1, 2, 2, 3], 2))   # [1, 2]
+print(top_k_frequent([1, 2, 2, 3, 3, 3], 2))   # [3, 2]
+
+# With library — Counter (most Pythonic)
+from collections import Counter
+
+def top_k_frequent_lib(nums, k):
+    return [item for item, _ in Counter(nums).most_common(k)]
+
+print(top_k_frequent_lib([1, 1, 1, 2, 2, 3], 2))   # [1, 2]
+
+# With library — heapq (efficient for very large arrays)
+import heapq
+
+def top_k_frequent_heap(nums, k):
+    freq = Counter(nums)
+    # nlargest picks top k by frequency — O(n log k) vs O(n log n) for full sort
+    return heapq.nlargest(k, freq.keys(), key=freq.get)
+
+print(top_k_frequent_heap([1, 1, 1, 2, 2, 3], 2))   # [1, 2]
+
+# Real ETL use case — top K most active customers
+from collections import Counter
+orders = ["C001","C002","C001","C003","C001","C002"]
+top_3  = Counter(orders).most_common(3)
+print(top_3)   # [('C001', 3), ('C002', 2), ('C003', 1)]</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>For interviews, mention the time complexity difference: full sort = O(n log n). Using <code>heapq.nlargest</code> = O(n log k) — faster when k is much smaller than n, which is usually the case for "top K" problems.</div></div>
+  </div>
+</div>
+
   <!-- Q4 -->
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)">
@@ -14296,6 +15030,153 @@ print(cleaned.tolist())</code></pre>
       <div class="callout tip"><span class="callout-icon">💡</span><div>This is a data quality question disguised as a coding question. In a real ETL pipeline, outlier detection runs at the Silver layer — flag suspicious records, route them to a dead-letter path, and let a data steward review before including them in Gold layer aggregations.</div></div>
     </div>
   </div>
+
+  <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Write a Python script to read, transform, and load data from a CSV into a database (ETL in pure Python).</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"This covers the full ETL pattern in Python — file reading, data cleaning, validation, and database insertion — all production-quality with error handling and logging."</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python">import csv
+import sqlite3   # swap for pyodbc/sqlalchemy for SQL Server/Azure SQL
+import logging
+from datetime import datetime
+
+logging.basicConfig(level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s")
+logger = logging.getLogger(__name__)
+
+# ── EXTRACT ───────────────────────────────────────────
+def extract(filepath):
+    """Read CSV and return list of dicts"""
+    records = []
+    try:
+        with open(filepath, "r", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                records.append(row)
+        logger.info(f"Extracted {len(records)} rows from {filepath}")
+    except FileNotFoundError:
+        logger.error(f"File not found: {filepath}")
+        raise
+    return records
+
+# ── TRANSFORM ─────────────────────────────────────────
+def transform(records):
+    """Clean, validate, and reshape records"""
+    cleaned, rejected = [], []
+
+    for i, row in enumerate(records, 1):
+        try:
+            # Validate required fields
+            if not row.get("order_id") or not row.get("customer_id"):
+                raise ValueError("Missing required field: order_id or customer_id")
+
+            # Type conversion
+            amount = float(row["amount"].strip().replace(",", ""))
+            if amount < 0:
+                raise ValueError(f"Negative amount: {amount}")
+
+            # Clean strings
+            status = row.get("status", "").strip().lower()
+            if status not in ("completed", "pending", "cancelled"):
+                status = "unknown"
+
+            cleaned.append({
+                "order_id":    row["order_id"].strip(),
+                "customer_id": row["customer_id"].strip(),
+                "amount":      round(amount, 2),
+                "status":      status,
+                "order_date":  row.get("order_date", "").strip(),
+                "loaded_at":   datetime.now().isoformat()
+            })
+
+        except (ValueError, KeyError) as e:
+            rejected.append({"row": i, "data": row, "reason": str(e)})
+
+    logger.info(f"Transformed: {len(cleaned)} valid, {len(rejected)} rejected")
+
+    # Log rejected records
+    if rejected:
+        for r in rejected:
+            logger.warning(f"Row {r['row']} rejected: {r['reason']}")
+
+    return cleaned, rejected
+
+# ── LOAD ──────────────────────────────────────────────
+def load(records, db_path="pipeline.db"):
+    """Insert records into database"""
+    if not records:
+        logger.warning("No records to load")
+        return 0
+
+    conn = sqlite3.connect(db_path)
+    cur  = conn.cursor()
+
+    # Create table if not exists
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS orders (
+            order_id    TEXT PRIMARY KEY,
+            customer_id TEXT NOT NULL,
+            amount      REAL,
+            status      TEXT,
+            order_date  TEXT,
+            loaded_at   TEXT
+        )
+    """)
+
+    # Upsert — INSERT OR REPLACE handles duplicates
+    inserted = 0
+    for rec in records:
+        try:
+            cur.execute("""
+                INSERT OR REPLACE INTO orders
+                (order_id, customer_id, amount, status, order_date, loaded_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (rec["order_id"], rec["customer_id"], rec["amount"],
+                  rec["status"],   rec["order_date"],  rec["loaded_at"]))
+            inserted += 1
+        except Exception as e:
+            logger.error(f"Failed to insert {rec['order_id']}: {e}")
+
+    conn.commit()
+    conn.close()
+    logger.info(f"Loaded {inserted} rows into database")
+    return inserted
+
+# ── PIPELINE ORCHESTRATOR ─────────────────────────────
+def run_pipeline(filepath, db_path="pipeline.db"):
+    start = datetime.now()
+    logger.info(f"Pipeline started: {filepath}")
+
+    try:
+        raw          = extract(filepath)
+        clean, bad   = transform(raw)
+        loaded       = load(clean, db_path)
+
+        duration = (datetime.now() - start).seconds
+        logger.info(
+            f"Pipeline completed in {duration}s | "
+            f"Extracted: {len(raw)} | "
+            f"Loaded: {loaded} | "
+            f"Rejected: {len(bad)}"
+        )
+    except Exception as e:
+        logger.error(f"Pipeline failed: {e}")
+        raise
+
+if __name__ == "__main__":
+    run_pipeline("orders.csv", "orders.db")</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"In a real production scenario, I'd replace <code>sqlite3</code> with <code>pyodbc</code> for SQL Server or <code>sqlalchemy</code> with a connection string from Key Vault. The ETL structure stays identical — only the load layer changes. That separation (extract/transform/load as independent functions) is what makes the code testable and reusable."</div></div>
+  </div>
+</div>
 
 </div><!-- /pycode -->
 
