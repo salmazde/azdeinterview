@@ -1215,24 +1215,24 @@
   <aside class="sidebar">
   
     <ul class="nav-list" id="sidebarNav">
-      <li class="nav-item"><button onclick="show('intro')" class="active"><span class="nav-dot"></span>Intro<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy Set<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('design')"><span class="nav-dot"></span>Design<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>ADF<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('synapse')"><span class="nav-dot"></span>Synapse<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('security')"><span class="nav-dot"></span>Security<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('coding')"><span class="nav-dot"></span>Coding<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('airflow')"><span class="nav-dot"></span>Airflow<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('datamodel')"><span class="nav-dot"></span>Data Modelling<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('hr')"><span class="nav-dot"></span>HR<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('python')"><span class="nav-dot"></span>Python<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('pandas')"><span class="nav-dot"></span>Adv-Py<span class="nav-count"></span></button></li>
-      <li class="nav-item"><button onclick="show('pycode')"><span class="nav-dot"></span>Py-Code<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('intro', this)" class="active"><span class="nav-dot"></span>Intro<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('handy', this)"><span class="nav-dot"></span>Handy Set<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('pyspark', this)"><span class="nav-dot"></span>PySpark<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('general', this)"><span class="nav-dot"></span>General<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('design', this)"><span class="nav-dot"></span>Design<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('sql', this)"><span class="nav-dot"></span>SQL<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('databricks', this)"><span class="nav-dot"></span>Databricks<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('delta', this)"><span class="nav-dot"></span>Delta<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('adf', this)"><span class="nav-dot"></span>ADF<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('synapse', this)"><span class="nav-dot"></span>Synapse<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('security', this)"><span class="nav-dot"></span>Security<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('coding', this)"><span class="nav-dot"></span>Coding<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('airflow', this)"><span class="nav-dot"></span>Airflow<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('datamodel', this)"><span class="nav-dot"></span>Data Modelling<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('hr', this)"><span class="nav-dot"></span>HR<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('python', this)"><span class="nav-dot"></span>Python<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('pandas', this)"><span class="nav-dot"></span>Adv-Py<span class="nav-count"></span></button></li>
+      <li class="nav-item"><button onclick="show('pycode', this)"><span class="nav-dot"></span>Py-Code<span class="nav-count"></span></button></li>
     </ul>
   </aside>
 
@@ -1288,6 +1288,7 @@
     </div>
     <div style="margin-top:12px">
       <span class="cert-badge">✅ Databricks Data Engineer Associate</span>
+      <span class="cert-badge">✅ Databricks Data Engineer Professional</span>
       <span class="cert-badge">✅ Databricks Data Analyst Associate</span>
       <span class="cert-badge">✅ Databricks Generative AI Engineer Associate</span>
     </div>
@@ -1604,7 +1605,127 @@
       </div>
   </div>
 
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Explain your day-to-day activities in your current project.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
 
+    <p>"In my current role at TCS, I work as a Data Engineer on the Citibank project. My responsibilities are divided between production support and development activities."</p>
+
+    <p><strong>How I start every day — Production Health Check:</strong></p>
+    <p>"The first thing I do every morning is review the health of our production pipelines by monitoring Azure Data Factory and Azure Databricks jobs. Since production issues directly impact business users, they always get the highest priority. On a typical day I spend around 30–40% of my time on production support — though this can go higher depending on the severity of incidents."</p>
+
+    <p><strong>Production Support responsibilities:</strong></p>
+    <ul>
+      <li>Resolving INC tickets raised by business users or monitoring alerts</li>
+      <li>Troubleshooting failed ETL pipelines — investigating the error in ADF Monitor, checking Databricks job logs, identifying root cause</li>
+      <li>Fixing data quality issues — null checks, duplicate records, reconciliation mismatches</li>
+      <li>Analyzing logs to find the exact point of failure and implementing permanent fixes rather than just restarting the job</li>
+      <li>Maintenance tasks — updating existing pipelines, applying business rule changes, performance improvements, small enhancements requested by business users</li>
+    </ul>
+
+    <p><strong>Development work — 60–70% of my time:</strong></p>
+    <p>"Once the production environment is stable, I dedicate the rest of my day to development. The biggest part of my development work right now is the SAS-to-Databricks migration."</p>
+    <ul>
+      <li><strong>SAS to PySpark migration:</strong> I analyze existing SAS-based ETL processes, understand the business rules behind them, and rewrite the same transformations in PySpark. This includes data cleansing, null handling, deduplication, aggregations, joins across multiple large tables, deriving new business columns, and applying validation rules. After development, I compare PySpark output against the SAS output row-by-row to confirm the logic is identical before sign-off.</li>
+      <li><strong>ADF pipeline integration:</strong> Once the transformation logic is ready in Databricks, I integrate it into ADF pipelines — setting up orchestration, activity dependencies, retry mechanisms, triggers, and alerting so the end-to-end execution is fully automated.</li>
+      <li><strong>Airflow:</strong> We also use Apache Airflow to schedule and manage certain workflows depending on business requirements — I write DAGs for those specific use cases.</li>
+    </ul>
+
+    <p><strong>Other day-to-day activities:</strong></p>
+    <ul>
+      <li><strong>Spark optimization:</strong> I regularly tune executor configurations, memory allocation, shuffle partitions, and transformation logic to reduce job execution time and improve performance — especially as data volumes grow.</li>
+      <li><strong>SQL work:</strong> SQL is a major part of my daily work. I write and optimize complex queries using CTEs, Views, Stored Procedures, Window Functions, and Joins for data validation, reconciliation, and reporting purposes.</li>
+      <li><strong>Stakeholder collaboration:</strong> I participate in requirement discussions with business analysts and other stakeholders to understand new data requirements, estimate development effort, and design scalable solutions.</li>
+      <li><strong>Code reviews and deployments:</strong> I review code from other team members, support deployments across dev, test, and production environments, and ensure data quality through validation and reconciliation checks before any change moves to production.</li>
+      <li><strong>Documentation:</strong> I maintain technical documentation for all pipelines — transformation logic, data lineage, config table structure, and deployment runbooks — so the team can support the solution independently.</li>
+    </ul>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Overall, my day is a combination of development, optimization, production support, pipeline monitoring, troubleshooting, and collaboration with cross-functional teams — all focused on delivering reliable and scalable data solutions for the Citibank platform."</div></div>
+
+  </div>
+</div>
+
+<!--
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Explain your day-to-day activities in your current project.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+  <p>
+  In my current role at TCS, I work as a Data Engineer on the Citibank project. my responsibilities are divided between production support and development activities.<br>
+  Every day, I first review the health of our production pipelines by monitoring Azure Data Factory pipelines and Azure Databricks jobs. Since production issues directly impact business users, they are always given the highest priority. On a typical day, I spend around 30–40% of my time handling production support activities, although this can increase depending on the severity of incidents.
+<br>
+My production support responsibilities include resolving INC tickets, troubleshooting failed ETL pipelines, fixing data quality issues, investigating job failures, analyzing logs, identifying root causes, and implementing permanent fixes. I also work on maintenance tasks, such as updating existing pipelines, applying business rule changes, improving performance, and implementing small enhancements requested by business users.
+Once production support activities are completed and the environment is stable, I dedicate the remaining 60–70% of my time to development work.<br>
+A significant part of my work involves migrating legacy SAS-based ETL processes to Azure Databricks using PySpark. I analyze the existing SAS logic, understand the business rules, and implement the same transformations in PySpark. These transformations include data cleansing, null handling, deduplication, aggregations, joins across multiple large tables, deriving new business columns, and applying business validation rules.<br>
+Once the transformation logic is developed, I integrate it into Azure Data Factory pipelines, where I configure pipeline orchestration, dependencies, triggers, retry mechanisms, and alerting to automate the end-to-end execution. We also use Apache Airflow to schedule and manage certain workflows depending on the business requirements.<br>
+Another important responsibility is monitoring daily production pipelines. I regularly monitor ADF pipeline executions and Databricks jobs, investigate failures, analyze logs, identify the root cause, and resolve issues to ensure that SLAs are met.<br>
+I also spend time optimizing Spark jobs by tuning executor configurations, memory allocation, and improving transformation logic to reduce execution time and improve overall pipeline performance.<br>
+SQL is another major part of my daily work. I write and optimize complex SQL queries using CTEs, Views, Stored Procedures, Window Functions, and Joins for data validation, reconciliation, and reporting purposes.<br>
+Apart from development activities, I participate in requirement discussions with business analysts and other stakeholders to understand new data requirements, estimate development effort, and design scalable data engineering solutions. I also prepare technical documentation, perform code reviews, support deployments across different environments, and ensure data quality through validation and reconciliation checks before moving changes to production.<br>
+Overall, my day-to-day work includes a combination of development, optimization, production support, pipeline monitoring, troubleshooting, and collaboration with cross-functional teams to deliver reliable and scalable data solutions.<br>
+  </p>
+  <hr>
+    <p>"My day-to-day work on the Citi project at TCS revolves around three things — keeping the pipelines healthy, migrating SAS logic to Databricks, and continuous improvements to the platform. Let me walk you through what a typical week looks like."</p>
+
+    <p><strong>Morning — Pipeline health check (first 30 minutes every day):</strong></p>
+    <ul>
+      <li>Open ADF Monitor and check Monday night's pipeline run status. Our main pipeline runs every Monday at 6 PM — so Tuesday mornings I verify all activities completed successfully, rows in vs rows out match expectations, and the audit table has clean success records for every source table.</li>
+      <li>If any activity shows failed or skipped, I check the error message — 90% of the time it's a transient network issue or SHIR timeout that resolves on the auto-retry. If it didn't auto-retry successfully, I investigate further.</li>
+      <li>Quick check on Azure Monitor alerts — any disk usage warnings on the SHIR VM, any Databricks job failures.</li>
+    </ul>
+
+    <p><strong>Core work — SAS to PySpark migration:</strong></p>
+    <ul>
+      <li>This is where most of my day goes. I pick up a SAS module from the migration backlog, read through the SAS code to understand what it's computing, then rewrite the equivalent logic in PySpark.</li>
+      <li>SAS code is often written procedurally — step by step, lots of implicit sorting and data step logic. Translating that to distributed PySpark requires understanding what the SAS script was actually trying to achieve, not just line-by-line conversion.</li>
+      <li>Once I have the PySpark version, I run both — SAS output and PySpark output — on the same dataset and compare row counts, column sums, and sample rows. Only when the outputs match exactly does the module go to review.</li>
+      <li>I document every mapping decision — what SAS function became which PySpark function, why certain transformations were done a specific way. This becomes the validation evidence for UAT.</li>
+    </ul>
+
+    <p><strong>Pipeline development and enhancement:</strong></p>
+    <ul>
+      <li>When new source tables need to be onboarded, I add them to the metadata config table in Azure SQL — table name, watermark column, target path, load mode. The generic ADF pipeline picks them up automatically on the next run without any pipeline changes.</li>
+      <li>When the business team requests new columns or new transformations in the Gold layer, I update the Databricks notebook — add the column derivation, test on a sample, validate output, raise a PR for peer review before deploying to prod.</li>
+      <li>I write PySpark transformation code in Databricks notebooks using the dev cluster, test it against a filtered dev dataset (usually 2–3 weeks of data rather than the full history), and verify the results before the Monday production run.</li>
+    </ul>
+
+    <p><strong>Data quality and validation work:</strong></p>
+    <ul>
+      <li>I run validation checks after every Silver layer transformation — null checks on key columns, row count reconciliation between Bronze and Silver, uniqueness checks on primary keys. Any check failure stops the pipeline and logs the reason to the audit table.</li>
+      <li>When the business team flags a data discrepancy in a Power BI report, I trace it back through the layers — check Gold aggregation, then Silver transformation, then Bronze raw data, then compare with the source. Having clean Bronze as a reference makes root cause analysis much faster.</li>
+    </ul>
+
+    <p><strong>Weekly activities:</strong></p>
+    <ul>
+      <li><strong>Monday evening:</strong> Monitor the production pipeline run in real time for the first hour. Confirm ingestion completes, Databricks job triggers and finishes, Synapse views are refreshed.</li>
+      <li><strong>Tuesday/Wednesday:</strong> Address any issues from Monday's run, continue SAS migration work.</li>
+      <li><strong>Thursday:</strong> Usually our sprint review or team sync — demo any new modules migrated, discuss blockers, align on next sprint scope.</li>
+      <li><strong>Friday:</strong> Documentation updates, OPTIMIZE + VACUUM maintenance jobs on Gold Delta tables, review any PRs from the team, plan next week's migration targets.</li>
+    </ul>
+
+    <p><strong>Ad-hoc work that comes up:</strong></p>
+    <ul>
+      <li>SHIR VM disk space alerts — clear diagnostic logs, add log rotation to prevent recurrence.</li>
+      <li>Source schema changes — a column gets added or renamed in the on-prem SQL Server without notice. I update the schema validation config, add the new column mapping in the Silver transformation, and document the change.</li>
+      <li>Performance issues — occasionally a Silver transformation job runs slower than usual. I check Spark UI, identify the cause (usually data growth causing more shuffle partitions to spill), and tune accordingly.</li>
+      <li>Stakeholder questions — "why did this number change from last week?" I trace through the pipeline versions, check Delta history, and provide a clear explanation with the exact transformation that produced the number.</li>
+    </ul>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"If they ask what I enjoy most about the role — I'd say the migration work. Translating 10-year-old SAS logic into clean, distributed PySpark that runs 5x faster is genuinely satisfying. And when the validation shows row-perfect match between legacy and new output, that's a good day."</div></div>
+  </div>
+</div>
+-->
 
 </div><!-- /intro -->
 
@@ -5119,16 +5240,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
     </div>
   </div>
 
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">Describe a production issue you handled end-to-end.</div><div class="q-tags"><span class="q-tag tag-debug">Scenario</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p>"Our nightly ADF pipeline that loaded source tables from on-prem SQL Server into ADLS Gen2 started failing intermittently — specifically on some Mondays. Other days it ran fine, which made it harder to diagnose.</p>
-      <p>I checked ADF Monitor and found the Copy Activity was timing out on the SHIR connection. I SSH'd into the SHIR machine and found the disk was at 98% capacity — weeks of ADF diagnostic logs had accumulated with no rotation policy in place. I cleared the logs, freed the disk, and manually re-triggered the pipeline. It completed in 35 minutes.</p>
-      <p>For the fix: I added a Windows Scheduled Task on the SHIR VM to rotate logs weekly, configured an Azure Monitor alert to trigger at 80% disk usage (giving us reaction time before it became critical), and added a retry policy of 3 attempts with 5-minute intervals on the Copy Activity so transient issues don't cause immediate failure.</p>
-      <p>Since those changes, the alert has fired twice — both times the team resolved it proactively before it impacted any pipeline run. Zero recurrence of the failure itself."</p>
-      <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>The prevention steps — monitoring alert + log rotation + retry policy — are what show engineering maturity. Fix + prevent, not just fix.</div></div>
-    </div>
-  </div>
+ 
 
   <!--<div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">A job works in Dev but fails in Production — how would you debug it?</div><div class="q-tags"><span class="q-tag tag-debug">Debugging</span></div></div><div class="q-chevron">▼</div></div>
@@ -12250,6 +12362,17 @@ def validate_df(df, name):
     </div>
   </div>
 
+   <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">Describe a production issue you handled end-to-end.</div><div class="q-tags"><span class="q-tag tag-debug">Scenario</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>"Our nightly ADF pipeline that loaded source tables from on-prem SQL Server into ADLS Gen2 started failing intermittently — specifically on some Mondays. Other days it ran fine, which made it harder to diagnose.</p>
+      <p>I checked ADF Monitor and found the Copy Activity was timing out on the SHIR connection. I SSH'd into the SHIR machine and found the disk was at 98% capacity — weeks of ADF diagnostic logs had accumulated with no rotation policy in place. I cleared the logs, freed the disk, and manually re-triggered the pipeline. It completed in 35 minutes.</p>
+      <p>For the fix: I added a Windows Scheduled Task on the SHIR VM to rotate logs weekly, configured an Azure Monitor alert to trigger at 80% disk usage (giving us reaction time before it became critical), and added a retry policy of 3 attempts with 5-minute intervals on the Copy Activity so transient issues don't cause immediate failure.</p>
+      <p>Since those changes, the alert has fired twice — both times the team resolved it proactively before it impacted any pipeline run. Zero recurrence of the failure itself."</p>
+      <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>The prevention steps — monitoring alert + log rotation + retry policy — are what show engineering maturity. Fix + prevent, not just fix.</div></div>
+    </div>
+  </div>
+
   <div class="hr-card q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">What would you do if your pipeline fails just before a client demo?</div><div class="q-tags"><span class="q-tag tag-scenario">Situational</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
@@ -16885,6 +17008,9 @@ function show(id, btn) {
         behavior: 'smooth'
     });
 }
+
+
+
 function toggle(header) {
   const card = header.closest('.q-card');
   const isOpen = card.classList.contains('open');
