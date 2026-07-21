@@ -52,6 +52,7 @@
     font-size:13px;
 
     font-weight:500;
+
 }
 
 .refresh-toggle button{
@@ -1624,6 +1625,127 @@
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">X</div>
     <div class="q-title-wrap">
+      <div class="q-title">Design an end-to-end ETL pipeline for large-scale data processing.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"I'd design this as a Medallion Architecture on Azure — metadata-driven, fault tolerant, and observable."</p>
+
+    <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;margin:12px 0;overflow-x:auto;">
+      <svg viewBox="0 0 860 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:0 auto;">
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#4f9cf9"/>
+          </marker>
+        </defs>
+
+        <!-- Sources -->
+        <rect x="10" y="60" width="100" height="36" rx="8" fill="#1e2d3d" stroke="#4f9cf9" stroke-width="1.2"/>
+        <text x="60" y="83" text-anchor="middle" fill="#e0eaff" font-size="11" font-family="monospace">SQL Server</text>
+        <rect x="10" y="110" width="100" height="36" rx="8" fill="#1e2d3d" stroke="#4f9cf9" stroke-width="1.2"/>
+        <text x="60" y="133" text-anchor="middle" fill="#e0eaff" font-size="11" font-family="monospace">REST APIs</text>
+        <rect x="10" y="160" width="100" height="36" rx="8" fill="#1e2d3d" stroke="#4f9cf9" stroke-width="1.2"/>
+        <text x="60" y="183" text-anchor="middle" fill="#e0eaff" font-size="11" font-family="monospace">Files / SFTP</text>
+        <rect x="10" y="210" width="100" height="36" rx="8" fill="#1e2d3d" stroke="#4f9cf9" stroke-width="1.2"/>
+        <text x="60" y="228" text-anchor="middle" fill="#e0eaff" font-size="11" font-family="monospace">Event Hubs</text>
+        <text x="60" y="240" text-anchor="middle" fill="#4f9cf9" font-size="9" font-family="monospace">(streaming)</text>
+
+        <!-- ADF box -->
+        <rect x="145" y="100" width="110" height="100" rx="10" fill="#162032" stroke="#38bdf8" stroke-width="1.5"/>
+        <text x="200" y="125" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="bold" font-family="sans-serif">ADF</text>
+        <text x="200" y="143" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">Orchestration</text>
+        <text x="200" y="158" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">Metadata-driven</text>
+        <text x="200" y="173" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">ForEach + Params</text>
+        <text x="200" y="188" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">Watermark CDC</text>
+
+        <!-- Arrows sources → ADF -->
+        <line x1="110" y1="78"  x2="145" y2="130" stroke="#4f9cf9" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="110" y1="128" x2="145" y2="145" stroke="#4f9cf9" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="110" y1="178" x2="145" y2="160" stroke="#4f9cf9" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="110" y1="228" x2="145" y2="175" stroke="#4f9cf9" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+        <!-- ADLS Bronze -->
+        <rect x="290" y="60" width="110" height="50" rx="10" fill="#162032" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="345" y="82" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="bold" font-family="sans-serif">🥉 Bronze</text>
+        <text x="345" y="99" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">Raw · Parquet · ADLS</text>
+
+        <!-- Arrow ADF → Bronze -->
+        <line x1="255" y1="140" x2="290" y2="90" stroke="#4f9cf9" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Databricks box -->
+        <rect x="290" y="145" width="110" height="80" rx="10" fill="#162032" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="345" y="168" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="bold" font-family="sans-serif">Databricks</text>
+        <text x="345" y="185" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">PySpark · Delta</text>
+        <text x="345" y="200" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">Validate · Clean</text>
+        <text x="345" y="215" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">Transform · Merge</text>
+
+        <!-- Arrow Bronze → Databricks -->
+        <line x1="345" y1="110" x2="345" y2="145" stroke="#4f9cf9" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- ADLS Silver -->
+        <rect x="440" y="60" width="110" height="50" rx="10" fill="#162032" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="495" y="82" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="bold" font-family="sans-serif">🥈 Silver</text>
+        <text x="495" y="99" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">Cleaned · Delta · ACID</text>
+
+        <!-- ADLS Gold -->
+        <rect x="440" y="145" width="110" height="50" rx="10" fill="#162032" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="495" y="167" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold" font-family="sans-serif">🥇 Gold</text>
+        <text x="495" y="184" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">Aggregated · KPIs</text>
+
+        <!-- Arrows Databricks → Silver/Gold -->
+        <line x1="400" y1="175" x2="440" y2="88" stroke="#4f9cf9" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <line x1="400" y1="185" x2="440" y2="168" stroke="#4f9cf9" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Synapse -->
+        <rect x="590" y="100" width="110" height="60" rx="10" fill="#162032" stroke="#34d399" stroke-width="1.5"/>
+        <text x="645" y="122" text-anchor="middle" fill="#34d399" font-size="12" font-weight="bold" font-family="sans-serif">Synapse</text>
+        <text x="645" y="139" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">Serverless SQL</text>
+        <text x="645" y="153" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">External tables</text>
+
+        <!-- Arrows Gold/Silver → Synapse -->
+        <line x1="550" y1="88"  x2="590" y2="120" stroke="#4f9cf9" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <line x1="550" y1="168" x2="590" y2="140" stroke="#4f9cf9" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Power BI -->
+        <rect x="740" y="100" width="110" height="60" rx="10" fill="#162032" stroke="#f472b6" stroke-width="1.5"/>
+        <text x="795" y="122" text-anchor="middle" fill="#f472b6" font-size="12" font-weight="bold" font-family="sans-serif">Power BI</text>
+        <text x="795" y="139" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">Dashboards</text>
+        <text x="795" y="153" text-anchor="middle" fill="#8bacc8" font-size="9.5" font-family="sans-serif">Reports</text>
+
+        <!-- Arrow Synapse → PBI -->
+        <line x1="700" y1="130" x2="740" y2="130" stroke="#4f9cf9" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Monitor/KV bar -->
+        <rect x="145" y="240" width="555" height="36" rx="8" fill="#111827" stroke="#334155" stroke-width="1.2"/>
+        <text x="422" y="257" text-anchor="middle" fill="#64748b" font-size="10" font-family="sans-serif">🔐 Key Vault (secrets)  ·  📊 Azure Monitor (alerts)  ·  📋 Audit Delta Table (logging)  ·  🔁 Git + ARM (CI/CD)</text>
+
+        <!-- Labels -->
+        <text x="60"  y="290" text-anchor="middle" fill="#4f9cf9" font-size="10" font-family="sans-serif">Sources</text>
+        <text x="200" y="290" text-anchor="middle" fill="#38bdf8" font-size="10" font-family="sans-serif">Orchestrate</text>
+        <text x="345" y="290" text-anchor="middle" fill="#a78bfa" font-size="10" font-family="sans-serif">Ingest + Transform</text>
+        <text x="495" y="290" text-anchor="middle" fill="#fbbf24" font-size="10" font-family="sans-serif">Store (Lakehouse)</text>
+        <text x="645" y="290" text-anchor="middle" fill="#34d399" font-size="10" font-family="sans-serif">Serve</text>
+        <text x="795" y="290" text-anchor="middle" fill="#f472b6" font-size="10" font-family="sans-serif">Consume</text>
+      </svg>
+    </div>
+
+    <ul>
+      <li><strong>Sources → ADF:</strong> On-prem SQL Server via SHIR, REST APIs via Web Activity, files via FTP connector, streaming events via Event Hubs. ADF is metadata-driven — Lookup reads config table, ForEach runs all sources in parallel with watermark-based incremental extraction.</li>
+      <li><strong>Bronze:</strong> Raw data lands on ADLS Gen2 as Parquet, partitioned by run date. No transformations — preserve source fidelity. Schema validation alert fires if schema changes.</li>
+      <li><strong>Databricks:</strong> PySpark notebooks clean, validate, deduplicate, and apply business rules. MERGE into Delta Silver/Gold tables — idempotent writes.</li>
+      <li><strong>Silver/Gold:</strong> Delta Lake tables on ADLS. Silver = cleaned source-aligned. Gold = business aggregates, KPI marts, dimensional models.</li>
+      <li><strong>Synapse + Power BI:</strong> Synapse Serverless creates external tables on Gold Delta paths. Power BI connects directly to Synapse for dashboards.</li>
+      <li><strong>Cross-cutting:</strong> Key Vault for all secrets, Azure Monitor for pipeline failure alerts within 5 minutes, audit Delta table for every run logged with rows in/out/status, Git + ARM templates for CI/CD across dev/test/prod.</li>
+    </ul>
+  </div>
+</div>
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
       <div class="q-title">How would you migrate a legacy ETL system to Databricks?</div>
     </div>
     <div class="q-chevron">▼</div>
@@ -1649,6 +1771,35 @@
       <li>Have a rollback plan — keep legacy runnable until you're confident the new system is stable in production.</li>
     </ul>
     <div class="callout tip"><span class="callout-icon">💡</span><div>"The biggest risk in a migration isn't technical — it's validation. If you can't prove the new output is identical to the old output on real production data, stakeholders won't trust the new system. Invest heavily in automated reconciliation before cutover."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Explain an ETL pipeline using Azure Data Factory — end to end.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Let me walk you through the exact ADF pipeline I built for the Citi project — it's a metadata-driven, incremental ETL pipeline that loads from on-prem SQL Server to ADLS and then triggers Databricks transformation."</p>
+    <p><strong>The pipeline flow (5 stages):</strong></p>
+    <ul>
+      <li><strong>Stage 1 — Lookup (Get Watermark):</strong> First activity runs a query against our Azure SQL config table — fetches the last successful load timestamp for each table. This is what makes the load incremental — we only pull records changed since this timestamp.</li>
+      <li><strong>Stage 2 — ForEach (Parallel ingestion):</strong> The Lookup returns an array of table configs. ForEach loops through them in parallel (up to 10 concurrent). Each iteration calls the same generic child pipeline with different parameters — table name, watermark column, target path.</li>
+      <li><strong>Stage 3 — Copy Activity (inside ForEach):</strong> Source is on-prem SQL Server via SHIR. Source query is dynamic: <code>SELECT * FROM @{item().table_name} WHERE @{item().watermark_col} > '@{activity('GetWatermark').output.firstRow.last_load_date}'</code>. Sink writes to ADLS Gen2 as Parquet, partitioned by run date.</li>
+      <li><strong>Stage 4 — Stored Procedure (Update watermark):</strong> Runs only on Copy Activity success (success dependency arrow). Updates the watermark table with the current timestamp. If Copy fails, watermark stays at last successful value — next run picks up from there.</li>
+      <li><strong>Stage 5 — Databricks Activity:</strong> After all ForEach iterations complete, triggers the Databricks transformation notebook. Passes run date and list of processed tables as parameters. ADF waits for completion and checks success/failure.</li>
+    </ul>
+    <p><strong>Supporting components:</strong></p>
+    <ul>
+      <li>Linked Services: SQL Server (via SHIR), ADLS Gen2 (Managed Identity), Azure SQL (for config), Databricks (token from Key Vault), Key Vault (for all secrets)</li>
+      <li>Trigger: Schedule trigger — every Monday at 6 PM</li>
+      <li>Error handling: Web Activity sends Teams notification on any pipeline failure. Every run writes to audit Delta table — rows in, rows out, status, error message, duration.</li>
+      <li>CI/CD: ADF connected to Azure DevOps Git. Changes go through PR review. ARM templates deployed to prod via Azure DevOps release pipeline — no one edits prod ADF directly.</li>
+    </ul>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The most important design decision in this pipeline is the watermark pattern — it's what makes re-runs safe. If the pipeline fails halfway, the watermark wasn't updated, so the next run re-extracts the failed window. No data loss, no human intervention needed."</div></div>
   </div>
 </div>
 
@@ -2259,6 +2410,357 @@ df.explain(True)   # True = full plan with cost info</code></pre>
 </div>
 
 
+<!--<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">A PySpark job processing 2 billion transaction records is taking more than 4 hours. How would you identify and eliminate the bottlenecks?</div>
+      <div class="q-tags">
+        <span class="q-tag tag-scenario">Scenario</span>
+        <span class="q-tag tag-perf">Performance</span>
+      </div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+
+  <div class="q-body">
+
+    <p>"Whenever a Spark job becomes slow, I don't immediately increase the cluster size. I first identify the bottleneck using the Spark UI, determine the root cause, and then apply the appropriate optimization."</p>
+
+    <p><strong>My troubleshooting approach:</strong></p>
+
+    <ol>
+      <li><strong>Analyze Spark UI</strong> (Jobs, Stages, Executors & SQL tab) to identify the slowest stage.</li>
+
+      <li><strong>Check Shuffle Read/Write</strong> to identify expensive joins, aggregations or repartitioning.</li>
+
+      <li><strong>Look for Data Skew</strong> if one task/executor is taking much longer than others.</li>
+
+      <li><strong>Monitor Spill to Disk & GC Time</strong> to identify memory pressure.</li>
+
+      <li><strong>Check Partition Count</strong> to ensure all executors are utilized efficiently.</li>
+
+      <li><strong>Review the Execution Plan</strong> using <code>df.explain(True)</code> to verify join strategy and predicate pushdown.</li>
+    </ol>
+
+    <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
+
+      <div style="padding:9px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-sec);">
+        Common Bottlenecks & Fixes
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr>
+            <th style="padding:10px;text-align:left;">Problem</th>
+            <th style="padding:10px;text-align:left;">Optimization</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <tr>
+            <td style="padding:10px;">Large Shuffle</td>
+            <td style="padding:10px;">Broadcast Join, Filter Early, Partitioning</td>
+          </tr>
+
+          <tr>
+            <td style="padding:10px;">Data Skew</td>
+            <td style="padding:10px;">AQE, Salting, Repartition</td>
+          </tr>
+
+          <tr>
+            <td style="padding:10px;">Spill to Disk</td>
+            <td style="padding:10px;">Increase Memory, Reduce Shuffle</td>
+          </tr>
+
+          <tr>
+            <td style="padding:10px;">Small Files</td>
+            <td style="padding:10px;">OPTIMIZE, Auto Compaction</td>
+          </tr>
+
+          <tr>
+            <td style="padding:10px;">Expensive Python UDF</td>
+            <td style="padding:10px;">Use Spark Built-in Functions</td>
+          </tr>
+
+          <tr>
+            <td style="padding:10px;">Too Few Partitions</td>
+            <td style="padding:10px;">Increase Parallelism using repartition()</td>
+          </tr>
+
+        </tbody>
+      </table>
+
+    </div>
+
+    <p><strong>Common Optimizations:</strong></p>
+
+    <ul>
+      <li>Enable <strong>Adaptive Query Execution (AQE)</strong>.</li>
+      <li>Use <strong>Broadcast Join</strong> for small lookup tables.</li>
+      <li>Filter data as early as possible (Predicate Pushdown).</li>
+      <li>Select only required columns (Column Pruning).</li>
+      <li>Cache DataFrames only if reused multiple times.</li>
+      <li>Optimize Delta tables using <code>OPTIMIZE</code> and <code>ZORDER</code>.</li>
+    </ul>
+
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">🐍 PySpark</div>
+<pre><code class="language-python">
+from pyspark.sql.functions import broadcast
+
+# Broadcast Join
+fact_df.join(broadcast(dim_df), "customer_id")
+
+# Enable AQE
+spark.conf.set("spark.sql.adaptive.enabled","true")
+
+# Increase partitions
+df = df.repartition(500)
+</code></pre>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">💡</span>
+      <div>
+        <strong>Interview Tip:</strong> Always start with <strong>"I will analyze the Spark UI first"</strong>. Interviewers want to know your troubleshooting methodology rather than memorized Spark tuning properties.
+      </div>
+    </div>
+
+  </div>
+</div>-->
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">A PySpark job processing 2 billion transaction records is taking 4+ hours. How would you identify and eliminate the bottlenecks?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"The first thing I do is open Spark UI — not guess. Every answer is in there."</p>
+    <p><strong>Step 1 — Find the slow stage:</strong> Go to Stages tab, sort by duration. Click the slowest stage and check three things:</p>
+    <ul>
+      <li><strong>Task duration variance</strong> — if most tasks finish in 10 seconds but one takes 3 hours → data skew</li>
+      <li><strong>Shuffle read/write size</strong> — if it's in hundreds of GBs → too much data moving between executors</li>
+      <li><strong>Spill to disk</strong> — non-zero spill means executors are out of memory and writing to disk, which is 100x slower</li>
+    </ul>
+    <p><strong>Step 2 — Common causes and fixes for 2 billion records:</strong></p>
+    <ul>
+      <li><strong>Not enough partitions:</strong> 2 billion rows in 200 partitions = 10 million rows per task. Target 128–256MB per partition. Calculate: <code>(2B rows × avg row size) / 200MB</code> = how many partitions you actually need. Use <code>repartition()</code> to redistribute evenly.</li>
+      <li><strong>Data skew:</strong> One key (like a high-volume merchant) has 500 million rows, others have 1 million. Salt the key — append a random number, groupBy salted key, then re-aggregate.</li>
+      <li><strong>Expensive joins:</strong> If joining 2B rows with a large table, check if the smaller side can be broadcast. If both are huge, ensure both are partitioned on the join key before joining.</li>
+      <li><strong>No predicate pushdown:</strong> If reading from Parquet/Delta without filters, Spark scans all 2B rows. Push date filters to the read — Spark's Catalyst pushes them down to file level, skipping files that don't match.</li>
+      <li><strong>Python UDFs:</strong> If there are any UDFs, replace them with native Spark functions. UDFs serialize row-by-row between JVM and Python — on 2B rows this adds hours.</li>
+      <li><strong>AQE not enabled:</strong> Enable <code>spark.sql.adaptive.enabled=true</code>. On 2B rows, AQE can dynamically handle skew joins and adjust shuffle partitions — this alone can cut runtime by 30–40%.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Enable AQE — always on for large jobs
+spark.conf.set("spark.sql.adaptive.enabled",           "true")
+spark.conf.set("spark.sql.adaptive.skewJoin.enabled",  "true")
+spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+
+# Check partition count and size BEFORE processing
+print(f"Partitions: {df.rdd.getNumPartitions()}")
+
+# Right-size partitions — target 200MB per partition
+# 2B rows × 200 bytes avg = 400GB / 200MB = ~2000 partitions
+df = df.repartition(2000)
+
+# Push filters EARLY — before any joins or aggregations
+df = (spark.read.format("delta")
+    .load("/mnt/delta/transactions")
+    .filter("transaction_date >= '2024-01-01'")   # partition pruning
+    .select("txn_id", "merchant_id", "amount")     # column pruning
+)
+
+# Broadcast small lookup table — eliminates shuffle
+from pyspark.sql.functions import broadcast
+result = df.join(broadcast(merchant_df), "merchant_id")
+
+# Check for spill after a run
+# Spark UI → Stage → Summary Metrics → Spill (Memory) + Spill (Disk)</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"My rule: never tune blindly. Open Spark UI, find the slow stage, look at task distribution and spill. The root cause tells you the fix — skew → salting, spill → more partitions or memory, shuffle explosion → broadcast or repartition before join."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">One executor is processing significantly more data than others. How would you detect and fix data skew?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Data skew is when data is unevenly distributed across partitions — one partition has 500 million rows and others have 1 million. The job can't finish until the last task finishes, so the entire job is as slow as that one skewed task."</p>
+    <p><strong>How to detect it:</strong></p>
+    <ul>
+      <li>Spark UI → Stages → click the slow stage → look at "Task Duration" distribution. If max duration is 10× the median → skew.</li>
+      <li>Check "Shuffle Read Size" per task. If one task reads 50GB and others read 100MB → skewed key.</li>
+      <li>In code: <code>df.groupBy("merchant_id").count().orderBy(col("count").desc()).show(10)</code> — if top merchant has 1000× more rows than the 10th → that key will skew your join or groupBy.</li>
+    </ul>
+    <p><strong>Fix 1 — Salting (most effective for groupBy skew):</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">from pyspark.sql.functions import col, rand, floor, concat, lit
+
+SALT = 10   # number of buckets
+
+# Step 1 — add random salt to skewed column
+df_salted = df.withColumn(
+    "merchant_id_salted",
+    concat(col("merchant_id"), lit("_"), (rand() * SALT).cast("int").cast("string"))
+)
+
+# Step 2 — first aggregation on salted key
+partial_agg = (df_salted
+    .groupBy("merchant_id_salted")
+    .agg(sum("amount").alias("partial_sum"))
+)
+
+# Step 3 — extract original key and re-aggregate
+from pyspark.sql.functions import split as _split
+
+final = (partial_agg
+    .withColumn("merchant_id", _split("merchant_id_salted", "_").getItem(0))
+    .groupBy("merchant_id")
+    .agg(sum("partial_sum").alias("total_amount"))
+)</code></pre>
+    </div>
+    <p><strong>Fix 2 — AQE Skew Join (automatic, no code change):</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># AQE detects skewed partitions at runtime and splits them automatically
+spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
+spark.conf.set("spark.sql.adaptive.skewJoin.skewedPartitionFactor", "5")
+# A partition is "skewed" if its size > 5x the median partition size
+
+# Fix 3 — Broadcast the smaller side of a skewed join
+from pyspark.sql.functions import broadcast
+result = large_txn_df.join(broadcast(merchant_ref_df), "merchant_id")
+# If merchant_ref_df is small enough (<10MB by default), no shuffle needed</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Enable AQE first — it handles skew automatically with zero code change. If AQE isn't enough (extreme skew like one key has 80% of all data), use salting. Salting is manual work but it's the most reliable fix for truly severe skew."</div></div>
+  </div>
+</div>
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you handle late-arriving data in pipelines?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Late-arriving data is data that arrives after the time window it belongs to has already been processed. It's very common in event-based systems — mobile apps go offline and batch events when reconnected, IoT devices have network delays, third-party systems send corrections hours later."</p>
+    <p><strong>In batch pipelines:</strong></p>
+    <ul>
+      <li><strong>Use event time, not processing time:</strong> Partition by <code>event_date</code> (when the event happened), not <code>load_date</code> (when we processed it). Late-arriving events for Jan 15 get written to the Jan 15 partition even if they arrive on Jan 17.</li>
+      <li><strong>Dynamic partition overwrite:</strong> When late data arrives for a past date, use dynamic partition overwrite — it rewrites only the affected date partition, not the entire table. Combined with MERGE, this handles both late inserts and late updates.</li>
+      <li><strong>Lookback window:</strong> Instead of processing only yesterday, always reprocess the last N days (e.g., 3 days). Any late data arriving within that window gets captured. Balance freshness vs reprocessing cost.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Batch — dynamic partition overwrite handles late data
+spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+df.write.format("delta") \
+    .partitionBy("event_date") \
+    .mode("overwrite") \
+    .save("/mnt/delta/silver/events")
+# If event_date=2024-01-15 has late arrivals on 2024-01-17,
+# only that partition gets rewritten — Jan 16 stays untouched
+
+# Streaming — watermark handles late-arriving events
+from pyspark.sql.functions import col, window
+
+(stream_df
+    .withWatermark("event_time", "2 hours")   # wait 2hrs for late events
+    .groupBy(
+        window("event_time", "1 hour"),
+        "customer_id"
+    )
+    .agg(sum("amount").alias("total"))
+    .writeStream
+    .outputMode("update")
+    .option("checkpointLocation", "/mnt/checkpoints/events")
+    .start("/mnt/delta/gold/hourly_totals")
+)
+# Events arriving up to 2 hours late are included in their correct window
+# Events arriving after 2 hours → dropped (window already closed)</code></pre>
+    </div>
+    <p><strong>In streaming pipelines:</strong></p>
+    <ul>
+      <li><strong>Watermark:</strong> Define how long Spark waits for late events before closing a window. <code>withWatermark("event_time", "2 hours")</code> — late events within 2 hours are included. After 2 hours, the window closes and state is cleaned up.</li>
+      <li><strong>Tradeoff:</strong> Larger watermark = more late data captured, but Spark holds more state in memory and results are less "real-time." Tune based on actual observed latency in your source system.</li>
+    </ul>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The right answer depends on the SLA. For a daily batch report, a 3-day lookback catches virtually all late data. For a real-time dashboard, a 30-minute watermark is usually enough. I always ask: what's the maximum realistic delay in this source? Set the watermark to 1.5× that."</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">A daily ETL job suddenly starts spilling data to disk during aggregations. What could be the reasons and fixes?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Spill means Spark ran out of executor memory during a shuffle or aggregation and started writing intermediate data to disk. Disk is 100x slower than RAM, so even a small amount of spill can double your job runtime."</p>
+    <p><strong>Common reasons it happens suddenly:</strong></p>
+    <ul>
+      <li><strong>Data volume grew:</strong> The job handled 50GB last month, now it's 200GB — same cluster, 4x the data, same memory. The most common cause.</li>
+      <li><strong>Data skew appeared:</strong> A new high-volume merchant or customer suddenly has 100M transactions. One partition is gigantic and overflows the executor's memory.</li>
+      <li><strong>Too few shuffle partitions:</strong> Default 200 shuffle partitions. If data grew 4x, each shuffle partition is 4x larger. Increase partition count to keep each partition manageable.</li>
+      <li><strong>Another job on the same cluster:</strong> Shared all-purpose cluster has other notebooks running, consuming executor memory. Job that fit in memory before no longer does.</li>
+      <li><strong>Caching consumed too much memory:</strong> A cached DataFrame is taking up the execution memory region, leaving less for the aggregation.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Detect spill — check Spark UI or in code
+# Spark UI → Stage → Summary Metrics → "Spill (Memory)" and "Spill (Disk)"
+# Any non-zero value = spill happening
+
+# Fix 1 — Increase shuffle partitions so each partition is smaller
+spark.conf.set("spark.sql.shuffle.partitions", "800")
+# Was 200 → each partition was 1GB → now 800 → each partition is 250MB
+
+# Fix 2 — Enable AQE to auto-adjust partition count
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+
+# Fix 3 — Increase executor memory (if cluster config allows)
+# In cluster config: spark.executor.memory = 16g → 32g
+
+# Fix 4 — Fix skew causing one huge partition
+spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
+
+# Fix 5 — Repartition before aggregation to distribute load evenly
+df = df.repartition(800, "merchant_id")   # co-locate same keys
+result = df.groupBy("merchant_id").agg(sum("amount"))
+
+# Fix 6 — Check if cached DFs are consuming execution memory
+# Unpersist any DataFrames no longer needed
+df_lookup.unpersist()
+
+# Fix 7 — Tune memory fraction
+# By default 60% of executor memory is for execution
+# If you don't cache much, give more to execution
+spark.conf.set("spark.memory.fraction", "0.8")        # 80% for Spark
+spark.conf.set("spark.memory.storageFraction", "0.2") # 20% for cache, 80% for execution</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"First thing I check is whether data volume increased. If the answer is yes, I increase shuffle partitions proportionally — if data is 4x bigger, set shuffle partitions to 4x the previous value. This is usually enough to eliminate the spill without touching cluster size."</div></div>
+  </div>
+</div>
+
+
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">X</div>
@@ -2566,6 +3068,60 @@ spark.sql("DESCRIBE HISTORY silver.orders LIMIT 10").show(truncate=False)</code>
   </div>
 </div>
 
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">You receive millions of small files daily from multiple payment systems. How would you handle the small file problem?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Millions of small files kill query performance in two ways — too many file open operations slow down reads, and the driver runs out of memory tracking metadata for all those files. I attack this at both write time and read time."</p>
+    <p><strong>At write time — prevent small files from accumulating:</strong></p>
+    <ul>
+      <li><strong>Optimize Write:</strong> Databricks feature that automatically coalesces output partitions before writing — instead of 1000 small files per micro-batch, it writes 10 right-sized files.</li>
+      <li><strong>Auto-Compaction:</strong> After every write, Delta automatically checks if newly written files are below target size and merges them in the background. Zero manual effort.</li>
+      <li><strong>Batch micro-batches:</strong> If payment systems push events every second, buffer them and process in 15-minute or hourly micro-batches instead. Fewer writes = fewer file creation events.</li>
+    </ul>
+    <p><strong>At read time / maintenance — fix existing small files:</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark / SQL</div>
+      <pre><code class="language-python"># Enable write-time prevention — set on table
+spark.sql("""
+    ALTER TABLE payments SET TBLPROPERTIES (
+        'delta.autoOptimize.optimizeWrite' = 'true',  -- coalesce at write
+        'delta.autoOptimize.autoCompact'   = 'true'   -- compact after write
+    )
+""")
+
+# Manual OPTIMIZE — compact existing small files into ~1GB files
+# Run as scheduled job — daily or weekly depending on write volume
+spark.sql("OPTIMIZE payments")
+
+# OPTIMIZE a specific partition only (faster for daily maintenance)
+spark.sql("OPTIMIZE payments WHERE payment_date = '2024-01-15'")
+
+# Auto Loader — reads new files incrementally without listing millions of files
+# Use File Notification mode for high-volume sources
+df = (spark.readStream
+    .format("cloudFiles")
+    .option("cloudFiles.format", "json")
+    .option("cloudFiles.useNotifications", "true")   # event-driven, not listing
+    .option("cloudFiles.schemaLocation", "/mnt/checkpoints/payments/schema")
+    .load("abfss://bronze@account.dfs.core.windows.net/payments/")
+)
+
+# Repartition before writing — control output file count
+df.repartition(10).write.format("delta").mode("append").save(target_path)
+
+# VACUUM to remove stale files from old versions
+spark.sql("VACUUM payments RETAIN 168 HOURS")</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Enable <code>optimizeWrite + autoCompact</code> on every table that receives frequent small writes — it's two lines of ALTER TABLE and it prevents the problem from ever growing. For existing tables already suffering from millions of files, run OPTIMIZE partition by partition during off-peak hours rather than optimizing the entire table at once."</div></div>
+  </div>
+</div>
+
   <!-- Q2 -->
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)">
@@ -2586,6 +3142,189 @@ spark.sql("DESCRIBE HISTORY silver.orders LIMIT 10").show(truncate=False)</code>
     </div>
   </div>
 
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Explain Incremental Load. What is the difference between Watermark and Timestamp?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p><strong>Incremental Load:</strong> Instead of reloading all data every run (full load), you only extract and process records that are new or changed since the last successful run. This reduces load on source systems, cuts processing time, and makes pipelines faster and cheaper as data grows.</p>
+
+    <p><strong>The difference between Watermark and Timestamp:</strong></p>
+    <ul>
+      <li><strong>Timestamp</strong> — a column in the source data that records when a row was created or last updated. Examples: <code>created_at</code>, <code>updated_at</code>, <code>modified_date</code>. It's a property of the data itself — it's there in the source table regardless of your pipeline.</li>
+      <li><strong>Watermark</strong> — a value stored by your pipeline that tracks "how far we've successfully processed." It's a pipeline construct — you create and manage it. After each successful run, you update the watermark to the maximum timestamp processed. The next run uses the watermark as a filter: <code>WHERE updated_at > last_watermark</code>.</li>
+    </ul>
+    <div class="schema-box">
+      <strong>Relationship:</strong> Watermark stores the last seen value of the Timestamp column.<br>
+      Timestamp is in the source data. Watermark is in your control table.<br>
+      Together they enable incremental load.
+    </div>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark / SQL</div>
+      <pre><code class="language-sql">-- Source table has a TIMESTAMP column (updated_at)
+-- orders: order_id, customer_id, amount, updated_at
+
+-- Watermark control table (YOUR pipeline creates this)
+CREATE TABLE watermark_control (
+    table_name     VARCHAR(100) PRIMARY KEY,
+    last_load_date DATETIME,        -- this IS the watermark value
+    last_run_status VARCHAR(20)
+);
+-- Initial value: '1900-01-01' → first run loads everything
+
+-- Every incremental run:
+-- Step 1: Get watermark
+SELECT last_load_date FROM watermark_control WHERE table_name = 'orders'
+-- Returns: 2024-01-14 18:00:00   ← this is the watermark
+
+-- Step 2: Extract only rows with timestamp > watermark
+SELECT * FROM orders
+WHERE updated_at > '2024-01-14 18:00:00'   -- timestamp column
+AND   updated_at <= GETDATE()               -- upper bound = now
+
+-- Step 3: After successful load → update watermark to current time
+UPDATE watermark_control
+SET last_load_date = GETDATE()
+WHERE table_name = 'orders'
+-- Next run will use this new watermark</code></pre>
+    </div>
+    <p><strong>Watermark in Streaming (Structured Streaming — different usage):</strong></p>
+    <p>In Structured Streaming, "watermark" has a slightly different meaning — it tells Spark how long to wait for late-arriving events before closing a time window. <code>withWatermark("event_time", "10 minutes")</code> means events up to 10 minutes late are still included in their correct window. After that, the window closes and state is freed. This is a memory management mechanism, not just a filter.</p>
+    <div class="callout tip"><span class="callout-icon">💡</span><div><strong>Simple way to remember:</strong> In batch ETL — Timestamp is in the data, Watermark is in your control table. Watermark = memory of how far your pipeline has run. In streaming — Watermark = tolerance for late data before closing a time window.</div></div>
+  </div>
+</div>
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you handle duplicate records in a PySpark DataFrame? Why does duplicate data exist? List all methods.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p><strong>Why duplicate data exists:</strong></p>
+    <ul class="ul-2col">
+      <li>Network retries — same event sent twice when no acknowledgment received</li>
+      <li>At-least-once delivery in Kafka/Event Hubs — guaranteed delivery but may duplicate</li>
+      <li>Multiple source systems sending the same record</li>
+      <li>Pipeline restarts reprocessing already-loaded data</li>
+      <li>ETL bugs — same batch loaded twice</li>
+      <li>CDC sending both insert and update for the same row</li>
+      <li>Manual corrections applied on top of auto-corrections</li>
+      <li>Joins producing cartesian explosion (implicit duplicates)</li>
+    </ul>
+    <p><strong>All methods to handle duplicates in PySpark:</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">from pyspark.sql.functions import row_number, col, count, sha2, concat_ws
+from pyspark.sql.window import Window
+
+# ── Method 1: dropDuplicates() — simplest ─────────────
+# Drops rows where ALL columns are identical
+df.dropDuplicates()
+
+# Drop duplicates based on specific key columns (most common)
+df.dropDuplicates(["order_id"])
+df.dropDuplicates(["order_id", "product_id"])   # composite key
+
+# ── Method 2: distinct() — all columns must match ─────
+# Same as dropDuplicates() with no arguments
+df.distinct()
+
+# ── Method 3: ROW_NUMBER — most control ───────────────
+# Keeps the LATEST record per key (by updated_at)
+window = Window.partitionBy("order_id").orderBy(col("updated_at").desc())
+
+df_deduped = (df
+    .withColumn("rn", row_number().over(window))
+    .filter(col("rn") == 1)
+    .drop("rn")
+)
+# Use when: you want to keep a SPECIFIC version (latest, earliest, highest)
+
+# ── Method 4: groupBy + agg ───────────────────────────
+# Collapse duplicates by aggregating
+from pyspark.sql.functions import max as _max, first
+df_deduped = (df
+    .groupBy("order_id")
+    .agg(
+        _max("updated_at").alias("updated_at"),
+        first("customer_id").alias("customer_id"),
+        first("amount").alias("amount")
+    )
+)
+# Use when: you want to aggregate values across duplicates (sum, max etc.)
+
+# ── Method 5: Delta MERGE — prevent at write time ─────
+# Best long-term solution — duplicates never land in the table
+from delta.tables import DeltaTable
+DeltaTable.forPath(spark, "/mnt/delta/orders") \
+    .alias("t").merge(df.alias("s"), "t.order_id = s.order_id") \
+    .whenMatchedUpdateAll() \
+    .whenNotMatchedInsertAll() \
+    .execute()
+
+# ── Method 6: Streaming dedup with watermark ──────────
+(df.withWatermark("event_time", "10 minutes")
+   .dropDuplicates(["event_id"])
+   .writeStream.format("delta")
+   .option("checkpointLocation", "/mnt/checkpoints/orders")
+   .start("/mnt/delta/orders")
+)
+
+# ── Method 7: Hash-based dedup ────────────────────────
+# Generate a hash of all columns — identical rows = same hash
+df_with_hash = df.withColumn(
+    "row_hash",
+    sha2(concat_ws("||", *df.columns), 256)
+)
+df_deduped = df_with_hash.dropDuplicates(["row_hash"]).drop("row_hash")
+
+# ── Detect duplicates before removing ─────────────────
+dup_count = df.count() - df.dropDuplicates(["order_id"]).count()
+print(f"Duplicate rows: {dup_count}")
+
+# Find which records are duplicated
+dups = (df.groupBy("order_id")
+    .agg(count("*").alias("cnt"))
+    .filter(col("cnt") > 1)
+    .orderBy(col("cnt").desc())
+)
+dups.show()</code></pre>
+    </div>
+
+    <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
+      <div style="padding:9px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-sec);">When to use which method</div>
+      <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:#E6F1FB;border:1px solid #B5D4F4;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;font-weight:700;color:#0C447C;margin-bottom:4px;">dropDuplicates / distinct</div>
+          <div style="font-size:12px;color:#042C53;">Quick one-off cleanup. No control over which duplicate is kept.</div>
+        </div>
+        <div style="background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;font-weight:700;color:#854F0B;margin-bottom:4px;">ROW_NUMBER</div>
+          <div style="font-size:12px;color:#412402;">Keep latest/earliest/specific version. Most used in production ETL.</div>
+        </div>
+        <div style="background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;font-weight:700;color:#0F6E56;margin-bottom:4px;">Delta MERGE</div>
+          <div style="font-size:12px;color:#04342C;">Prevent duplicates at write time. Best long-term solution for production.</div>
+        </div>
+        <div style="background:#FBEAF0;border:1px solid #F4C0D1;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;font-weight:700;color:#993556;margin-bottom:4px;">Streaming + watermark</div>
+          <div style="font-size:12px;color:#4B1528;">Real-time dedup within a time window. For streaming pipelines.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"My preference in production: MERGE at write time (preventive) + ROW_NUMBER in transformation (curative). MERGE stops duplicates from landing in the first place. ROW_NUMBER handles cases where duplicates already exist and you need the most recent version of each record."</div></div>
+  </div>
+</div>
 
   <!-- Q4 -->
   <div class="q-card">
@@ -3468,6 +4207,75 @@ except Exception as e:
       <p><strong>Best practice for production:</strong> Don't silently accept all drift. Add a schema validation step that compares incoming schema to expected schema — alert on changes so the team can decide consciously whether to accept or reject them.</p>
     </div>
   </div>
+
+  <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How would you handle multiple sources with schema differences?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Schema differences across sources are extremely common — different column names for the same concept, different data types, some sources having extra columns others don't. My approach is to normalize schemas at the Silver layer and never let schema inconsistency reach Gold."</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">from pyspark.sql.functions import col, lit, to_date, coalesce
+from pyspark.sql.types import DoubleType, StringType
+
+# Source A: {order_id, cust_id, amt, dt}
+# Source B: {order_id, customer_id, amount, order_date, currency}
+# Source C: {txn_id, customer_id, value, transaction_date}
+
+# Step 1 — Define canonical (target) schema
+CANONICAL_COLS = ["order_id", "customer_id", "amount", "order_date", "currency"]
+
+# Step 2 — Normalize each source to canonical schema
+def normalize_source_a(df):
+    return (df
+        .withColumnRenamed("cust_id", "customer_id")
+        .withColumnRenamed("amt",     "amount")
+        .withColumn("amount",     col("amount").cast(DoubleType()))
+        .withColumn("order_date", to_date(col("dt"), "yyyy-MM-dd"))
+        .withColumn("currency",   lit("USD"))   # source A doesn't have currency — default
+        .select(CANONICAL_COLS)
+    )
+
+def normalize_source_b(df):
+    return (df
+        .withColumn("amount",     col("amount").cast(DoubleType()))
+        .withColumn("order_date", to_date(col("order_date"), "dd/MM/yyyy"))
+        .select(CANONICAL_COLS)
+    )
+
+def normalize_source_c(df):
+    return (df
+        .withColumnRenamed("txn_id",           "order_id")
+        .withColumnRenamed("value",             "amount")
+        .withColumnRenamed("transaction_date",  "order_date")
+        .withColumn("currency", lit("GBP"))
+        .select(CANONICAL_COLS)
+    )
+
+# Step 3 — Union all normalized sources
+df_a = normalize_source_a(spark.read.format("delta").load("/mnt/bronze/source_a"))
+df_b = normalize_source_b(spark.read.format("delta").load("/mnt/bronze/source_b"))
+df_c = normalize_source_c(spark.read.format("delta").load("/mnt/bronze/source_c"))
+
+unified = df_a.union(df_b).union(df_c)
+
+# Step 4 — Validate after union
+assert set(unified.columns) == set(CANONICAL_COLS), "Schema mismatch after union"
+assert unified.filter(col("order_id").isNull()).count() == 0, "Null order_ids found"
+
+# Step 5 — Handle extra columns gracefully (when sources have MORE columns)
+# Use select with coalesce for optional columns
+# unified.select(*CANONICAL_COLS)   # only canonical, drop extras</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The canonical schema is your contract. Define it once in a config file, version-control it, and every source normalization function is judged against it. If a new source has a column that doesn't map — flag it for review, don't silently drop it."</div></div>
+  </div>
+</div>
+
 
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">How do you manage Linked Services and Datasets in ADF at scale?</div><div class="q-tags"><span class="q-tag tag-pattern">Best Practice</span></div></div><div class="q-chevron">▼</div></div>
@@ -4370,6 +5178,89 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
     <div class="callout tip"><span class="callout-icon">💡</span><div>"The fastest path to the answer is almost always: what is different between dev and prod? I make a checklist — data volume, cluster config, permissions, connection strings, schema — and go through each one systematically. The culprit is usually the second or third item."</div></div>
   </div>
 </div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What is dbutils in Databricks? Explain the commands you have used.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"dbutils is Databricks' built-in utility library — it's available in every Databricks notebook without any import. It gives you tools to interact with the filesystem, manage secrets, run other notebooks, and work with widgets."</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># ── dbutils.fs — filesystem operations ───────────────
+# List files in ADLS path
+dbutils.fs.ls("abfss://bronze@account.dfs.core.windows.net/orders/")
+# Returns: [FileInfo(path, name, size)]
+
+# Copy a file
+dbutils.fs.cp(
+    "abfss://bronze@account.dfs.core.windows.net/orders/raw.csv",
+    "abfss://archive@account.dfs.core.windows.net/orders/raw.csv"
+)
+
+# Move (rename/relocate) a file
+dbutils.fs.mv("/mnt/bronze/temp/file.csv", "/mnt/bronze/final/file.csv")
+
+# Delete a file or folder
+dbutils.fs.rm("/mnt/bronze/temp/", recurse=True)
+
+# Check if a path exists
+def path_exists(path):
+    try:
+        dbutils.fs.ls(path)
+        return True
+    except Exception:
+        return False
+
+if path_exists("/mnt/bronze/orders/2024-01-15"):
+    print("Today's file arrived — proceed")
+
+# ── dbutils.secrets — fetch secrets from Key Vault ────
+# Most important one I use daily on Citi project
+sql_password = dbutils.secrets.get(scope="kv-scope", key="sql-server-password")
+adls_key     = dbutils.secrets.get(scope="kv-scope", key="adls-access-key")
+sp_secret    = dbutils.secrets.get(scope="kv-scope", key="service-principal-secret")
+
+# List available secret scopes
+dbutils.secrets.listScopes()
+
+# ── dbutils.notebook — call other notebooks ───────────
+# Run a child notebook and pass parameters
+result = dbutils.notebook.run(
+    path     = "/Shared/pipelines/transform_orders",
+    timeout  = 3600,   # seconds before timeout
+    arguments= {
+        "run_date":   "2024-01-15",
+        "table_name": "orders",
+        "mode":       "incremental"
+    }
+)
+print(result)   # whatever the child notebook returns via dbutils.notebook.exit()
+
+# In the child notebook — return a value
+dbutils.notebook.exit("success: 50000 rows processed")
+
+# ── dbutils.widgets — pass parameters to notebooks ────
+# Create a text input widget (visible in notebook UI)
+dbutils.widgets.text("run_date",   "2024-01-15", "Run Date")
+dbutils.widgets.text("table_name", "orders",     "Table Name")
+dbutils.widgets.dropdown("mode",   "incremental", ["full", "incremental"], "Load Mode")
+
+# Read the widget value
+run_date   = dbutils.widgets.get("run_date")
+table_name = dbutils.widgets.get("table_name")
+mode       = dbutils.widgets.get("mode")
+
+# Remove widgets
+dbutils.widgets.removeAll()</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The three I use most in production: <code>dbutils.secrets.get()</code> for all credentials (never hardcode anything), <code>dbutils.fs.ls()</code> to check if files arrived before proceeding, and <code>dbutils.notebook.run()</code> to call child transformation notebooks from a master orchestration notebook."</div></div>
+  </div>
+</div>
 </div><!-- /databricks -->
 
 <!-- ════════════════════════════════════════════════════════
@@ -4821,6 +5712,66 @@ grouped = df_by_customer.groupBy("customer_id").sum("amount")
       <li><strong>Cache strategically:</strong> If the same DataFrame is used multiple times in a job, cache it after the first transformation. Without caching, Spark recomputes it from scratch every time it's referenced.</li>
     </ul>
     <div class="callout tip"><span class="callout-icon">💡</span><div>I always compare Spark UI from the last good run vs the slow run side by side. The difference in stage timings and shuffle sizes usually points to the problem within 10 minutes — without guessing.</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Your Spark cluster has 100 cores, but only 20 are actively utilized. How would you improve parallelism?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p><strong>What parallelism means in Spark:</strong></p>
+    <p>Parallelism in Spark means how many tasks run simultaneously across your cluster. Spark splits data into partitions, and each partition is processed by one task on one core. If you have 100 cores and 100 partitions, all 100 tasks run in parallel — maximum parallelism. If you have 100 cores but only 20 partitions, only 20 tasks run at a time and 80 cores sit idle.</p>
+    <div class="schema-box">
+      <strong>Rule:</strong> Number of active tasks = min(number of partitions, number of available cores)<br>
+      100 cores + 20 partitions = 20 active tasks = 80 idle cores = 20% utilization
+    </div>
+    <p><strong>How to diagnose low utilization:</strong></p>
+    <ul>
+      <li>Spark UI → Executors tab → check "Active Tasks" vs total cores. If 80 cores show 0 tasks, you have too few partitions.</li>
+      <li><code>df.rdd.getNumPartitions()</code> — if this returns 20 on a 100-core cluster, that's your problem.</li>
+      <li>Check <code>spark.sql.shuffle.partitions</code> — default is 200, but if your data is small or you haven't tuned it, shuffle operations create exactly that many partitions regardless of cluster size.</li>
+    </ul>
+    <p><strong>Fixes:</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Check current partitions
+print(df.rdd.getNumPartitions())   # returns 20 → only 20 tasks running
+
+# Fix 1 — repartition to match cores
+# Rule of thumb: 2-4 partitions per core for good utilization
+df = df.repartition(300)   # 100 cores × 3 = 300 partitions
+
+# Fix 2 — tune shuffle partitions (affects joins and groupBys)
+spark.conf.set("spark.sql.shuffle.partitions", "300")
+# Default 200 is too low for 100 cores — increase it
+
+# Fix 3 — Enable AQE to auto-tune partition count
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+# AQE dynamically adjusts partition count at runtime based on actual data size
+
+# Fix 4 — Check if data source is the bottleneck
+# Reading 1 file = 1 partition → only 1 core used
+# Solution: read with multiple partitions
+df = (spark.read.format("jdbc")
+    .option("url", jdbc_url)
+    .option("dbtable", "transactions")
+    .option("partitionColumn", "txn_id")
+    .option("lowerBound", "1")
+    .option("upperBound", "1000000000")
+    .option("numPartitions", "100")   # 100 parallel reads = 100 cores active
+    .load()
+)
+
+# Check utilization after fix
+print(df.rdd.getNumPartitions())   # should now be 300</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"Low core utilization almost always means too few partitions. The fix is simple — repartition your DataFrame to at least 2-3× your core count. But don't go too high either — millions of tiny partitions create task scheduling overhead that's just as bad."</div></div>
   </div>
 </div>
 
@@ -5726,6 +6677,98 @@ result = orders.join(customers, "customer_id")</code></pre>
   </div>
 </div>
 
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Explain how the word "Partitioning" is used in PySpark.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"Partitioning in PySpark is actually used in three different contexts. Let me explain each clearly."</p>
+
+    <p><strong>1. Spark In-Memory Partitioning (RDD/DataFrame partitions):</strong></p>
+    <p>When Spark loads data, it splits it into partitions — chunks held in executor memory. Each partition is processed by one task on one core. This is purely an in-memory concept. More partitions = more parallelism. Target 128–256MB per partition.</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Check current in-memory partitions
+print(df.rdd.getNumPartitions())   # e.g., 200
+
+# Increase partitions — full shuffle, balanced distribution
+df = df.repartition(400)
+
+# Increase and co-locate by key — good before joins/groupBys
+df = df.repartition(400, "customer_id")
+
+# Decrease partitions — NO shuffle (just merge adjacent partitions)
+df = df.coalesce(10)   # use before writing to reduce output file count
+
+# Shuffle partitions — controls partition count AFTER a shuffle
+# (joins, groupBys, aggregations)
+spark.conf.set("spark.sql.shuffle.partitions", "400")</code></pre>
+    </div>
+
+    <p><strong>2. Storage/Disk Partitioning (Delta Lake / Parquet folder structure):</strong></p>
+    <p>When writing to disk, partitioning creates physical folder structure based on a column's values. This is different from in-memory partitioning — it's about how files are organized on ADLS. Queries filtering on the partition column skip entire folders — called partition pruning.</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Write with storage partitioning — creates folder structure on ADLS
+df.write.format("delta") \
+    .partitionBy("year", "month") \   # disk partition
+    .save("/mnt/delta/orders")
+# Creates: /year=2024/month=01/, /year=2024/month=02/ etc.
+
+# Query only scans the matching folder — partition pruning
+spark.sql("""
+    SELECT * FROM orders
+    WHERE year = 2024 AND month = 1   -- skips all other year/month folders
+""")
+
+# Best for: low-cardinality columns (date, region, status)
+# Avoid: high-cardinality columns (customer_id, order_id) → too many folders</code></pre>
+    </div>
+
+    <p><strong>3. SQL/Synapse Partitioning (Data Warehouse table distribution):</strong></p>
+    <p>In Synapse Dedicated Pool, partitioning splits a table into segments at the physical storage level for pruning. Combined with distribution strategy (Hash, Round Robin, Replicate), it controls how data is stored across the 60 distribution nodes.</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; SQL</div>
+      <pre><code class="language-sql">-- Synapse table with Hash distribution + date partition
+CREATE TABLE orders (
+    order_id    BIGINT,
+    customer_id INT,
+    amount      DECIMAL(10,2),
+    order_date  DATE
+)
+WITH (
+    DISTRIBUTION = HASH(customer_id),   -- co-locate by customer_id for joins
+    PARTITION    (order_date RANGE RIGHT FOR VALUES  -- partition by date for pruning
+        ('2024-01-01','2024-02-01','2024-03-01'))
+);</code></pre>
+    </div>
+
+    <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
+      <div style="padding:9px 14px;background:var(--surface2);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-sec);">The three meanings at a glance</div>
+      <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div style="background:#E6F1FB;border:1px solid #B5D4F4;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;font-weight:700;color:#0C447C;margin-bottom:4px;">In-Memory (Spark)</div>
+          <div style="font-size:12px;color:#042C53;line-height:1.8;">Controls parallelism<br>repartition / coalesce<br>Target: 128–256MB<br>Lives in executor RAM</div>
+        </div>
+        <div style="background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;font-weight:700;color:#854F0B;margin-bottom:4px;">Storage (Delta/Parquet)</div>
+          <div style="font-size:12px;color:#412402;line-height:1.8;">Controls folder structure<br>partitionBy() at write<br>Enables pruning<br>Lives on ADLS disk</div>
+        </div>
+        <div style="background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:12px;font-weight:700;color:#0F6E56;margin-bottom:4px;">DW (Synapse)</div>
+          <div style="font-size:12px;color:#04342C;line-height:1.8;">Controls DW segments<br>PARTITION BY in DDL<br>Combined with HASH<br>Lives in DW storage</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!--
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">Explain partitioning and bucketing in Apache Spark and when to use each.</div><div class="q-tags"><span class="q-tag tag-arch">Storage</span></div></div><div class="q-chevron">▼</div></div>
@@ -6207,6 +7250,82 @@ WHERE order_date BETWEEN '2024-01-01' AND '2024-01-31';</code></pre>
   </div>
 </div>
 
+ <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Explain the MERGE statement. How is it different from UPSERT?</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>UPSERT is a concept: insert if a record doesn't exist, update if it does. MERGE is the SQL statement that implements this — and more. MERGE is a superset of UPSERT — it can handle UPDATE, INSERT, and DELETE in one atomic statement.</p>
+      <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+      <pre><code class="language-sql">MERGE INTO target_table AS t
+USING source_table AS s
+ON t.order_id = s.order_id
+WHEN MATCHED AND s.amount != t.amount THEN
+    UPDATE SET t.amount = s.amount, t.updated_at = GETDATE()
+WHEN NOT MATCHED BY TARGET THEN
+    INSERT (order_id, amount, created_at)
+    VALUES (s.order_id, s.amount, GETDATE())
+WHEN NOT MATCHED BY SOURCE THEN
+    DELETE;  -- rows in target not in source → delete</code></pre></div></div>
+      <p>The <code>WHEN NOT MATCHED BY SOURCE THEN DELETE</code> clause goes beyond UPSERT — it's a full sync that removes rows from target that no longer exist in source. MERGE is atomic — either all three operations succeed or none do.</p>
+    </div>
+  </div>
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Your Delta Lake MERGE operation suddenly became 3x slower after data volume increased. How would you optimize it?</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"MERGE scans the target table to find matching rows. As the table grows to terabytes, that scan gets expensive. The fix is to reduce how much of the target table MERGE needs to scan."</p>
+    <p><strong>Root causes:</strong></p>
+    <ul>
+      <li>Target table has no partitioning — MERGE scans all files to find matches</li>
+      <li>Too many small files have accumulated — thousands of files = thousands of file open operations per scan</li>
+      <li>No Z-ORDER on the merge key — data skipping can't eliminate files</li>
+      <li>Source DataFrame is large with no filter — MERGE compares every source row against the entire target</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark / SQL</div>
+      <pre><code class="language-python"># Fix 1 — Partition the target table on a date column
+# MERGE on today's partition only scans today's files
+spark.sql("""
+    MERGE INTO transactions t
+    USING updates s
+    ON t.txn_id = s.txn_id
+    AND t.txn_date = s.txn_date   -- partition column in join condition
+    WHEN MATCHED THEN UPDATE SET *
+    WHEN NOT MATCHED THEN INSERT *
+""")
+
+# Fix 2 — Z-ORDER target on the merge key — improves data skipping
+spark.sql("OPTIMIZE transactions ZORDER BY (txn_id)")
+
+# Fix 3 — Filter source to only recent/changed records
+# Don't merge ALL 2B source rows — only what actually changed
+updates = source_df.filter(col("updated_at") > last_run_timestamp)
+
+# Fix 4 — Compact target table before MERGE
+spark.sql("OPTIMIZE transactions")   # compact small files first
+# MERGE on 100 large files is much faster than MERGE on 100,000 small files
+
+# Fix 5 — Enable low shuffle merge (Databricks 12.1+)
+spark.conf.set("spark.databricks.delta.merge.enableLowShuffle", "true")
+# Reduces shuffle by only writing changed files, not all matched files
+
+# Fix 6 — Deletion vectors — fast deletes without file rewrite
+spark.sql("""
+    ALTER TABLE transactions
+    SET TBLPROPERTIES ('delta.enableDeletionVectors' = 'true')
+""")</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"The biggest win is almost always Fix 1 — add the partition column to the MERGE join condition. This tells Delta to only look at the relevant partition, not the entire terabyte table. A MERGE that took 3 hours on an unpartitioned table often drops to 10 minutes after this one change."</div></div>
+  </div>
+</div>
 
 
 <div class="q-card">
@@ -6280,59 +7399,57 @@ stream_df.writeStream \
   </div>
 </div>
 
+
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">X</div>
     <div class="q-title-wrap">
-      <div class="q-title">How do you handle late-arriving data in pipelines?</div>
+      <div class="q-title">A Delta table has grown to several terabytes and query performance is degrading. What optimization strategies would you apply?</div>
     </div>
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
-    <p>"Late-arriving data is data that arrives after the time window it belongs to has already been processed. It's very common in event-based systems — mobile apps go offline and batch events when reconnected, IoT devices have network delays, third-party systems send corrections hours later."</p>
-    <p><strong>In batch pipelines:</strong></p>
+    <p>"A terabyte-scale Delta table degrades for predictable reasons — too many small files, no partition pruning, no data skipping. I address them in order of impact."</p>
     <ul>
-      <li><strong>Use event time, not processing time:</strong> Partition by <code>event_date</code> (when the event happened), not <code>load_date</code> (when we processed it). Late-arriving events for Jan 15 get written to the Jan 15 partition even if they arrive on Jan 17.</li>
-      <li><strong>Dynamic partition overwrite:</strong> When late data arrives for a past date, use dynamic partition overwrite — it rewrites only the affected date partition, not the entire table. Combined with MERGE, this handles both late inserts and late updates.</li>
-      <li><strong>Lookback window:</strong> Instead of processing only yesterday, always reprocess the last N days (e.g., 3 days). Any late data arriving within that window gets captured. Balance freshness vs reprocessing cost.</li>
+      <li><strong>Step 1 — Diagnose first:</strong> <code>DESCRIBE DETAIL table_name</code> — check numFiles, sizeInBytes, averageFileSize. If thousands of files with average size under 10MB, small file problem is the primary issue.</li>
+      <li><strong>Step 2 — OPTIMIZE:</strong> Compacts small files into target size of ~1GB. Run this first — it's often enough to cut query time in half.</li>
+      <li><strong>Step 3 — Z-ORDER on most-filtered columns:</strong> After OPTIMIZE, add Z-ORDER on the columns most commonly in WHERE clauses. Delta stores min/max stats per file — Z-ORDER clusters similar values together so data skipping can eliminate more files per query.</li>
+      <li><strong>Step 4 — Review partitioning strategy:</strong> If the table is partitioned by a column that's never filtered on, partition pruning never fires. Repartition by a column that queries actually filter on — usually a date column.</li>
+      <li><strong>Step 5 — VACUUM:</strong> Old deleted/updated file versions accumulate. VACUUM removes them, reducing the metadata scan overhead.</li>
+      <li><strong>Step 6 — Liquid Clustering:</strong> If Z-ORDER + OPTIMIZE isn't keeping up with write frequency, switch to Liquid Clustering — it's incremental, so you don't need to rewrite the whole table to change clustering strategy.</li>
+      <li><strong>Step 7 — Synapse Serverless or Photon:</strong> For read-heavy BI workloads on the terabyte table, move serving to Synapse Serverless SQL (Parquet scan optimized) or enable Photon engine on the Databricks cluster (2-4x faster SQL execution).</li>
     </ul>
     <div class="split-pane py-pane-card">
-      <div class="split-pane-header">&#x1F40D; PySpark</div>
-      <pre><code class="language-python"># Batch — dynamic partition overwrite handles late data
-spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
-df.write.format("delta") \
-    .partitionBy("event_date") \
-    .mode("overwrite") \
-    .save("/mnt/delta/silver/events")
-# If event_date=2024-01-15 has late arrivals on 2024-01-17,
-# only that partition gets rewritten — Jan 16 stays untouched
+      <div class="split-pane-header">&#x1F40D; SQL</div>
+      <pre><code class="language-sql">-- Step 1: Diagnose
+DESCRIBE DETAIL gold.transactions;
+-- Check: numFiles, averageFileSize, sizeInBytes
 
-# Streaming — watermark handles late-arriving events
-from pyspark.sql.functions import col, window
+-- Step 2: OPTIMIZE + Z-ORDER
+OPTIMIZE gold.transactions ZORDER BY (customer_id, txn_date);
 
-(stream_df
-    .withWatermark("event_time", "2 hours")   # wait 2hrs for late events
-    .groupBy(
-        window("event_time", "1 hour"),
-        "customer_id"
-    )
-    .agg(sum("amount").alias("total"))
-    .writeStream
-    .outputMode("update")
-    .option("checkpointLocation", "/mnt/checkpoints/events")
-    .start("/mnt/delta/gold/hourly_totals")
-)
-# Events arriving up to 2 hours late are included in their correct window
-# Events arriving after 2 hours → dropped (window already closed)</code></pre>
+-- Step 3: VACUUM to remove stale files
+VACUUM gold.transactions RETAIN 168 HOURS;
+
+-- Step 4: Check if partition pruning fires
+EXPLAIN FORMATTED
+SELECT * FROM gold.transactions
+WHERE txn_date = '2024-01-15';
+-- Look for "PartitionFilters" in the plan — if missing, pruning isn't firing
+
+-- Step 5: Enable predictive optimization (Databricks)
+ALTER TABLE gold.transactions
+SET TBLPROPERTIES ('delta.enablePredictiveOptimization' = 'auto');
+-- Databricks automatically runs OPTIMIZE + Z-ORDER based on usage patterns
+
+-- Step 6: Switch to Liquid Clustering for future-proof flexibility
+ALTER TABLE gold.transactions CLUSTER BY (customer_id, txn_date);
+OPTIMIZE gold.transactions;   -- apply clustering</code></pre>
     </div>
-    <p><strong>In streaming pipelines:</strong></p>
-    <ul>
-      <li><strong>Watermark:</strong> Define how long Spark waits for late events before closing a window. <code>withWatermark("event_time", "2 hours")</code> — late events within 2 hours are included. After 2 hours, the window closes and state is cleaned up.</li>
-      <li><strong>Tradeoff:</strong> Larger watermark = more late data captured, but Spark holds more state in memory and results are less "real-time." Tune based on actual observed latency in your source system.</li>
-    </ul>
-    <div class="callout tip"><span class="callout-icon">💡</span><div>"The right answer depends on the SLA. For a daily batch report, a 3-day lookback catches virtually all late data. For a real-time dashboard, a 30-minute watermark is usually enough. I always ask: what's the maximum realistic delay in this source? Set the watermark to 1.5× that."</div></div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"For a terabyte table, I'd start with OPTIMIZE + Z-ORDER and VACUUM. This alone usually brings query time down from minutes to seconds by reducing file count and enabling data skipping. If it's still slow after that, I look at the execution plan to check if partition pruning and data skipping are actually firing."</div></div>
   </div>
 </div>
+
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
@@ -7622,7 +8739,7 @@ EXEC usp_refresh_customer_summary;</code></pre></div></div>
 
 
    <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Indexes in SQL — types, internals, when to use / avoid</div><div class="q-tags"><span class="q-tag tag-perf">Indexes</span><span class="q-tag tag-fund">Core Concept</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Indexes in SQL — types, when to use / avoid</div><div class="q-tags"><span class="q-tag tag-perf">Indexes</span><span class="q-tag tag-fund">Core Concept</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>An index is a separate data structure (B-tree or other) that stores a sorted copy of one or more columns with pointers to original rows. It converts O(n) table scans into O(log n) lookups.</p>
       <p><strong>Types:</strong></p>
@@ -7636,8 +8753,50 @@ EXEC usp_refresh_customer_summary;</code></pre></div></div>
       </ul>
       <p><strong>When NOT to index:</strong> Columns with very low cardinality (e.g., <code>gender</code> — only 2 values, a scan is faster than an index on 50% of a table). Tables with very frequent writes — every INSERT/UPDATE/DELETE maintains all indexes. Staging/temp tables — not worth the overhead.</p>
       <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Common pitfalls: <strong>functions on indexed columns</strong> prevent index use (<code>WHERE YEAR(order_date)=2024</code> → full scan). <strong>Leading wildcards</strong> in LIKE prevent index use (<code>LIKE '%keyword'</code> → full scan, but <code>LIKE 'keyword%'</code> uses the index).</div></div>
+      <p>"Without an index, when you run <code>WHERE customer_id = 'C001'</code>, the database scans every single row from top to bottom to find matches — called a full table scan. On a table with 500 million rows, that's slow. An index is like the index at the back of a textbook — instead of reading every page, you look up the topic and jump directly to the right page."</p>
+    <p><strong>How it works internally:</strong></p>
+    <ul>
+      <li>An index creates a separate sorted data structure (usually a B-tree) containing the indexed column values and pointers to the actual row locations.</li>
+      <li>When you query with a WHERE clause on an indexed column, the database uses the B-tree to find the matching values in O(log n) time, then jumps directly to those rows.</li>
+      <li>Without index: O(n) — scan all rows. With index: O(log n) — binary search on sorted structure.</li>
+    </ul>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; SQL</div>
+      <pre><code class="language-sql">-- Check if query is doing a full table scan — before index
+EXPLAIN SELECT * FROM orders WHERE customer_id = 'C001';
+-- Shows: "Table Scan" or "Seq Scan" → reading every row
+
+-- Create index on the filtered column
+CREATE INDEX idx_customer_id ON orders(customer_id);
+
+-- Now same query uses the index
+EXPLAIN SELECT * FROM orders WHERE customer_id = 'C001';
+-- Shows: "Index Seek" → jumps directly to matching rows
+
+-- Types of indexes:
+-- Clustered Index: physically sorts the table by the index column
+--   → only one per table (data can only have one physical order)
+--   → primary key creates a clustered index by default in SQL Server
+
+-- Non-Clustered Index: separate structure pointing back to the data
+--   → multiple allowed per table
+--   → add on columns frequently used in WHERE, JOIN, ORDER BY
+
+-- Composite index — multiple columns (order matters)
+CREATE INDEX idx_customer_date ON orders(customer_id, order_date);
+-- Useful for: WHERE customer_id = 'C001' AND order_date > '2024-01-01'
+-- NOT useful for: WHERE order_date > '2024-01-01' alone (leading column missing)
+
+-- When NOT to over-index:
+-- Every INSERT/UPDATE/DELETE must also update the index
+-- Heavy-write tables (staging, landing) → too many indexes slow down writes
+-- Low-cardinality columns (gender: M/F) → index not selective enough to help</code></pre>
+    </div>
+        <div class="callout tip"><span class="callout-icon">💡</span><div>"In Spark and Delta Lake, the equivalent of indexing is Z-Ordering — it clusters rows with similar values in the same files, so Delta's data skipping can eliminate most files when filtering. On Synapse Dedicated Pools, the clustered columnstore index (CCI) is the default for analytical workloads — it stores data column-wise, enabling fast aggregations across billions of rows."</div></div>
     </div>
   </div>
+
+  
 
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How would you optimize a slow SQL query? What steps and tools do you use?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
@@ -7669,27 +8828,7 @@ EXEC usp_refresh_customer_summary;</code></pre></div></div>
     </div>
   </div>
 
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Explain the MERGE statement. How is it different from UPSERT?</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p>UPSERT is a concept: insert if a record doesn't exist, update if it does. MERGE is the SQL statement that implements this — and more. MERGE is a superset of UPSERT — it can handle UPDATE, INSERT, and DELETE in one atomic statement.</p>
-      <div class="split-grid">
-          <div class="split-pane sql-pane-card">
-            <div class="split-pane-header">&#x1F5C4; SQL</div>
-      <pre><code class="language-sql">MERGE INTO target_table AS t
-USING source_table AS s
-ON t.order_id = s.order_id
-WHEN MATCHED AND s.amount != t.amount THEN
-    UPDATE SET t.amount = s.amount, t.updated_at = GETDATE()
-WHEN NOT MATCHED BY TARGET THEN
-    INSERT (order_id, amount, created_at)
-    VALUES (s.order_id, s.amount, GETDATE())
-WHEN NOT MATCHED BY SOURCE THEN
-    DELETE;  -- rows in target not in source → delete</code></pre></div></div>
-      <p>The <code>WHEN NOT MATCHED BY SOURCE THEN DELETE</code> clause goes beyond UPSERT — it's a full sync that removes rows from target that no longer exist in source. MERGE is atomic — either all three operations succeed or none do.</p>
-    </div>
-  </div>
-
+ 
   <div class="q-card">
       <div class="q-header" onclick="toggle(this)">
         <div class="q-num">7</div>
@@ -8630,6 +9769,91 @@ final = historical.union(deduped_recent)</code></pre>
     <div class="concept-label"><span>&#x1F4CA; Set 2 — Nth Salary</span></div>
 
     
+    <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Find the Nth highest salary from the employee table.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <div class="schema-box"><strong>employees:</strong> <code>employee_id</code>, <code>name</code>, <code>salary</code>, <code>department_id</code></div>
+    <div class="split-grid">
+      <div class="split-pane sql-pane-card">
+        <div class="split-pane-header">🗄 SQL</div>
+        <pre><code class="language-sql">-- Method 1 — DENSE_RANK (handles ties correctly)
+-- N = 3 → 3rd highest salary
+WITH ranked AS (
+    SELECT
+        employee_id, name, salary,
+        DENSE_RANK() OVER (ORDER BY salary DESC) AS rnk
+    FROM employees
+)
+SELECT employee_id, name, salary
+FROM ranked
+WHERE rnk = 3;   -- change 3 to N
+
+-- Method 2 — subquery (classic approach)
+SELECT MIN(salary)
+FROM employees
+WHERE salary IN (
+    SELECT DISTINCT TOP 3 salary
+    FROM employees
+    ORDER BY salary DESC
+);
+-- TOP 3 gives top 3 distinct salaries
+-- MIN of those = 3rd highest
+
+-- Method 3 — OFFSET FETCH (SQL Server / Synapse)
+SELECT DISTINCT salary
+FROM employees
+ORDER BY salary DESC
+OFFSET 2 ROWS FETCH NEXT 1 ROW ONLY;
+-- OFFSET N-1 = skip first N-1 → next 1 row = Nth highest
+
+-- With ties — DENSE_RANK vs RANK difference:
+-- Salaries: 90000, 80000, 80000, 70000
+-- DENSE_RANK 3rd = 70000 (correct — 3rd distinct)
+-- RANK 3rd = nothing returned (rank 3 skipped due to two rank-2 ties)</code></pre>
+      </div>
+      <div class="split-pane py-pane-card">
+        <div class="split-pane-header">&#x1F40D; PySpark</div>
+        <pre><code class="language-python">from pyspark.sql.functions import dense_rank, col
+from pyspark.sql.window import Window
+
+# N = 3 → 3rd highest salary
+N = 3
+
+# Method 1 — DENSE_RANK (handles ties, most interview-friendly)
+window = Window.orderBy(col("salary").desc())
+
+result = (df.withColumn("rnk", dense_rank().over(window))
+            .filter(col("rnk") == N)
+            .select("employee_id", "name", "salary"))
+result.show()
+
+# Method 2 — using distinct sorted salaries
+distinct_salaries = (df.select("salary").distinct()
+                       .orderBy(col("salary").desc()))
+nth_salary = distinct_salaries.limit(N).tail(1)[0]["salary"]
+result = df.filter(col("salary") == nth_salary)
+result.show()
+
+# Method 3 — generic function for any N
+def nth_highest_salary(df, n):
+    window = Window.orderBy(col("salary").desc())
+    return (df.withColumn("rnk", dense_rank().over(window))
+              .filter(col("rnk") == n).drop("rnk"))
+
+nth_highest_salary(df, 3).show()
+nth_highest_salary(df, 1).show()  # = highest salary</code></pre>
+      </div>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>Always use DENSE_RANK, not RANK, for Nth highest salary. With RANK, if two people share the 2nd highest salary, RANK jumps from 2 to 4 — there's no rank 3, so <code>WHERE rnk = 3</code> returns nothing. DENSE_RANK never has gaps — 1,2,2,3 not 1,2,2,4.</div></div>
+  </div>
+</div>
+
 
     <div class="q-card">
       <div class="q-header" onclick="toggle(this)">
@@ -11268,21 +12492,85 @@ def validate_df(df, name):
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">How Fault Tolerance is Achieved in Spark</div></div><div class="q-chevron">▼</div></div>
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Transformations and Actions.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>"This is one of the most fundamental Spark concepts — and understanding it explains why Spark is fast."</p>
+    <p><strong>Transformations:</strong> Operations that define what to do with the data — but don't actually execute anything. They're lazy. Spark just records the instruction and builds a DAG (execution plan). Nothing runs until an action is called.</p>
+    <p><strong>Actions:</strong> Operations that trigger the actual execution. When an action is called, Spark looks at the full DAG, optimizes it using Catalyst, and runs all the pending transformations in one go.</p>
+    <div class="schema-box">
+      <strong>Lazy evaluation benefit:</strong> Spark can see the full plan before executing. It can push filters early, eliminate unnecessary columns, choose optimal join strategies — optimizations it couldn't do if it executed each step immediately.
+    </div>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">df = spark.read.format("delta").load("/mnt/delta/orders")
+# ↑ Nothing runs yet. Spark just notes "read from this path"
+
+# TRANSFORMATIONS — lazy, build the DAG
+filtered   = df.filter(col("status") == "completed")     # nothing runs
+selected   = filtered.select("order_id", "customer_id", "amount")  # nothing runs
+renamed    = selected.withColumnRenamed("amount", "order_amount")  # nothing runs
+joined     = renamed.join(broadcast(customers), "customer_id")     # nothing runs
+aggregated = joined.groupBy("customer_id").agg(sum("order_amount")) # nothing runs
+
+# ACTIONS — trigger actual execution of everything above
+aggregated.show()       # ← NOW everything runs
+aggregated.count()      # ← triggers again — runs full DAG a second time
+aggregated.write.format("delta").save("/mnt/delta/output")  # ← triggers again
+
+# Common Transformations:
+# filter(), select(), withColumn(), drop(), join(),
+# groupBy(), orderBy(), distinct(), repartition(), coalesce()
+# map(), flatMap(), union(), withColumnRenamed()
+
+# Common Actions:
+# show(), count(), collect(), first(), take(n)
+# write(), saveAsTable(), foreach(), toPandas()
+
+# Key insight — count() is an action:
+df.filter(...).count()   # ← executes the filter, then counts
+
+# Cache to avoid re-executing for multiple actions
+aggregated.cache()      # store result in memory after first action
+aggregated.show()       # first action — computes + caches
+aggregated.count()      # second action — reads from cache (fast)</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"A common interview mistake is calling <code>.count()</code> or <code>.show()</code> multiple times in a loop for logging — each call re-executes the full DAG. Cache the DataFrame before the first action if you'll use it multiple times. That's the practical implication of understanding transformations vs actions."</div></div>
+  </div>
+</div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Explain how Spark processes data and ensures fault tolerance.</div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+      <p><strong>How Spark processes data:</strong></p>
+    <ul>
+      <li><strong>Driver:</strong> The brain of the application. Reads your code, builds the logical plan (DAG of transformations), optimizes it using Catalyst, and coordinates the work across executors.</li>
+      <li><strong>Executors:</strong> Worker processes running on cluster nodes. Each executor has CPU cores and memory. They receive tasks from the driver and actually process the data.</li>
+      <li><strong>Partitions and Tasks:</strong> Data is split into partitions. Each partition is processed by one task on one core. 1000 partitions = up to 1000 concurrent tasks across all executors.</li>
+      <li><strong>Stages and Shuffles:</strong> Spark splits the DAG into stages. Within a stage, tasks run independently. Between stages, data is shuffled — redistributed across executors based on keys (for joins, groupBys). Shuffles are expensive because they involve network transfer.</li>
+      <li><strong>Lazy evaluation:</strong> Nothing runs until an action (show, count, write) is called. This lets Catalyst see the full plan and optimize it — push filters early, eliminate unused columns, choose join strategies.</li>
+    </ul>
       <p>If a machine, executor, or task fails during distributed processing, Spark can recover the lost computation automatically without restarting the entire application.</p>
       <ul>
-        <li><strong>① RDD Lineage</strong> — Core fault tolerance mechanism. Every RDD maintains a lineage graph. Spark remembers where data came from, what transformations were applied, and the dependency chain.</li>
-        <li><strong>② DAG</strong> — Spark converts transformations into a DAG. The DAG scheduler tracks dependencies, identifies failed stages &amp; reruns failed tasks.</li>
-        <li><strong>③ Task Re-execution:</strong> Spark divides work into stages &amp; tasks. If a task fails, Spark retries it automatically.</li>
-        <li><strong>④ Lazy Evaluation helps recovery:</strong> Spark builds the execution plan first. Because Spark knows the full DAG before execution, it can efficiently recover failed computations.</li>
-        <li><strong>⑤ Checkpointing:</strong> Lineage chains can become very long — recomputation becomes expensive. Spark saves RDD physically to HDFS. On failure: Spark loads checkpointed data instead of recomputing entire lineage.</li>
-        <li><strong>⑥ Data Replication:</strong> When persisting RDDs, Spark supports replication — stores 2 copies across nodes. If one executor fails, another copy exists.</li>
-        <li><strong>⑦ Speculative Execution:</strong> Sometimes one executor becomes slow. Spark can run duplicate copies of slow tasks. Whichever finishes first is accepted — improves reliability &amp; execution stability.</li>
+        <li><strong>1️⃣RDD lineage (DAG):</strong> Spark remembers the full sequence of transformations that produced each dataset — the lineage. If a partition is lost (executor crashes), Spark re-executes only the transformations needed to rebuild that specific partition from its source. No need to restart the entire job.</li>
+        <li><strong>2️⃣DAG</strong> — Spark converts transformations into a DAG. The DAG scheduler tracks dependencies, identifies failed stages &amp; reruns failed tasks.</li>
+        <li><strong>3️⃣Task Re-execution:</strong> Spark divides work into stages &amp; tasks. If a task fails (not the executor — just one task), Spark automatically retries it up to 4 times on another executor before failing the stage.</li>
+        <li><strong>4️⃣Lazy Evaluation helps recovery:</strong> Spark builds the execution plan first. Because Spark knows the full DAG before execution, it can efficiently recover failed computations.</li>
+        <li><strong>5️⃣Checkpointing:</strong> For long lineage chains or streaming, you can checkpoint a DataFrame to ADLS. This breaks the lineage — instead of recomputing from the source, Spark reads from the checkpoint. Prevents recomputing hours of transformations on recovery.</li>
+        <li><strong>6️⃣Streaming checkpoints:</strong> Structured Streaming saves source offsets (which Kafka messages or files were processed) and output state to a checkpoint directory. Crash + restart = resume from exact position, no data loss or duplication.</li>
+        <li><strong>7️⃣Data Replication:</strong> When persisting RDDs, Spark supports replication — stores 2 copies across nodes. If one executor fails, another copy exists.</li>
+        <li><strong>8️⃣Speculative Execution:</strong> Sometimes one executor becomes slow. Spark can run duplicate copies of slow tasks. Whichever finishes first is accepted — improves reliability &amp; execution stability.</li>
       </ul>
       <div class="callout tip"><span class="callout-icon">💡</span><div>Spark achieves fault tolerance mainly through <strong>RDD lineage</strong>, allowing lost partitions to be recomputed automatically if an executor or node fails. Also uses DAG scheduling, task retries, checkpointing, storage replication &amp; speculative execution.</div></div>
     </div>
   </div>
+
+
 
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">OOMs - Out of Memory Errors</div></div><div class="q-chevron">▼</div></div>
@@ -14131,7 +15419,7 @@ np.corrcoef([1,2,3,4], [2,4,5,4])       # correlation matrix</code></pre>
     <div class="sec-icon" style="background:#E8F5E9">💻</div>
     <div>
       <div class="sec-title">Py-Code</div>
-      <div class="sec-desc">Top 20 Python coding questions — solved with and without built-in libraries</div>
+      <div class="sec-desc">Top Python coding questions — solved with and without built-in libraries</div>
     </div>
   </div>
 
@@ -14258,6 +15546,59 @@ print(result)   # [3, 1, 4, 5, 9, 2, 6]</code></pre>
       </div>
     </div>
   </div>
+
+  <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Given an array, find the longest consecutive sequence.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <div class="schema-box"><strong>Input:</strong> <code>[100, 4, 200, 1, 3, 2]</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>4</code> → sequence: 1, 2, 3, 4</div>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python"># Without sorting — O(n) using a set
+def longest_consecutive(nums):
+    num_set  = set(nums)
+    max_len  = 0
+
+    for n in num_set:
+        # Only start counting from the beginning of a sequence
+        # n-1 not in set means n is the START of a new sequence
+        if n - 1 not in num_set:
+            current = n
+            length  = 1
+            while current + 1 in num_set:
+                current += 1
+                length  += 1
+            max_len = max(max_len, length)
+
+    return max_len
+
+print(longest_consecutive([100, 4, 200, 1, 3, 2]))   # 4 → (1,2,3,4)
+print(longest_consecutive([0, 3, 7, 2, 5, 8, 4, 6, 0, 1]))  # 9 → (0-8)
+
+# With library — sorting approach (O(n log n) — simpler to explain)
+def longest_consecutive_sorted(nums):
+    if not nums:
+        return 0
+    nums    = sorted(set(nums))   # remove dupes and sort
+    max_len = current_len = 1
+    for i in range(1, len(nums)):
+        if nums[i] == nums[i-1] + 1:
+            current_len += 1
+            max_len = max(max_len, current_len)
+        else:
+            current_len = 1
+    return max_len
+
+print(longest_consecutive_sorted([100, 4, 200, 1, 3, 2]))   # 4</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>The key insight for the O(n) set approach: only start counting from a number where <code>n-1</code> is NOT in the set — that means it's the beginning of a sequence. Without this check, you'd recount subsequences multiple times.</div></div>
+  </div>
+</div>
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
