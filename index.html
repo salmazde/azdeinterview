@@ -1197,7 +1197,7 @@
         <!--<span>🧩 <strong id="totalSections">0</strong> Sections</span>-->
         <div class="suggestion-toggle">
           🕵🏻<label class="theme-switch">
-          <input type="checkbox" id="suggestionToggle" checked onchange="toggleSuggestions(this.checked)">
+          <input type="checkbox" id="suggestionToggle" onchange="toggleSuggestions(this.checked)">
           <span class="theme-slider"></span></label>
         </div>
 
@@ -1591,7 +1591,39 @@
    <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">🛡️ What optimization techniques that you have applied in your day-to-day work so far in your four years of experience?</div><div class="q-tags"><span class="q-tag tag-pattern">Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
-    <p>In my four years, the optimization techniques I applied depended on the layer I was working on.</p>
+
+    <p>"Over my four years, optimization came up across three areas mainly — PySpark jobs, SQL queries, and ADF pipelines. Let me walk through what I actually did."</p>
+
+<p><strong>PySpark / Databricks:</strong></p>
+<ul>
+  <li>The biggest wins came during the SAS-to-Databricks migration. Some jobs were running much longer than expected. I opened Spark UI, checked the stages, and found two main issues — one was filtering happening too late, and the other was reading all columns even when only 4–5 were needed. Pushing filters early and selecting only required columns reduced the data Spark had to carry through the entire job.</li>
+  <li>For joins involving large and small tables, I used broadcast joins for the smaller side — this eliminated the shuffle completely.</li>
+  <li>Wherever the same DataFrame was being used multiple times in a job, I cached it after the first transformation so Spark didn't recompute it from scratch every time.</li>
+  <li>When I noticed data skew — one executor taking much longer than others — I repartitioned the data on the join key to distribute the load more evenly.</li>
+</ul>
+
+<p><strong>SQL:</strong></p>
+<ul>
+  <li>Replaced deeply nested subqueries with CTEs — same result, much easier to read and debug, and the query optimizer handles it better.</li>
+  <li>Used window functions instead of self-joins for things like ranking, running totals, and comparing a row with the previous row — self-joins on large tables are expensive.</li>
+  <li>Made sure filters were applied as early as possible in the query so the database processes less data in subsequent steps.</li>
+</ul>
+
+<p><strong>ADF pipelines:</strong></p>
+<ul>
+  <li>Moved from sequential table loading to parallel execution using ForEach — tables that were independent of each other now load simultaneously instead of one after another.</li>
+  <li>Replaced full loads with incremental loads wherever the source table had a reliable watermark column — this reduced ingestion time significantly as data volumes grew.</li>
+  <li>Added retry policies on activities so transient failures like network timeouts resolve automatically without creating an INC.</li>
+</ul>
+
+<p><strong>Production support side:</strong></p>
+<ul>
+  <li>Instead of just fixing the same issue every week, I looked at recurring INCs and implemented permanent fixes. For example, if a pipeline kept failing because of schema changes in the source, I added schema validation at ingestion so we'd catch it early and alert before it broke downstream.</li>
+</ul>
+
+<div class="callout tip"><span class="callout-icon">💡</span><div>"My approach has always been — profile first, then optimize. I never tune blindly. Spark UI, execution plans, ADF run history — these tell me exactly where the time is going before I make any change."</div></div>
+<div class="callout tip"><span class="callout-icon">💡</span><div>One example was during the migration of a SAS ETL process to Azure Databricks. The initial PySpark implementation was taking around 7 hours to complete. After analyzing the job, we identified unnecessary transformations, multiple joins on large datasets, and repeated reads from storage. We optimized the transformation logic, filtered data earlier in the pipeline, used broadcast joins for small reference tables, selected only the required columns, and repartitioned the data to distribute the workload evenly. These optimizations reduced the execution time to around 40 minutes while producing the same business results.</div></div>
+    <!--<p>In my four years, the optimization techniques I applied depended on the layer I was working on.</p>
 
 <ul>
   <li><strong>Source / Ingestion layer:</strong> I avoided full loads wherever possible. In my project, we used watermark columns to extract only changed records since the last run — this alone reduced ingestion time significantly since we weren't pulling millions of unchanged rows every day.</li>
@@ -1601,7 +1633,7 @@
   <li><strong>Cost layer:</strong> Used spot instances for Databricks batch jobs, paused Synapse Dedicated Pool during off-hours, and set ADLS lifecycle policies to move older raw files to cheaper storage tiers automatically.</li>
 </ul>
 
-<div class="callout tip"><span class="callout-icon">💡</span><div>If they ask for a specific example — mention the UDF replacement (30% runtime reduction) or the parallel ForEach ingestion (hours saved on sequential loads). Always close with a before/after number if you can.</div></div>
+<div class="callout tip"><span class="callout-icon">💡</span><div>If they ask for a specific example — mention the UDF replacement (30% runtime reduction) or the parallel ForEach ingestion (hours saved on sequential loads). Always close with a before/after number if you can.</div></div>-->
       </div>
   </div>
 
@@ -1618,16 +1650,19 @@
     <p>"In my current role at TCS, I work as a Data Engineer on the Citibank project. My responsibilities are divided between production support and development activities."</p>
 
     <p><strong>How I start every day — Production Health Check:</strong></p>
-    <p>"The first thing I do every morning is review the health of our production pipelines by monitoring Azure Data Factory and Azure Databricks jobs. Since production issues directly impact business users, they always get the highest priority. On a typical day I spend around 30–40% of my time on production support — though this can go higher depending on the severity of incidents."</p>
-
+    <p>"The first thing I do every morning is check my emails and the Jira — I look for any INC tickets that were raised overnight or early morning, any maintenance requests, or enhancement tickets assigned to me. Since our production pipeline runs every Monday at 6 PM, Tuesday mornings are always the busiest — I check whether the run completed successfully or if any INC was raised against it by the business team or monitoring alerts."</p>
+    <p>"If there are open INCs, I prioritize them first before anything else — production issues directly impact business users and the SLA clock starts ticking from the moment the ticket is raised. I check the ticket description, reproduce the issue, look at the ADF Monitor for the failed activity, check the Databricks job logs for any error stack trace, and start narrowing down the root cause."</p>
+    <p>"If there are no INCs — which is a good morning — I look at maintenance and enhancement tickets. Maintenance tasks are usually things like updating an existing transformation rule, adjusting a watermark value, or fixing a minor data quality issue that doesn't break the pipeline but was flagged by reconciliation. Enhancement requests are typically small additions from the business — a new derived column, a new filter condition, or a new table to be onboarded into the existing metadata-driven framework."</p>
+    <p>"Once I've gone through the ticket queue and the environment looks stable, I move on to my development work for the day."</p>
+   <!-- <p>"The first thing I do every morning is review the health of our production pipelines by monitoring Azure Data Factory and Azure Databricks jobs. Since production issues directly impact business users, they always get the highest priority. On a typical day I spend around 30–40% of my time on production support — though this can go higher depending on the severity of incidents."</p>-->
     <p><strong>Production Support responsibilities:</strong></p>
-    <ul>
-      <li>Resolving INC tickets raised by business users or monitoring alerts</li>
-      <li>Troubleshooting failed ETL pipelines — investigating the error in ADF Monitor, checking Databricks job logs, identifying root cause</li>
-      <li>Fixing data quality issues — null checks, duplicate records, reconciliation mismatches</li>
-      <li>Analyzing logs to find the exact point of failure and implementing permanent fixes rather than just restarting the job</li>
-      <li>Maintenance tasks — updating existing pipelines, applying business rule changes, performance improvements, small enhancements requested by business users</li>
-    </ul>
+    
+      <p>• Resolving INC tickets raised by business users or monitoring alerts</p>
+      <p>• Troubleshooting failed ETL pipelines — investigating the error in ADF Monitor, checking Databricks job logs, identifying root cause</p>
+      <p>• Fixing data quality issues — null checks, duplicate records, reconciliation mismatches</p>
+      <p>• Analyzing logs to find the exact point of failure and implementing permanent fixes rather than just restarting the job</p>
+      <p>• Maintenance tasks — updating existing pipelines, applying business rule changes, performance improvements, small enhancements requested by business users</p>
+    
 
     <p><strong>Development work — 60–70% of my time:</strong></p>
     <p>"Once the production environment is stable, I dedicate the rest of my day to development. The biggest part of my development work right now is the SAS-to-Databricks migration."</p>
@@ -1753,7 +1788,8 @@ Overall, my day-to-day work includes a combination of development, optimization,
   <div class="q-body">
     <p>"I'd design this as a Medallion Architecture on Azure — metadata-driven, fault tolerant, and observable."</p>
 
-    <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;margin:12px 0;overflow-x:auto;">
+    <p>For large-scale ETL, I use a layered architecture with Bronze, Silver, and Gold tables. Azure Data Factory orchestrates ingestion from databases, APIs, and files into ADLS Gen2. Raw data is stored in the Bronze layer for traceability. Databricks processes the data using PySpark, where I perform schema validation, duplicate removal, null checks, and business rule validations before writing clean data to the Silver layer. Business transformations such as joins, aggregations, and SCD processing produce curated Gold datasets for reporting. I implement incremental loading using watermarks or CDC with Delta MERGE to ensure idempotency. To improve performance, I use partitioning, predicate pushdown, column pruning, AQE, and Delta OPTIMIZE. Finally, I maintain audit logs, quarantine invalid records, monitor pipeline health through ADF and Spark, and secure the solution using RBAC, Managed Identities, and Key Vault.</p>
+    <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;">
       <svg viewBox="0 0 860 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:0 auto;">
         <defs>
           <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
@@ -2457,6 +2493,9 @@ with ThreadPoolExecutor(max_workers=4) as executor:
       <div class="q-chevron">▼</div>
     </div>
     <div class="q-body">
+    <p>If a pipeline completed successfully but produced incorrect data, I would debug it systematically by validating each stage of the pipeline, starting from the source and moving toward the target. Since the pipeline succeeded technically, I would focus on data validation rather than execution failures.
+    I would first identify the nature of the issue, such as missing data, duplicates, null values or incorrect records. Then I would validate the source data, verify pipeline parameters and incremental load logic, review transformation logic including filters and joins, and compare record counts across each stage of the pipeline to identify where the discrepancy was introduced. I would also review logs and recent deployments to determine if any code or configuration changes caused the issue. 
+    Once the root cause is identified, I would correct the logic, reprocess only the affected data where possible, and validate the results before closing the incident.</p>
       <p>This is the hardest class of bug — the system thinks everything succeeded. Work through these steps:</p>
       <ol>
         <li><strong>Narrow down the layer.</strong> Check Bronze → Silver → Gold sequentially. At which layer does data first look wrong?</li>
@@ -2479,7 +2518,7 @@ with ThreadPoolExecutor(max_workers=4) as executor:
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
-    <p>"Whenever I see a slow Spark job, my first rule is — don't guess, look at the Spark UI. Every answer is in there."</p>
+    <p>If a Spark job is slow on large datasets, I first analyze the Spark UI to identify the slow stages, task distribution, shuffle size, spills, and executor utilization. I then check for common issues such as data skew, expensive shuffle operations, incorrect join strategies, and improper partitioning</p>
     <p><strong>Step 1 — Spark UI diagnosis:</strong></p>
     <ul>
       <li><strong>Stages tab:</strong> Find the stage taking longest. Click into it.</li>
@@ -2661,7 +2700,7 @@ df = df.repartition(500)
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
-    <p>"The first thing I do is open Spark UI — not guess. Every answer is in there."</p>
+    <p>For a PySpark job processing 2 billion records, my first step would be to analyze the Spark UI rather than immediately increasing cluster resources. I would identify the slow stages, review task execution, executor utilization, shuffle size, spill metrics, and GC time. I would then investigate common bottlenecks such as data skew, large shuffle operations, inefficient join strategies, improper partitioning, Python UDF usage, and storage format. I'd verify whether Catalyst optimizations like predicate pushdown and column pruning are being applied and ensure AQE is enabled for runtime optimizations such as skew handling and dynamic join selection. After optimizing the application logic, I would tune executor memory, cores, or cluster size only if resource constraints remain. This approach ensures that I address the root cause instead of masking it by adding hardware.</p>
     <p><strong>Step 1 — Find the slow stage:</strong> Go to Stages tab, sort by duration. Click the slowest stage and check three things:</p>
     <ul>
       <li><strong>Task duration variance</strong> — if most tasks finish in 10 seconds but one takes 3 hours → data skew</li>
@@ -2771,6 +2810,7 @@ result = large_txn_df.join(broadcast(merchant_ref_df), "merchant_id")
 </div>
 
 
+
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">X</div>
@@ -2780,6 +2820,7 @@ result = large_txn_df.join(broadcast(merchant_ref_df), "merchant_id")
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
+  
     <p>"Late-arriving data is data that arrives after the time window it belongs to has already been processed. It's very common in event-based systems — mobile apps go offline and batch events when reconnected, IoT devices have network delays, third-party systems send corrections hours later."</p>
     <p><strong>In batch pipelines:</strong></p>
     <ul>
@@ -2891,7 +2932,9 @@ spark.conf.set("spark.memory.storageFraction", "0.2") # 20% for cache, 80% for e
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
-    <p>"Fault tolerance is something I design in upfront — not something I scramble for after a failure. The key principle: every step must be idempotent, meaning running it twice gives the same result as running it once."</p>
+  <p>If a pipeline fails midway, my first priority is to determine where it failed(which activity, during ingestion, transformation, loading etc.,) and ensure that restarting the pipeline does not create duplicate or inconsistent data. I follow a structured recovery approach by identifying the failure point, validating partial data, and resuming processing in an idempotent manner instead of reprocessing everything.</p>
+    <p>I design pipelines to be idempotent by using MERGE or upsert operations so that rerunning the pipeline doesn't create duplicates. For incremental loads, I ensure the watermark is updated only after a successful run, preventing data loss. For Spark jobs, I leverage checkpointing where appropriate to avoid recomputing long execution chains. I also configure retry policies for transient failures and maintain audit tables to track pipeline status, row counts, and processing checkpoints. This allows the pipeline to recover safely while ensuring data consistency.</p>
+    <p><i><strong>The key principle: every step must be idempotent, meaning running it twice gives the same result as running it once.</strong></i></p>
     <p><strong>Design principles for fault-tolerant pipelines:</strong></p>
     <ul>
       <li><strong>Idempotent writes — MERGE instead of append:</strong> If a step reruns, it shouldn't create duplicate rows. MERGE on natural key means re-running the same batch produces the same result.</li>
@@ -2933,6 +2976,7 @@ stream = (df.writeStream
 )</code></pre>
     </div>
     <div class="callout tip"><span class="callout-icon">💡</span><div>"Recovery speed is determined by how small your failure blast radius is. If Bronze, Silver, and Gold are separate Delta tables written independently with their own watermarks, a Gold failure costs you one Gold rerun. If everything is one monolithic pipeline, a Gold failure costs you a full re-extraction from source."</div></div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>In production, I avoid designing pipelines that require full reruns after a failure. Instead, I make each stage restartable and idempotent so recovery is faster, compute costs are lower, and data consistency is maintained.</div></div>
   </div>
 </div>
 
@@ -2947,7 +2991,8 @@ stream = (df.writeStream
       <div class="q-chevron">▼</div>
     </div>
     <div class="q-body">
-      <p>"Intermittent failures are actually harder to debug than consistent failures — because by the time you look at it, it's working again. So the first thing I do is resist the urge to immediately restart the pipeline and call it done. I want to understand why it failed before I fix anything."</p>
+      <p>"Intermittent failures are actually harder to debug than consistent failures — because by the time I look at it, it's working again & this happened many times with me. So the first thing I do is resist the urge to immediately restart the pipeline and call it done. I want to understand why it failed before I fix anything."</p>
+    <p>For an intermittent production failure, I first try to identify patterns rather than jumping directly into the code. Since the pipeline succeeds in some runs and fails in others, I compare successful and failed executions to determine what changed between them. I compare inputs, parameters, file sizes, and execution metrics to determine what changed. I then investigate infrastructure factors like storage availability, network connectivity, and cluster health, as well as data-related issues such as schema changes or corrupt files. My goal is to identify whether the issue is related to data, infrastructure, configuration, or external dependencies.</p>
 <p><strong>Step 1 — Reproduce and capture:</strong></p>
 <ul>
   <li>Check ADF Monitor first — look at the exact activity that failed, the error message, and the timestamp. Screenshot it or copy the JSON error before rerunning — these details disappear once you restart.</li>
@@ -2980,7 +3025,7 @@ stream = (df.writeStream
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
-    <p>"Queued usually means the pipeline is waiting for resources or permission to run, not that it's actually failing. I check these three things, in this order."</p>
+  <p>Queued usually means the pipeline is waiting for resources or permission to run, not that it's actually failing. If a pipeline is stuck in the 'Queued' state, the first thing I check is whether the required compute resources are available—for example, whether the Databricks cluster or Integration Runtime is healthy and not waiting to start. Second, I verify pipeline concurrency limits to see if another run is already executing or if the maximum number of concurrent runs has been reached. Third, I check for upstream dependencies, such as parent pipelines or event triggers, that may be preventing the pipeline from starting. If those checks don't identify the issue, I review ADF monitoring logs, Databricks job logs, Integration Runtime health, and any recent configuration changes or service throttling.</p>
 
     <!--<p><strong>1. Cluster / compute availability:</strong> If this is a Databricks job, I check whether the job cluster is still spinning up, or whether the cluster pool has hit its capacity limit. On Azure, sometimes the VM family we requested has a regional quota limit or is temporarily out of capacity — Databricks will queue the job until a node becomes available. I check the cluster event log for messages like "waiting for instance" or "pool exhausted."</p> -->
     <p><strong>1. Cluster availability / resource contention:</strong> In Databricks, a queued job often means the cluster is starting up, all available spot instances are taken, or the cluster pool is exhausted. Check the cluster Events tab for startup errors or spot eviction notices. In ADF, check if the Integration Runtime is online — if SHIR is offline, activities queue indefinitely. I check the cluster event log for messages like "waiting for instance" or "pool exhausted.</p>
@@ -3006,7 +3051,9 @@ stream = (df.writeStream
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
+    <p><strong>Observe → Compare → Identify → Fix → Validate</strong></p>
     <p>The first thing I do is not panic and not randomly restart the job. A 4x slowdown has a reason, and I want to find it before I touch anything.</p>
+    <p>If a job runtime increases from one hour to four hours, I start by comparing the current execution with previous successful runs to identify what changed, such as data volume, code, schema, or cluster configuration. I then analyze the Spark UI to identify slow stages, excessive shuffle, data skew, spills, GC time, and executor utilization. I review the execution plan to verify join strategies, predicate pushdown, and column pruning. I also check for recent code changes, such as Python UDFs, additional joins, or unnecessary transformations, and evaluate infrastructure factors like cluster health and autoscaling. After identifying the root cause, I implement targeted optimizations, validate the results through another run, and confirm both performance improvement and data correctness.</p>
     <p><strong>Step 1 — Check if the data volume changed:</strong></p>
     <ul>
       <li>Go to the audit table and compare today's row count with the last few days. If data volume tripled, the slowdown may be proportional and expected — but still worth investigating whether the job scales linearly or has a bottleneck.</li>
@@ -3058,7 +3105,8 @@ stream = (df.writeStream
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
-    <p>"Schema inference means Spark reads a sample of your data and guesses the schema. Predefined schema means you tell Spark exactly what the schema is upfront. In development, inference is convenient. In production, it's a risk."</p>
+  <p>In PySpark, Schema inference means Spark reads a sample of our data and guesses the schema. Predefined schema means I tell Spark exactly what the schema is upfront. we can either let Spark infer the schema automatically or define the schema explicitly using a StructType.</p>
+    <p>Schema inference allows Spark to determine column data types automatically, which is useful for development and ad hoc analysis. However, in production I prefer predefined schemas using StructType because they improve performance by avoiding the schema inference step, ensure consistent data types across runs, and help detect data quality issues early. For production pipelines, I also implement schema validation so that unexpected schema changes are identified and handled through controlled schema evolution rather than allowing Spark to infer a different structure automatically.</p>
     <p><strong>Why schema inference is dangerous in production:</strong></p>
     <ul>
       <li>To infer schema, Spark reads the entire file (or a large sample) before processing — adding overhead on large datasets.</li>
@@ -3120,6 +3168,8 @@ assert set(expected_fields.keys()).issubset(set(df.columns)), "Missing expected 
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
+  <p>Schema evolution is the process of handling changes in the source schema, such as adding, removing, or modifying columns, without disrupting downstream pipelines.</p>
+  <p>In production, I handle schema evolution through controlled validation rather than automatically accepting every schema change. I first compare the incoming schema with the expected schema to identify new columns, missing columns, renamed columns, or data type changes. Additive changes, such as new nullable columns, can be accommodated using controlled Delta Lake schema evolution when approved. However, incompatible changes like data type modifications or column removals are treated as breaking changes. In those cases, I log the schema difference, alert the team, and stop or quarantine the pipeline until the issue is resolved. This approach maintains pipeline stability while allowing legitimate schema evolution.</p>
     <p>"Schema evolution — columns being added, renamed, or changed in a source system — is one of the most common causes of silent data corruption or pipeline failures. My approach: detect it early, handle it explicitly, never let it pass through silently."</p>
     <p><strong>Layer 1 — Detect at Bronze ingestion:</strong></p>
     <ul>
@@ -3198,7 +3248,9 @@ spark.sql("DESCRIBE HISTORY silver.orders LIMIT 10").show(truncate=False)</code>
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
+  <p>The small file problem occurs when Spark processes millions of tiny files, leading to high metadata, scheduling, and I/O overhead. My approach is to first identify why the files are being generated, such as streaming micro-batches or excessive partitioning. I then optimize the ingestion process by batching writes and repartitioning data before writing. In Delta Lake, I use OPTIMIZE to compact small files into larger ones and enable Auto Optimize or Auto Compaction where appropriate. I also choose partition columns carefully to avoid creating tiny partitions and periodically run VACUUM to clean up obsolete files. Finally, I monitor file counts and average file sizes to ensure the storage layout remains efficient as data grows.</p>
     <p>"Millions of small files kill query performance in two ways — too many file open operations slow down reads, and the driver runs out of memory tracking metadata for all those files. I attack this at both write time and read time."</p>
+    <p>I treat the small file problem as both a pipeline design issue and a storage optimization issue. While OPTIMIZE helps after files are created, the better long-term solution is to minimize small file creation through efficient ingestion, appropriate partitioning, and controlled write patterns. That reduces both compute overhead and operational costs.</p>
     <p><strong>At write time — prevent small files from accumulating:</strong></p>
     <ul>
       <li><strong>Optimize Write:</strong> Databricks feature that automatically coalesces output partitions before writing — instead of 1000 small files per micro-batch, it writes 10 right-sized files.</li>
@@ -3273,7 +3325,7 @@ spark.sql("VACUUM payments RETAIN 168 HOURS")</code></pre>
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
-    <p><strong>Incremental Load:</strong> Instead of reloading all data every run (full load), you only extract and process records that are new or changed since the last successful run. This reduces load on source systems, cuts processing time, and makes pipelines faster and cheaper as data grows.</p>
+    <p><strong>Incremental Load:</strong> Instead of reloading all data every run (full load), we only extract and process records that are new or changed since the last successful run. This reduces load on source systems, cuts processing time, and makes pipelines faster and cheaper as data grows.</p>
 
     <p><strong>The difference between Watermark and Timestamp:</strong></p>
     <ul>
@@ -3325,22 +3377,23 @@ WHERE table_name = 'orders'
   <div class="q-header" onclick="toggle(this)">
     <div class="q-num">X</div>
     <div class="q-title-wrap">
-      <div class="q-title">How do you handle duplicate records in a PySpark DataFrame? Why does duplicate data exist? List all methods.</div>
+      <div class="q-title">How do you handle duplicate records in a PySpark DataFrame?</div>
     </div>
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
+  <p>Duplicate records can occur due to retries, multiple source systems, late-arriving data, CDC processing, incorrect joins, streaming reprocessing, or upstream application issues. Before removing duplicates, I first identify why they exist because the deduplication strategy depends on the business requirement. Sometimes we need to keep the latest record, sometimes the earliest, and sometimes remove only exact duplicates.For exact duplicate rows, I use <code>distinct()</code>. If duplicates are based on specific business keys, I use <code>dropDuplicates()</code>. In most production ETL pipelines, I prefer using a window function with <code>row_number()</code> to retain the latest or highest-priority record based on a timestamp or version column. For incremental Delta Lake pipelines, I use <code>MERGE</code> operations to prevent duplicate inserts, and for streaming pipelines I use watermarks with <code>dropDuplicates()</code> to handle duplicate events within a defined time window. This ensures both data quality and business correctness.</p>
     <p><strong>Why duplicate data exists:</strong></p>
-    <ul class="ul-2col">
-      <li>Network retries — same event sent twice when no acknowledgment received</li>
-      <li>At-least-once delivery in Kafka/Event Hubs — guaranteed delivery but may duplicate</li>
-      <li>Multiple source systems sending the same record</li>
-      <li>Pipeline restarts reprocessing already-loaded data</li>
-      <li>ETL bugs — same batch loaded twice</li>
-      <li>CDC sending both insert and update for the same row</li>
-      <li>Manual corrections applied on top of auto-corrections</li>
-      <li>Joins producing cartesian explosion (implicit duplicates)</li>
-    </ul>
+    
+      <p>1️⃣. Network retries — same event sent twice when no acknowledgment received<br>
+      2️⃣. At-least-once delivery in Kafka/Event Hubs — guaranteed delivery but may duplicate<br>
+      3️⃣. Multiple source systems sending the same record<br>
+      4️⃣. Pipeline restarts reprocessing already-loaded data<br>
+      5️⃣. ETL bugs — same batch loaded twice<br>
+      6️⃣. CDC sending both insert and update for the same row<br>
+      7️⃣. Manual corrections applied on top of auto-corrections<br>
+      8️⃣. Joins producing cartesian explosion (implicit duplicates)</p>
+    
     <p><strong>All methods to handle duplicates in PySpark:</strong></p>
     <div class="split-pane py-pane-card">
       <div class="split-pane-header">&#x1F40D; PySpark</div>
@@ -3458,13 +3511,15 @@ dups.show()</code></pre>
       <div class="q-chevron">▼</div>
     </div>
     <div class="q-body">
-      <p>An idempotent pipeline produces the same result whether it runs once or ten times. This is critical because pipelines fail and need to re-run.</p>
+    <p>Idempotency means that if a pipeline is executed multiple times with the same input data, the final output remains the same—no duplicate records, no incorrect updates, and no inconsistent state.</p>
+      <p>To process incremental data without creating duplicates, I design the pipeline to be idempotent. I first identify incremental records using a watermark, Last Modified timestamp, or CDC. Every record is matched using a unique business key, and instead of using INSERT operations, I use Delta Lake MERGE to update existing records and insert only new ones. I update the watermark only after the pipeline completes successfully, ensuring that failures don't cause data loss. To handle late-arriving data, I process a configurable lookback window and rely on MERGE to avoid duplicates. Finally, I maintain audit tables and validate row counts and data quality before marking the pipeline successful. This ensures that rerunning the pipeline with the same input always produces the same final dataset.</p>
       <ul>
         <li><strong>Watermark table:</strong> Store the last processed timestamp or ID. Each run reads only rows newer than the watermark. After a successful load, update the watermark.</li>
         <li><strong>Delta Lake MERGE (UPSERT):</strong> Match on a unique business key — update if the row exists, insert if new. Naturally handles duplicates from re-runs.</li>
         <li><strong>Partition overwrite:</strong> Write new data to a date partition, overwrite that partition on re-run. Avoids duplicates by design when partitioned by ingestion date.</li>
         <li><strong>Dedup in PySpark:</strong> <code>df.dropDuplicates(["id", "updated_at"])</code> before writing.</li>
       </ul>
+          <div class="callout tip"><span class="callout-icon">💡</span><div>Idempotency isn't achieved by deduplicating after the load; it's achieved by designing the pipeline so duplicates cannot be introduced in the first place. Using incremental extraction, stable business keys, transactional MERGE operations, and updating the watermark only after a successful commit makes reruns safe and reliable.</div></div>
     </div>
   </div>
 
@@ -3583,6 +3638,7 @@ df.writeStream \
   </div>
   <div class="q-body">
     <p>"Data quality is not something I add at the end — I bake it into every layer of the pipeline from day one. The earlier you catch a bad record, the cheaper it is to fix."</p>
+  <p>I ensure data quality by implementing validation checks throughout the ETL process. Before processing, I validate the source file, schema, and mandatory columns. During transformation, I perform duplicate checks, null validations, data type checks, range validations, and business rule validations. After loading, I cross-check source and target row counts, verify aggregate values, and ensure there are no duplicate business keys. Invalid records are written to a quarantine table instead of being loaded into production, while audit logs capture processing statistics such as rows read, rows loaded, and rows rejected. Finally, automated alerts notify the support team of any validation failures. This layered validation approach ensures that only high-quality data reaches downstream systems.</p>
     <p><strong>At the Bronze layer — structural checks:</strong></p>
     <ul>
       <li>Schema validation — compare incoming schema against the expected schema before writing. If a new column appears or a column type changes, the pipeline alerts instead of silently accepting it.</li>
@@ -3615,7 +3671,8 @@ df.writeStream \
       <li>Aggregate reconciliation — sum of revenue in Gold should match sum of revenue in Silver after transformations. Any mismatch means the transformation logic has a bug.</li>
     </ul>
     <p><strong>Audit logging:</strong> Every pipeline run writes a row to a central audit table — pipeline name, run ID, rows in, rows out, status, error message, start and end time. I built a simple Power BI dashboard on top of this so the team has visibility without needing to dig into ADF Monitor every day.</p>
-    <div class="callout tip"><span class="callout-icon">💡</span><div>Good line to say: "My rule is — never write bad data silently. Either fix it, route it to a dead-letter path with the reason logged, or fail loudly. Silent bad data is the worst outcome because nobody knows it's wrong until a business decision is made on it."</div></div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>"My rule is — never write bad data silently. Either fix it, route it to a dead-letter path with the reason logged, or fail loudly. Silent bad data is the worst outcome because nobody knows it's wrong until a business decision is made on it."</div></div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>I don't rely on a single validation step. I implement layered data quality checks throughout the ETL lifecycle—before ingestion, during transformation, and after loading. This approach catches issues early, prevents bad data from reaching downstream systems, and provides clear auditability for production support.</div></div>
   </div>
 </div>
 
@@ -4536,16 +4593,17 @@ stages:
     <div class="q-body">
       <p>Earlier organizations used SQL Data Warehouse, Azure Data Factory, HDInsight, Spark Clusters as separate services.</p>
       <p>Synapse unified them into a Single Platform, reducing Data movement, Infrastructure management &amp; Development Complexity.</p>
+      <p>Azure Synapse is a unified analytics platform. It combines data ingestion, Spark-based processing, SQL analytics, and enterprise data warehousing into a single workspace. This reduces the need to manage multiple disconnected services and simplifies building end-to-end analytics solutions.</p>
       <p><strong>Performance Optimization in Synapse:</strong></p>
-      <ul>
-        <li>Use Hash distribution</li>
-        <li>Reduce data movement</li>
-        <li>Use Partitioning</li>
-        <li>Use Parquet files</li>
-        <li>Avoid Select *</li>
-        <li>Use Replicated tables for dimensions</li>
-        <li>Use CTAS</li>
-      </ul>
+      
+        <p>1. Use Hash distribution<br>
+        2. Reduce data movement<br>
+        3. Use Partitioning<br>
+        4. Use Parquet files<br>
+        5. Avoid Select *<br>
+        6. Use Replicated tables for dimensions<br>
+        7. Use CTAS</p>
+      
       <p><strong>Security in Synapse:</strong></p>
       <ul>
         <li>Azure RBAC → Managed Identity</li>
@@ -4734,6 +4792,174 @@ WITH (FILE_TYPE = 'PARQUET', CREDENTIAL = ('Managed Identity'));</code></pre></d
   </div>
   <div class="q-body">
     <p>Databricks is a cloud-based unified analytics platform that combines Data Engineering, Data Science, ML & Business Intelligence Into a single environment. It is widely used for large-scale data processing and advanced analytics.</p>
+    <p>Azure Databricks follows a Control Plane and Data Plane architecture. The Control Plane is managed by Databricks and provides workspace services such as notebooks, cluster management, job scheduling, REST APIs, and Unity Catalog. The Data Plane runs inside the customer's Azure subscription and contains the Spark clusters, including the Driver and Executor nodes that process data. When a user executes a notebook, the Driver creates an optimized execution plan, divides the work into stages and tasks, and distributes those tasks to Executors. Executors process data in parallel by reading from and writing to Azure Data Lake Storage (ADLS), typically using Delta Lake tables. The results are then returned to the Driver and displayed in the notebook.</p>
+
+    <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin:14px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;">
+<svg viewBox="0 0 820 520" xmlns="http://www.w3.org/2000/svg" style="min-width:640px;width:100%;display:block;margin:0 auto;">
+
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L7,3 z" fill="#4f9cf9"/>
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L7,3 z" fill="#34d399"/>
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L7,3 z" fill="#a78bfa"/>
+    </marker>
+    <marker id="arr-orange" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L7,3 z" fill="#fb923c"/>
+    </marker>
+    <marker id="arr-gray" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L7,3 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- ── Title ── -->
+  <text x="410" y="26" text-anchor="middle" fill="#4f9cf9" font-size="15" font-weight="bold" font-family="sans-serif">Azure Databricks Architecture</text>
+
+  <!-- ══════════════════════════════════════════
+       CONTROL PLANE (left column)
+  ══════════════════════════════════════════ -->
+  <rect x="18" y="44" width="250" height="430" rx="12" fill="#0d1b2a" stroke="#4f9cf9" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="143" y="64" text-anchor="middle" fill="#4f9cf9" font-size="11" font-weight="bold" font-family="sans-serif">CONTROL PLANE</text>
+  <text x="143" y="78" text-anchor="middle" fill="#334155" font-size="9.5" font-family="sans-serif">(Managed by Databricks)</text>
+
+  <!-- Databricks UI -->
+  <rect x="34" y="90" width="218" height="44" rx="8" fill="#162032" stroke="#38bdf8" stroke-width="1.2"/>
+  <text x="143" y="108" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="600" font-family="sans-serif">Databricks UI / Notebooks</text>
+  <text x="143" y="124" text-anchor="middle" fill="#64748b" font-size="9.5" font-family="sans-serif">Web IDE · Job UI · SQL Editor</text>
+
+  <!-- REST API -->
+  <rect x="34" y="148" width="218" height="44" rx="8" fill="#162032" stroke="#38bdf8" stroke-width="1.2"/>
+  <text x="143" y="166" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="600" font-family="sans-serif">REST API / CLI</text>
+  <text x="143" y="182" text-anchor="middle" fill="#64748b" font-size="9.5" font-family="sans-serif">Trigger jobs · Manage clusters</text>
+
+  <!-- Cluster Manager -->
+  <rect x="34" y="206" width="218" height="44" rx="8" fill="#162032" stroke="#38bdf8" stroke-width="1.2"/>
+  <text x="143" y="224" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="600" font-family="sans-serif">Cluster Manager</text>
+  <text x="143" y="240" text-anchor="middle" fill="#64748b" font-size="9.5" font-family="sans-serif">Autoscaling · Lifecycle · Config</text>
+
+  <!-- Job Scheduler -->
+  <rect x="34" y="264" width="218" height="44" rx="8" fill="#162032" stroke="#38bdf8" stroke-width="1.2"/>
+  <text x="143" y="282" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="600" font-family="sans-serif">Job Scheduler</text>
+  <text x="143" y="298" text-anchor="middle" fill="#64748b" font-size="9.5" font-family="sans-serif">Cron · ADF trigger · Manual</text>
+
+  <!-- Unity Catalog -->
+  <rect x="34" y="322" width="218" height="44" rx="8" fill="#1a0f2e" stroke="#a78bfa" stroke-width="1.2"/>
+  <text x="143" y="340" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600" font-family="sans-serif">Unity Catalog</text>
+  <text x="143" y="356" text-anchor="middle" fill="#64748b" font-size="9.5" font-family="sans-serif">Governance · ACL · Lineage</text>
+
+  <!-- Metastore -->
+  <rect x="34" y="380" width="218" height="44" rx="8" fill="#162032" stroke="#38bdf8" stroke-width="1.2"/>
+  <text x="143" y="398" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="600" font-family="sans-serif">Metastore / MLflow</text>
+  <text x="143" y="414" text-anchor="middle" fill="#64748b" font-size="9.5" font-family="sans-serif">Table metadata · ML models</text>
+
+  <!-- ══════════════════════════════════════════
+       DATA PLANE (right column)
+  ══════════════════════════════════════════ -->
+  <rect x="306" y="44" width="496" height="430" rx="12" fill="#0a1a10" stroke="#34d399" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="554" y="64" text-anchor="middle" fill="#34d399" font-size="11" font-weight="bold" font-family="sans-serif">DATA PLANE</text>
+  <text x="554" y="78" text-anchor="middle" fill="#1a3a28" font-size="9.5" font-family="sans-serif">(Runs in Customer's Azure Subscription)</text>
+
+  <!-- ── Driver node ── -->
+  <rect x="322" y="90" width="220" height="90" rx="10" fill="#0f2a1a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="432" y="110" text-anchor="middle" fill="#34d399" font-size="12" font-weight="bold" font-family="sans-serif">Driver Node</text>
+  <rect x="336" y="118" width="192" height="22" rx="5" fill="#0a1a10" stroke="#34d399" stroke-width="0.8"/>
+  <text x="432" y="133" text-anchor="middle" fill="#6ee7b7" font-size="10" font-family="sans-serif">SparkContext / DAG Scheduler</text>
+  <rect x="336" y="146" width="192" height="22" rx="5" fill="#0a1a10" stroke="#34d399" stroke-width="0.8"/>
+  <text x="432" y="161" text-anchor="middle" fill="#6ee7b7" font-size="10" font-family="sans-serif">Task Scheduler · Broadcast</text>
+
+  <!-- ── Executor nodes ── -->
+  <!-- Executor 1 -->
+  <rect x="566" y="90" width="218" height="76" rx="10" fill="#0f2a1a" stroke="#34d399" stroke-width="1.2"/>
+  <text x="675" y="108" text-anchor="middle" fill="#34d399" font-size="11" font-weight="bold" font-family="sans-serif">Executor 1</text>
+  <rect x="580" y="116" width="190" height="18" rx="4" fill="#0a1a10" stroke="#34d399" stroke-width="0.6"/>
+  <text x="675" y="129" text-anchor="middle" fill="#6ee7b7" font-size="9.5" font-family="sans-serif">Task Slots · Memory Pool</text>
+  <rect x="580" y="140" width="190" height="18" rx="4" fill="#0a1a10" stroke="#34d399" stroke-width="0.6"/>
+  <text x="675" y="153" text-anchor="middle" fill="#6ee7b7" font-size="9.5" font-family="sans-serif">Block Manager · Cache</text>
+
+  <!-- Executor 2 -->
+  <rect x="566" y="180" width="218" height="76" rx="10" fill="#0f2a1a" stroke="#34d399" stroke-width="1.2"/>
+  <text x="675" y="198" text-anchor="middle" fill="#34d399" font-size="11" font-weight="bold" font-family="sans-serif">Executor 2</text>
+  <rect x="580" y="206" width="190" height="18" rx="4" fill="#0a1a10" stroke="#34d399" stroke-width="0.6"/>
+  <text x="580" y="215" text-anchor="start" fill="#6ee7b7" font-size="0" font-family="sans-serif"> </text>
+  <text x="675" y="219" text-anchor="middle" fill="#6ee7b7" font-size="9.5" font-family="sans-serif">Task Slots · Memory Pool</text>
+  <rect x="580" y="230" width="190" height="18" rx="4" fill="#0a1a10" stroke="#34d399" stroke-width="0.6"/>
+  <text x="675" y="243" text-anchor="middle" fill="#6ee7b7" font-size="9.5" font-family="sans-serif">Block Manager · Cache</text>
+
+  <!-- Executor N -->
+  <rect x="566" y="270" width="218" height="44" rx="10" fill="#0a1a10" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="675" y="296" text-anchor="middle" fill="#334155" font-size="11" font-family="sans-serif">Executor N  (autoscaled)</text>
+
+  <!-- Arrow Driver → Executors -->
+  <line x1="542" y1="128" x2="564" y2="128" stroke="#34d399" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <line x1="542" y1="148" x2="564" y2="218" stroke="#34d399" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <text x="552" y="118" text-anchor="middle" fill="#34d399" font-size="9" font-family="sans-serif">tasks</text>
+
+  <!-- ── ADLS Gen2 storage ── -->
+  <rect x="322" y="340" width="460" height="54" rx="10" fill="#1a1205" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="552" y="362" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold" font-family="sans-serif">Azure Data Lake Storage Gen2 (ADLS)</text>
+  <text x="552" y="380" text-anchor="middle" fill="#64748b" font-size="10" font-family="sans-serif">Delta Lake tables · Bronze / Silver / Gold · Checkpoints · Logs</text>
+
+  <!-- Arrows Executors → ADLS -->
+  <line x1="432" y1="180" x2="432" y2="338" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr-orange)"/>
+  <line x1="675" y1="258" x2="675" y2="338" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr-orange)"/>
+  <text x="455" y="270" fill="#fbbf24" font-size="9" font-family="sans-serif">read / write</text>
+
+  <!-- ── Azure Services row ── -->
+  <!-- Key Vault -->
+  <rect x="322" y="410" width="100" height="44" rx="8" fill="#1a0f1a" stroke="#e879f9" stroke-width="1.2"/>
+  <text x="372" y="428" text-anchor="middle" fill="#e879f9" font-size="10" font-weight="600" font-family="sans-serif">Key Vault</text>
+  <text x="372" y="444" text-anchor="middle" fill="#64748b" font-size="9" font-family="sans-serif">Secrets</text>
+
+  <!-- Azure Monitor -->
+  <rect x="436" y="410" width="110" height="44" rx="8" fill="#0f1a2a" stroke="#38bdf8" stroke-width="1.2"/>
+  <text x="491" y="428" text-anchor="middle" fill="#38bdf8" font-size="10" font-weight="600" font-family="sans-serif">Azure Monitor</text>
+  <text x="491" y="444" text-anchor="middle" fill="#64748b" font-size="9" font-family="sans-serif">Logs · Alerts</text>
+
+  <!-- AAD -->
+  <rect x="560" y="410" width="100" height="44" rx="8" fill="#1a0f1a" stroke="#a78bfa" stroke-width="1.2"/>
+  <text x="610" y="428" text-anchor="middle" fill="#a78bfa" font-size="10" font-weight="600" font-family="sans-serif">AAD / IAM</text>
+  <text x="610" y="444" text-anchor="middle" fill="#64748b" font-size="9" font-family="sans-serif">Auth · RBAC</text>
+
+  <!-- ADF -->
+  <rect x="674" y="410" width="108" height="44" rx="8" fill="#162032" stroke="#fb923c" stroke-width="1.2"/>
+  <text x="728" y="428" text-anchor="middle" fill="#fb923c" font-size="10" font-weight="600" font-family="sans-serif">ADF / Airflow</text>
+  <text x="728" y="444" text-anchor="middle" fill="#64748b" font-size="9" font-family="sans-serif">Orchestration</text>
+
+  <!-- ══════════════════════════════════════════
+       ARROWS — Control Plane ↔ Data Plane
+  ══════════════════════════════════════════ -->
+  <!-- Cluster Manager → Driver -->
+  <line x1="268" y1="228" x2="320" y2="130" stroke="#4f9cf9" stroke-width="1.4" marker-end="url(#arr-blue)"/>
+  <text x="280" y="175" fill="#4f9cf9" font-size="9" font-family="sans-serif" transform="rotate(-34,280,175)">provision</text>
+
+  <!-- Job Scheduler → Driver -->
+  <line x1="268" y1="282" x2="320" y2="155" stroke="#4f9cf9" stroke-width="1.4" stroke-dasharray="5,3" marker-end="url(#arr-blue)"/>
+
+  <!-- Unity Catalog → Driver (governance) -->
+  <line x1="268" y1="344" x2="320" y2="180" stroke="#a78bfa" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr-purple)"/>
+  <text x="266" y="340" fill="#a78bfa" font-size="8.5" font-family="sans-serif" text-anchor="end">govern</text>
+
+  <!-- ══════════════════════════════════════════
+       LEGEND
+  ══════════════════════════════════════════ -->
+  <rect x="18" y="482" width="784" height="26" rx="6" fill="#0d1117" stroke="#1e293b" stroke-width="1"/>
+  <line x1="36"  y1="495" x2="64"  y2="495" stroke="#4f9cf9" stroke-width="1.4"/>
+  <text x="70"  y="499" font-size="9.5" fill="#94a3b8" font-family="sans-serif">Control → Data</text>
+  <line x1="170" y1="495" x2="198" y2="495" stroke="#34d399" stroke-width="1.4"/>
+  <text x="204" y="499" font-size="9.5" fill="#94a3b8" font-family="sans-serif">Task dispatch</text>
+  <line x1="310" y1="495" x2="338" y2="495" stroke="#fbbf24" stroke-width="1.4" stroke-dasharray="4,3"/>
+  <text x="344" y="499" font-size="9.5" fill="#94a3b8" font-family="sans-serif">Storage read/write</text>
+  <line x1="480" y1="495" x2="508" y2="495" stroke="#a78bfa" stroke-width="1.4" stroke-dasharray="4,3"/>
+  <text x="514" y="499" font-size="9.5" fill="#94a3b8" font-family="sans-serif">Governance</text>
+  <line x1="620" y1="495" x2="648" y2="495" stroke="#fb923c" stroke-width="1.4"/>
+  <text x="654" y="499" font-size="9.5" fill="#94a3b8" font-family="sans-serif">Orchestration</text>
+
+</svg>
+</div>
+    
     <p>Databricks follows a two-layer architecture — the control plane managed by Databricks, while the Compute/Data Plane is hosted in the cloud environment (AWS, Azure, or Google Cloud)</p>
     <p><strong>Managed Spark + Delta Lake + Lakehouse Platform + Governance + Enterprise Tooling</strong></p>
 
@@ -5108,6 +5334,8 @@ spark.sql("""
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">How do you optimize a slow Databricks job? End-to-end approach.</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span><span class="q-tag tag-debug">Tuning</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <p>follow a structured troubleshooting approach when optimizing a slow Databricks job. First, I collect baseline information such as execution time, data volume, and recent changes. Next, I analyze the Databricks Job Run and Spark UI to identify slow stages, shuffle operations, skewed tasks, spills, or resource bottlenecks. I also review the execution plan using <code>explain()</code> to understand join strategies and data movement. Based on the root cause, I apply targeted optimizations such as filtering data early, using built-in Spark functions instead of Python UDFs, broadcasting small tables, fixing data skew, optimizing partitioning, and enabling AQE. For Delta tables, I use <code>OPTIMIZE, ZORDER, and VACUUM</code> where appropriate. Finally, I validate the improvements by comparing execution time, shuffle metrics, CPU and memory utilization, and Spark UI statistics before and after the changes.</p>
+      <p>I first identify whether the bottleneck is in the code, the data, or the infrastructure. Scaling the cluster is my last option after eliminating inefficient execution patterns.</p>
       <p>Work through these layers in order — fix the cheapest issue first:</p>
       <ol>
         <li><strong>Check Spark UI first:</strong> Go to Stages → find the bottleneck stage. Look at: task duration variance (skew?), shuffle read/write size (too much data?), spill to disk (OOM pressure?), GC time (memory tuning needed?). <br> <b>Standard Clusters:</b> The Spark UI is fully accessible by clicking View Spark UI in the Cluster UI. It provides detailed insights into jobs, stages, tasks, executors, and DAG visualizations for performance tuning and debugging. <br> <b>Serverless Compute (Free Edition):</b> The Spark UI is not available. Users in the Free Edition should use Query Profile instead to analyze execution plans and performance.</li>
@@ -5127,6 +5355,7 @@ spark.sql("""
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">A Databricks job is failing with Out-of-Memory (OOM) errors. How would you troubleshoot it?</div><div class="q-tags"><span class="q-tag tag-debug">Troubleshooting</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <p>When a Databricks job fails with an OOM error, my first step is to determine whether it's a Driver OOM or an Executor OOM because the causes are different. I review the Databricks Job Run, Spark UI, and executor logs to identify the failing stage and analyze memory usage, shuffle size, spills, and skewed tasks. I also inspect the execution plan using explain() to understand joins and data movement. Common causes include data skew, large shuffles, oversized partitions, excessive caching, Python collect() or toPandas(), and inefficient joins. I address the specific root cause by repartitioning data, broadcasting small tables, filtering early, replacing Python UDFs with built-in functions, optimizing Delta tables, and adjusting caching. I consider increasing cluster memory or the number of executors only after confirming that the issue cannot be resolved through query or data optimization.</p>
       <ol>
         <li><strong>Identify where OOM occurs:</strong> Driver OOM → you're collecting too much data to the driver (<code>collect()</code>, <code>toPandas()</code>, large broadcast). Executor OOM → individual tasks are too memory-heavy.</li>
         <li><strong>Check Spark UI:</strong> Go to Stages → look for tasks with very large shuffle read/write or skewed task sizes.</li>
@@ -5153,29 +5382,12 @@ spark.sql("""
     </div>
   </div>
 
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">What is the difference between schema inference and predefined schema in PySpark? Which is better in production?</div><div class="q-tags"><span class="q-tag tag-pattern">Schema</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p><strong>Schema inference</strong> means Spark reads a sample of the data and auto-detects column names and types. Convenient in development, but problematic in production:</p>
-      <ul>
-        <li><strong>Expensive:</strong> requires an extra scan of the data before processing begins.</li>
-        <li><strong>Unreliable:</strong> <code>inferSchema</code> on CSV might read <code>"123"</code> as integer, but rows later with <code>"123abc"</code> fail or produce wrong types.</li>
-        <li><strong>Non-deterministic:</strong> schema can silently change if source data changes, breaking downstream code without any obvious error.</li>
-      </ul>
-      <p><strong>Predefined schema (StructType)</strong> — you explicitly declare every column name and type before reading:</p>
-      <pre><code class="language-python">schema = StructType([
-    StructField("order_id", IntegerType(), False),
-    StructField("amount", DoubleType(), True),
-    StructField("created_at", TimestampType(), True)
-])
-df = spark.read.schema(schema).json("path/to/data")</code></pre>
-      <div class="callout tip"><span class="callout-icon">&#x2705;</span><div>Always use predefined schema in production. It's faster, predictable, and forces you to explicitly handle schema changes — which is exactly what you want in a controlled pipeline.</div></div>
-    </div>
-  </div>
+
 
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How would you build a reusable Python ETL framework in Databricks?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <p>I build ETL pipelines using a metadata-driven framework instead of hardcoding logic. Common tasks like reading data, validation, transformations, logging, error handling, and writing data are implemented as reusable Python modules. Pipeline behavior is controlled through configuration files or metadata tables, making it easy to onboard new datasets without changing the core code. I also incorporate Spark best practices like predicate pushdown, broadcast joins, AQE, partitioning, and Delta Lake optimizations. This approach minimizes code duplication, simplifies onboarding of new datasets, and makes the solution easier to maintain.</p>
       <ul>
         <li><strong>Config-driven:</strong> Store pipeline configs in JSON, YAML, or a control SQL table. Code reads config at runtime — add a new pipeline by adding a config row, not writing new code.</li>
         <li><strong>Separate concerns:</strong> Organize into <code>readers/</code>, <code>transformers/</code>, <code>writers/</code>, and <code>utils/</code> (logging, audit, schema validation).</li>
@@ -5190,6 +5402,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How do you handle Schema Drift using ADF and Databricks?</div><div class="q-tags"><span class="q-tag tag-debug">Schema Management</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <p>I handle schema drift using both ADF and Databricks. In ADF, I enable schema drift in Mapping Data Flows where appropriate so that additive schema changes don't immediately fail the pipeline. I first land all incoming data in the Bronze layer. In Databricks, I compare the incoming schema with the target schema and classify changes as either additive or breaking. For new nullable columns, I use controlled Delta Lake schema evolution, such as <code>mergeSchema</code>, after validation. For datatype changes, removed columns, or missing mandatory fields, I reject or quarantine the data, log the schema mismatch, and send alerts. This approach keeps the pipeline resilient while protecting the curated Silver and Gold layers from unexpected schema changes.</p>
       <p>Schema drift = source adds/removes/renames columns unexpectedly, breaking your pipeline.</p>
       <p><strong>In ADF Data Flow:</strong> Enable "Allow schema drift" on the source transformation. ADF will pass through unknown columns. Use "Auto mapping" in the sink.</p>
       <p><strong>In Databricks:</strong></p>
@@ -5207,6 +5420,8 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">How do you control Azure costs across your data platform?</div><div class="q-tags"><span class="q-tag tag-cost">Cost Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <p>I approach Azure cost optimization across the entire data platform rather than focusing on a single service. For Databricks, I use job clusters, autoscaling, auto-termination, and optimize Spark jobs to reduce execution time. For Delta Lake, I compact small files using OPTIMIZE, improve query efficiency with ZORDER, and clean up obsolete files with VACUUM. In ADF, I prefer incremental processing and event-based triggers to avoid unnecessary executions. For ADLS Gen2, I implement lifecycle management to move older data from Hot to Cool or Archive tiers. I also use Azure Monitor and Azure Cost Management to track resource utilization, set budgets, and identify underutilized resources. My objective is to reduce cloud costs through efficient design and monitoring rather than simply reducing infrastructure</p>
+    <p>The biggest savings usually come from reducing unnecessary computation—optimizing Spark jobs, processing only changed data, eliminating idle clusters, and improving data layout—before resizing infrastructure. Efficient workloads naturally consume fewer Azure resources.</p>
       <ul>
         <li><strong>Databricks:</strong> Use spot instances for batch (90% cheaper). Use job clusters (auto-terminate) not all-purpose clusters (idle billing). Enable auto-termination (15–30 min idle). Use cluster pools for faster spin-up without idle cost. Right-size — profile job metrics and pick smallest fitting cluster.</li>
         <li><strong>Synapse Dedicated Pool:</strong> Pause when not in use (ADF pipeline or Azure Automation). Scale down DWU during off-peak. Use Serverless SQL Pool for ad-hoc exploration — pay per TB scanned, not per hour.</li>
@@ -5269,6 +5484,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
   <div class="q-body">
     <p>"This is one of the most frustrating problems — and it almost always comes down to differences between the two environments that aren't immediately obvious."</p>
+    <p>When a job works in Dev but fails in Production, First, I check the exact error message and identify whether it's related to code, configuration, data, permissions, or infrastructure. I then compare the Dev and Production environments, including configuration files, cluster settings, library versions, secrets, and access permissions. Next, I compare the input data for differences in schema, volume, or quality, and review the Spark UI if the job fails during execution. I also verify that the correct code and configuration were deployed. Once I identify the root cause, I validate the fix in a lower environment where possible before promoting it to Production, ensuring the issue is resolved without introducing regressions</p>
     <p><strong>My debugging checklist — things that differ between dev and prod:</strong></p>
     <ul>
       <li><strong>Data volume:</strong> Dev usually runs on a sample — 10K rows. Prod has 100M rows. A job that runs fine in 2 minutes on 10K rows can OOM or time out on 100M rows. Check for memory spill, skew, or missing partitioning that only becomes visible at scale.</li>
@@ -5373,6 +5589,28 @@ dbutils.widgets.removeAll()</code></pre>
     <div class="callout tip"><span class="callout-icon">💡</span><div>"The three I use most in production: <code>dbutils.secrets.get()</code> for all credentials (never hardcode anything), <code>dbutils.fs.ls()</code> to check if files arrived before proceeding, and <code>dbutils.notebook.run()</code> to call child transformation notebooks from a master orchestration notebook."</div></div>
   </div>
 </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">What is the difference between schema inference and predefined schema in PySpark? Which is better in production?</div><div class="q-tags"><span class="q-tag tag-pattern">Schema</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Schema inference</strong> means Spark reads a sample of the data and auto-detects column names and types. Convenient in development, but problematic in production:</p>
+      <ul>
+        <li><strong>Expensive:</strong> requires an extra scan of the data before processing begins.</li>
+        <li><strong>Unreliable:</strong> <code>inferSchema</code> on CSV might read <code>"123"</code> as integer, but rows later with <code>"123abc"</code> fail or produce wrong types.</li>
+        <li><strong>Non-deterministic:</strong> schema can silently change if source data changes, breaking downstream code without any obvious error.</li>
+      </ul>
+      <p><strong>Predefined schema (StructType)</strong> — you explicitly declare every column name and type before reading:</p>
+      <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python">schema = StructType([
+    StructField("order_id", IntegerType(), False),
+    StructField("amount", DoubleType(), True),
+    StructField("created_at", TimestampType(), True)
+])
+df = spark.read.schema(schema).json("path/to/data")</code></pre></div>
+      <div class="callout tip"><span class="callout-icon">&#x2705;</span><div>Always use predefined schema in production. It's faster, predictable, and forces you to explicitly handle schema changes — which is exactly what you want in a controlled pipeline.</div></div>
+    </div>
+  </div>
 </div><!-- /databricks -->
 
 <!-- ════════════════════════════════════════════════════════
@@ -5394,6 +5632,7 @@ dbutils.widgets.removeAll()</code></pre>
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
+  <p>Apache Spark and Hadoop MapReduce are both distributed data processing frameworks.The biggest difference between Spark and MapReduce is their execution model. MapReduce is disk-based, writing intermediate results to disk after each stage, whereas Spark performs most computations in memory, making it much faster for iterative and interactive workloads. Spark uses a DAG execution engine, supports SQL, streaming, machine learning, and graph processing through a unified framework, while MapReduce is primarily designed for batch processing. Spark also provides simpler APIs in Python, Scala, Java, and SQL, reducing development effort. In modern data engineering projects, Spark is generally the preferred choice because it delivers better performance, flexibility, and scalability</p>
     <p>"MapReduce was Hadoop's original processing engine — Spark was built to fix its performance limitations. The core difference is where intermediate data lives: MapReduce always writes to disk between steps, Spark keeps it in memory."</p>
 
     <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--surface);">
@@ -5447,7 +5686,7 @@ dbutils.widgets.removeAll()</code></pre>
     <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Spark Architecture — Driver, Executors, Cluster Manager, DAG, Lazy Evaluation</div><div class="q-tags"><span class="q-tag tag-fund">Architecture</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
     <p>PySpark is the Python API for Apache Spark, used to process large-scale data across distributed systems.</p>
-      <p>Spark follows a master–worker design. A Spark application runs a driver program on one node and executor processes on many worker nodes. The driver hosts the main function and creates the SparkContext (or SparkSession ), which is the entry point to Spark. The driver’s SparkContext connects to a cluster manager (e.g. YARN, Kubernetes, or Spark’s standalone manager) to acquire resources. The cluster manager allocates executors on worker machines; each executor is a JVM process that will run tasks and cache data partitions.</p>
+    <P>Spark follows a master-worker architecture consisting of a Driver, a Cluster Manager, and multiple Executors. The Driver is the brain of the application—it creates the SparkSession, builds the logical plan and DAG, optimizes the query, divides it into stages and tasks, and schedules those tasks. The Cluster Manager, such as YARN or Kubernetes, allocates resources and launches Executors on worker nodes. Executors perform the actual data processing, including reading data, executing transformations, caching intermediate results, and writing outputs. They also report task status back to the Driver. This architecture allows Spark to process large datasets efficiently by distributing work across multiple Executors running in parallel.</P>
       <div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:20px;margin-bottom:18px;overflow-x:auto">
       <svg width="100%" viewBox="0 0 660 370" style="min-width:480px" role="img">
         <title>Spark cluster architecture — Driver, Cluster Manager, and Executors</title>
@@ -5559,96 +5798,207 @@ dbutils.widgets.removeAll()</code></pre>
     </div>
   </div>
 
-
- <div class="q-card">
+<div class="q-card">
   <div class="q-header" onclick="toggle(this)">
-    <div class="q-num">3</div>
+    <div class="q-num">X</div>
     <div class="q-title-wrap">
-      <div class="q-title">Memory Management in Spark</div>
-      <div class="q-tags"><span class="q-tag tag-perf">Memory</span><span class="q-tag tag-fund">Internals</span></div>
+      <div class="q-title">Explain Memory Management in Spark.</div>
     </div>
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
-    <p>Spark runs on JVM and every executor has a fixed memory container. Spark divides that memory into regions — each with a specific job. Think of it like a restaurant kitchen with dedicated stations.</p>
+<p>Spark uses a Unified Memory Management model where executor memory is divided into Execution Memory and Storage Memory. Execution Memory is used for operations like joins, shuffles, sorts, and aggregations, while Storage Memory is used for caching and persisting DataFrames or RDDs. These regions share a common memory pool and can dynamically borrow memory from each other, improving utilization. If execution memory becomes insufficient, Spark spills intermediate data to disk, which allows the job to continue but may reduce performance. To avoid memory-related issues, I filter data early, prune unnecessary columns, manage caching carefully with <code>unpersist()</code>, handle data skew, avoid <code>collect()</code> on large datasets, and monitor the Spark UI to identify spills and memory bottlenecks.</p>
 
-    <div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin:14px 0;">
-      <div style="padding:10px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;font-weight:500;color:var(--color-text-secondary);">
-        <i class="ti ti-server" style="font-size:13px;margin-right:5px;" aria-hidden="true"></i>Executor container — 4 GB total (example)
-      </div>
+    <p><strong>Executor Memory — the full picture:</strong></p>
+    <p>When you set <code>spark.executor.memory = 8g</code>, that's not all usable memory. Spark divides executor memory into four regions:</p>
 
-      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+    <!-- SVG Diagram -->
+    <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin:14px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="min-width:580px;width:100%;display:block;margin:0 auto;">
 
-        <div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid #B5D4F4;">
-          <div style="background:#E6F1FB;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:13px;font-weight:500;color:#0C447C;">Reserved memory</span>
-            <span style="font-size:12px;color:#185FA5;background:#fff;border:0.5px solid #B5D4F4;border-radius:4px;padding:1px 8px;">~300 MB fixed</span>
-          </div>
-          <div style="padding:7px 12px;font-size:12.5px;color:var(--color-text-secondary);">
-            Spark's internal objects (SparkContext, metadata). You cannot touch this. <em>Kitchen: the fridge and utilities — always reserved.</em>
-          </div>
-        </div>
+        <!-- Title -->
+        <text x="360" y="28" text-anchor="middle" fill="#4f9cf9" font-size="14" font-weight="bold" font-family="sans-serif">Spark Executor Memory Layout (spark.executor.memory = 8 GB)</text>
 
-        <div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid #9FE1CB;">
-          <div style="background:#E1F5EE;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:13px;font-weight:500;color:#085041;">User memory</span>
-            <span style="font-size:12px;color:#0F6E56;background:#fff;border:0.5px solid #9FE1CB;border-radius:4px;padding:1px 8px;">~40% of remaining</span>
-          </div>
-          <div style="padding:7px 12px;font-size:12.5px;color:var(--color-text-secondary);">
-            Your Python objects, custom data structures, UDF variables. Spark doesn't manage this — it's yours. <em>Kitchen: your personal prep table.</em>
-          </div>
-        </div>
+        <!-- Total executor memory box -->
+        <rect x="30" y="45" width="660" height="340" rx="12" fill="none" stroke="#334155" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="360" y="65" text-anchor="middle" fill="#64748b" font-size="11" font-family="sans-serif">Total JVM Heap = spark.executor.memory (8 GB)</text>
 
-        <div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid #FAC775;">
-          <div style="background:#FAEEDA;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:13px;font-weight:500;color:#633806;">Spark (unified) memory — 60% of remaining</span>
-            <span style="font-size:12px;color:#854F0B;background:#fff;border:0.5px solid #FAC775;border-radius:4px;padding:1px 8px;">shared pool</span>
-          </div>
-          <div style="padding:8px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:0.5px solid #FAC775;">
-            <div style="background:#1f2423;border:0.5px solid #FAC775;border-radius:6px;padding:8px 10px;">
-              <div style="font-size:12px;font-weight:500;color:#d6ad7a;margin-bottom:3px;">Execution memory</div>
-              <div style="font-size:12px;color:var(--color-text-secondary);">Shuffle, sort, join, aggregation. Spills to disk when full. <em>The cooking station.</em></div>
-            </div>
-            <div style="background:#1f2423;border:0.5px solid #FAC775;border-radius:6px;padding:8px 10px;">
-              <div style="font-size:12px;font-weight:500;color:#d6ad7a;margin-bottom:3px;">Storage memory</div>
-              <div style="font-size:12px;color:var(--color-text-secondary);">Cached DataFrames. Evicted when execution needs space. <em>The warming shelf.</em></div>
-            </div>
-          </div>
-          <div style="padding:7px 12px;font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid #FAC775;">
-            <i class="ti ti-arrow-right" style="font-size:12px;margin-right:4px;" aria-hidden="true"></i>These two share the same pool and borrow from each other dynamically — this is called <strong>Unified Memory Model</strong> (default since Spark 1.6).
-          </div>
-        </div>
+        <!-- Reserved Memory -->
+        <rect x="50" y="80" width="620" height="52" rx="8" fill="#1e1e2e" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="360" y="100" text-anchor="middle" fill="#a5b4fc" font-size="12" font-weight="bold" font-family="sans-serif">Reserved Memory</text>
+        <text x="360" y="118" text-anchor="middle" fill="#64748b" font-size="10.5" font-family="sans-serif">Fixed 300 MB — used internally by Spark. Not configurable. Protects critical Spark objects.</text>
 
-        <div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid #AFA9EC;">
-          <div style="background:#EEEDFE;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:13px;font-weight:500;color:#3C3489;">Overhead memory</span>
-            <span style="font-size:12px;color:#534AB7;background:#fff;border:0.5px solid #AFA9EC;border-radius:4px;padding:1px 8px;">10% of executor memory (min 384 MB)</span>
-          </div>
-          <div style="padding:7px 12px;font-size:12.5px;color:var(--color-text-secondary);">
-            Off-heap: JVM threads, Python worker processes, network buffers, GC structures. Driver also has this. <em>Kitchen: ventilation and plumbing — invisible but critical.</em>
-          </div>
-        </div>
+        <!-- Spark Memory pool label -->
+        <text x="70" y="160" fill="#38bdf8" font-size="11" font-weight="bold" font-family="sans-serif">Spark Memory Pool  (spark.memory.fraction = 0.6  →  ~4.6 GB)</text>
 
-      </div>
+        <!-- Storage Memory -->
+        <rect x="50" y="168" width="300" height="120" rx="8" fill="#0f2a1a" stroke="#34d399" stroke-width="1.5"/>
+        <text x="200" y="195" text-anchor="middle" fill="#34d399" font-size="12" font-weight="bold" font-family="sans-serif">Storage Memory</text>
+        <text x="200" y="215" text-anchor="middle" fill="#64748b" font-size="10.5" font-family="sans-serif">spark.memory.storageFraction</text>
+        <text x="200" y="232" text-anchor="middle" fill="#64748b" font-size="10.5" font-family="sans-serif">Default: 50% of Spark pool (~2.3 GB)</text>
+        <text x="200" y="255" text-anchor="middle" fill="#8bacc8" font-size="10.5" font-family="sans-serif">Used for: df.cache(), df.persist()</text>
+        <text x="200" y="272" text-anchor="middle" fill="#8bacc8" font-size="10.5" font-family="sans-serif">broadcast variables</text>
+
+        <!-- Execution Memory -->
+        <rect x="370" y="168" width="300" height="120" rx="8" fill="#0f1a2a" stroke="#4f9cf9" stroke-width="1.5"/>
+        <text x="520" y="195" text-anchor="middle" fill="#4f9cf9" font-size="12" font-weight="bold" font-family="sans-serif">Execution Memory</text>
+        <text x="520" y="215" text-anchor="middle" fill="#64748b" font-size="10.5" font-family="sans-serif">50% of Spark pool (~2.3 GB)</text>
+        <text x="520" y="235" text-anchor="middle" fill="#8bacc8" font-size="10.5" font-family="sans-serif">Used for: shuffles, joins,</text>
+        <text x="520" y="252" text-anchor="middle" fill="#8bacc8" font-size="10.5" font-family="sans-serif">sorts, aggregations</text>
+        <text x="520" y="272" text-anchor="middle" fill="#8bacc8" font-size="10.5" font-family="sans-serif">Can borrow from Storage</text>
+
+        <!-- Borrow arrows -->
+        <defs>
+          <marker id="arrowY" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#f59e0b"/>
+          </marker>
+          <marker id="arrowY2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#f59e0b"/>
+          </marker>
+        </defs>
+        <line x1="350" y1="228" x2="372" y2="228" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowY)"/>
+        <line x1="372" y1="240" x2="350" y2="240" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowY2)"/>
+        <text x="361" y="222" text-anchor="middle" fill="#f59e0b" font-size="9" font-family="sans-serif">borrow</text>
+        <text x="361" y="250" text-anchor="middle" fill="#f59e0b" font-size="9" font-family="sans-serif">evict</text>
+
+        <!-- User Memory -->
+        <rect x="50" y="310" width="620" height="55" rx="8" fill="#1a1a0f" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="360" y="332" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold" font-family="sans-serif">User Memory  (remaining ~3.1 GB)</text>
+        <text x="360" y="352" text-anchor="middle" fill="#64748b" font-size="10.5" font-family="sans-serif">Your Python/Scala objects, UDFs, custom data structures. Spark does NOT manage this.</text>
+
+        <!-- Size labels -->
+        <text x="695" y="110" text-anchor="end" fill="#6366f1" font-size="10" font-family="monospace">300 MB</text>
+        <text x="695" y="232" text-anchor="end" fill="#34d399" font-size="10" font-family="monospace">~2.3 GB</text>
+        <text x="695" y="252" text-anchor="end" fill="#4f9cf9" font-size="10" font-family="monospace">~2.3 GB</text>
+        <text x="695" y="340" text-anchor="end" fill="#fbbf24" font-size="10" font-family="monospace">~3.1 GB</text>
+
+      </svg>
+    </div>
+
+
+    <p><strong>The four memory regions explained:</strong></p>
+    <ul>
+      <li><strong>Reserved Memory (fixed 300 MB):</strong> Spark keeps this for its own internal objects — not configurable, not available to your jobs. Always subtracted first. we can't touch this.</li>
+      <li><strong>Spark Memory Pool (<code>spark.memory.fraction</code> = 0.6 default):</strong> 60% of the remaining heap after reserved memory. This is split between Storage and Execution — and they can borrow from each other dynamically. this is called <strong>Unified Memory Model</strong> (default since Spark 1.6).</li>
+      <li><strong>Storage Memory:</strong> Used for caching DataFrames (<code>df.cache()</code>, <code>df.persist()</code>) and storing broadcast variables. If Execution needs more memory and Storage is idle, Spark evicts cached data to free space.</li>
+      <li><strong>Execution Memory:</strong> Used for active computation — shuffles, joins, sorts, aggregations. This is where spill to disk happens if execution memory runs out. Can borrow from Storage memory if available.</li>
+      <li><strong>User Memory (remaining ~40%):</strong> For our own Python/Scala objects, UDF data, custom data structures. Spark doesn't manage this — if we create huge objects here, you're on your own.</li>
+    </ul>
+
+    <p><strong>What happens when memory runs out — Spill:</strong></p>
+    <p>When execution memory is full during a shuffle or aggregation, Spark doesn't crash — it spills the overflow data to disk. But disk is 100x slower than RAM, so even a small spill can double your job runtime. You'll see non-zero "Spill (Memory)" and "Spill (Disk)" values in Spark UI → Stages → Summary Metrics.</p>
+
+    <!-- Spill flow SVG -->
+    <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;margin:14px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <svg viewBox="0 0 680 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:680px;display:block;margin:0 auto;">
+        <defs>
+          <marker id="arr2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#4f9cf9"/>
+          </marker>
+          <marker id="arrR" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#f87171"/>
+          </marker>
+        </defs>
+        <text x="340" y="20" text-anchor="middle" fill="#64748b" font-size="11" font-family="sans-serif">What happens during an aggregation on a large dataset</text>
+        <!-- Step boxes -->
+        <rect x="10"  y="35" width="120" height="40" rx="8" fill="#0f1a2a" stroke="#4f9cf9" stroke-width="1.2"/>
+        <text x="70" y="52" text-anchor="middle" fill="#4f9cf9" font-size="10.5" font-family="sans-serif">Data loaded</text>
+        <text x="70" y="67" text-anchor="middle" fill="#8bacc8" font-size="10" font-family="sans-serif">into partitions</text>
+
+        <line x1="130" y1="55" x2="160" y2="55" stroke="#4f9cf9" stroke-width="1.2" marker-end="url(#arr2)"/>
+
+        <rect x="160" y="35" width="130" height="40" rx="8" fill="#0f1a2a" stroke="#4f9cf9" stroke-width="1.2"/>
+        <text x="225" y="52" text-anchor="middle" fill="#4f9cf9" font-size="10.5" font-family="sans-serif">Aggregation uses</text>
+        <text x="225" y="67" text-anchor="middle" fill="#8bacc8" font-size="10" font-family="sans-serif">Execution Memory</text>
+
+        <line x1="290" y1="55" x2="320" y2="55" stroke="#4f9cf9" stroke-width="1.2" marker-end="url(#arr2)"/>
+
+        <rect x="320" y="35" width="130" height="40" rx="8" fill="#2a0f0f" stroke="#f87171" stroke-width="1.2"/>
+        <text x="385" y="52" text-anchor="middle" fill="#f87171" font-size="10.5" font-family="sans-serif">Memory full</text>
+        <text x="385" y="67" text-anchor="middle" fill="#8bacc8" font-size="10" font-family="sans-serif">→ Spill to disk</text>
+
+        <line x1="450" y1="55" x2="480" y2="55" stroke="#f87171" stroke-width="1.2" marker-end="url(#arrR)"/>
+
+        <rect x="480" y="35" width="130" height="40" rx="8" fill="#2a1a0f" stroke="#f59e0b" stroke-width="1.2"/>
+        <text x="545" y="52" text-anchor="middle" fill="#f59e0b" font-size="10.5" font-family="sans-serif">Reads back from</text>
+        <text x="545" y="67" text-anchor="middle" fill="#8bacc8" font-size="10" font-family="sans-serif">disk — very slow</text>
+
+        <!-- Labels below -->
+        <text x="385" y="98" text-anchor="middle" fill="#f87171" font-size="10" font-family="sans-serif">⚠ Spill detected here in Spark UI</text>
+      </svg>
+    </div>
+
+    <p><strong>How to fix memory issues in practice:</strong></p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Fix 1 — Increase executor memory (cluster config)
+# spark.executor.memory = 16g   (was 8g)
+
+# Fix 2 — Increase shuffle partitions so each partition is smaller
+# Less data per partition = less memory needed per task
+spark.conf.set("spark.sql.shuffle.partitions", "800")   # was 200
+
+# Fix 3 — Give more memory to execution (if you don't cache much)
+spark.conf.set("spark.memory.fraction",        "0.8")   # was 0.6
+spark.conf.set("spark.memory.storageFraction", "0.2")   # less for cache, more for execution
+
+# Fix 4 — Unpersist cached DFs you no longer need
+# They consume storage memory that execution might need
+df_lookup.unpersist()
+
+# Fix 5 — Repartition to reduce size of each partition before heavy ops
+df = df.repartition(800)   # more, smaller partitions = less memory per task
+
+# Fix 6 — Use memory-efficient storage levels when caching
+from pyspark import StorageLevel
+df.persist(StorageLevel.MEMORY_AND_DISK)   # spills to disk if RAM full, not OOM
+# vs df.cache() which is MEMORY_AND_DISK by default for DataFrames
+
+# Fix 7 — Enable AQE — automatically coalesces shuffle partitions
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+
+# How to check memory usage per executor
+# Spark UI → Executors tab → Storage Memory column
+# Also check: Spark UI → Stage → Task Metrics → GC Time</code></pre>
+    </div>
+
+    <p><strong>Off-heap memory (Tungsten):</strong></p>
+    <p>Tungsten, Spark's execution engine, also uses off-heap memory — memory outside the JVM heap. This avoids JVM garbage collection overhead entirely. When GC time in Spark UI is high (say >20% of task time), Tungsten's off-heap storage and binary format are what reduce it — rows stored as binary format outside JVM don't create Java objects that need garbage collecting.</p>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; PySpark</div>
+      <pre><code class="language-python"># Enable off-heap memory (optional — Tungsten uses it automatically)
+spark.conf.set("spark.memory.offHeap.enabled", "true")
+spark.conf.set("spark.memory.offHeap.size",    "4g")
+# Useful when: JVM GC pressure is high and you want to move
+# more memory outside JVM heap to reduce GC pauses</code></pre>
     </div>
 
     <p style="font-size:13.5px;color:var(--color-text-secondary);margin:8px 0 4px;"><strong style="color:var(--color-text-primary);">What happens during a join? (real example)</strong></p>
-    <ul>
-      <li>Spark reads two DataFrames and starts shuffling them by join key — this uses <strong>execution memory</strong>.</li>
-      <li>If you called <code>df.cache()</code> earlier, that cached data sits in <strong>storage memory</strong>.</li>
-      <li>If execution memory fills up, Spark <strong>spills to disk</strong> (slow but doesn't crash).</li>
-      <li>If storage memory is needed by execution, Spark <strong>evicts the cache</strong> automatically.</li>
-      <li>If even the overhead fills up → <strong>OOM error</strong> — the executor dies.</li>
-    </ul>
+      <p>1. Spark reads two DataFrames and starts shuffling them by join key — this uses <strong>execution memory</strong>.<br>
+      2. If you called <code>df.cache()</code> earlier, that cached data sits in <strong>storage memory</strong>.<br>
+      3. If execution memory fills up, Spark <strong>spills to disk</strong> (slow but doesn't crash).<br>
+      4. If storage memory is needed by execution, Spark <strong>evicts the cache</strong> automatically.<br>
+      5. If even the overhead fills up → <strong>OOM error</strong> — the executor dies.</p>
 
     <div class="callout warn"><span class="callout-icon">⚠️</span><div><strong>Common traps:</strong> calling <code>toPandas()</code> or <code>collect()</code> sends everything to <strong>driver memory</strong> (not executor) — driver has no execution/storage split, just a JVM heap. Overflow it and the entire application crashes, not just one task.</div></div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div><strong>Quick memory troubleshooting guide:</strong><br>
+    <strong>OOM error</strong> → increase <code>spark.executor.memory</code> or reduce partition size<br>
+    <strong>Spill to disk</strong> → increase shuffle partitions or increase execution memory fraction<br>
+    <strong>High GC time</strong> → reduce number of objects created in UDFs, use native functions, consider off-heap<br>
+    <strong>Slow caching</strong> → use <code>MEMORY_AND_DISK</code> instead of <code>MEMORY_ONLY</code> to avoid OOM when cache doesn't fit</div></div>
+
   </div>
 </div>
+
+ 
 
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Catalyst Optimizer &amp; Tungsten Engine</div><div class="q-tags"><span class="q-tag tag-perf">Internals</span></div></div><div class="q-chevron">▼</div></div>
   <div class="q-body">
+  <p>Catalyst Optimizer = Decides the best execution plan <br>
+Tungsten Engine = Executes that plan as efficiently as possible</p>
     <p><strong>Catalyst Optimizer</strong> is Spark's intelligent query optimizer — it automatically rewrites our PySpark code into the fastest possible execution plan. Catalyst decides how to execute it efficiently. It works in 4 phases:</p>
     <ol>
       <li><strong>Analysis (Unresolved → Analyzed Logical Plan):</strong> Spark first reads the code but doesn't yet know details about columns or tables — this is the unresolved logical plan. Example: <code>df.select("salary")</code> — Spark asks "does column salary exist?" Only structure is understood here. Then in the analyzed phase, Spark checks metadata — does the column exist, what data type is it, where is the table stored. This is where Spark catches "column not found" errors.</li>
@@ -5714,7 +6064,7 @@ dbutils.widgets.removeAll()</code></pre>
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Adaptive Query Execution (AQE)</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
-      <p>Traditional Spark optimization happens at query parse time based on statistics that may be stale or missing. AQE (Spark 3.0+) re-optimizes the query plan <strong>at runtime</strong> using actual shuffle statistics.</p>
+    <p>Adaptive Query Execution (AQE) is a Spark 3.x optimization feature that improves query performance using runtime statistics. AQE monitors the job while it is running and can modify the execution plan based on actual data characteristics. Its key optimizations include dynamically changing join strategies (such as converting a Sort Merge Join to a Broadcast Hash Join), coalescing small shuffle partitions into fewer larger partitions, and splitting skewed partitions to improve parallelism. These runtime adaptations help reduce shuffle overhead, improve resource utilization, and shorten overall execution time.</p>
       <p>AQE is an optimization technique in Spark that makes the use of runtime statistics to choose the most efficient query execution plan, which is enabled by default.</p>
       <ul>
         <li><strong>Dynamic coalescing of shuffle partitions:</strong> If data is small, AQE merges small partitions → fewer tasks, less overhead.</li>
@@ -5837,7 +6187,7 @@ grouped = df_by_customer.groupBy("customer_id").sum("amount")
   </div>
   <div class="q-body">
     <p><strong>What parallelism means in Spark:</strong></p>
-    <p>Parallelism in Spark means how many tasks run simultaneously across your cluster. Spark splits data into partitions, and each partition is processed by one task on one core. If you have 100 cores and 100 partitions, all 100 tasks run in parallel — maximum parallelism. If you have 100 cores but only 20 partitions, only 20 tasks run at a time and 80 cores sit idle.</p>
+    <p>Parallelism in Spark means how many tasks run simultaneously across the cluster. Spark splits data into partitions, and each partition is processed by one task on one core. If we have 100 cores and 100 partitions, all 100 tasks run in parallel — maximum parallelism. If we have 100 cores but only 20 partitions, only 20 tasks run at a time and 80 cores sit idle.</p>
     <div class="schema-box">
       <strong>Rule:</strong> Number of active tasks = min(number of partitions, number of available cores)<br>
       100 cores + 20 partitions = 20 active tasks = 80 idle cores = 20% utilization
@@ -6547,13 +6897,13 @@ query.awaitTermination()</code></pre>
 
     <p>"Structured Streaming is Spark's real-time processing engine built on top of the DataFrame and SQL API. The core idea — treat incoming streaming data as an <strong>unbounded table</strong> that keeps growing, and run a continuous query on it. You write it almost the same as batch — same transformations, same API — and Spark handles the incremental execution automatically."</p>
     <strong>Key advantages:</strong>
-    <ul>
-      <li>Same DataFrame and SQL API for both batch and streaming</li>
-      <li>Fault-tolerant with exactly-once guarantees through checkpointing</li>
-      <li>Supports multiple input sources (Kafka, Event Hub, ADLS, Socket)</li>
-      <li>Supports multiple output sinks (Delta Lake, Kafka, Console, Memory)</li>
-      <li>Supports stateful operations (aggregations, joins, deduplication)</li>
-    </ul>
+    
+      <p>1. Same DataFrame and SQL API for both batch and streaming<br>
+      2. Fault-tolerant with exactly-once guarantees through checkpointing<br>
+      3. Supports multiple input sources (Kafka, Event Hub, ADLS, Socket)<br>
+      4. Supports multiple output sinks (Delta Lake, Kafka, Console, Memory)<br>
+      5. Supports stateful operations (aggregations, joins, deduplication)</p>
+    
     <!-- Real-life example -->
     <div class="callout info"><span class="callout-icon">🛒</span><div><strong>Real-life example:</strong> A shopping website where customers place orders every second. We don't want to wait until tomorrow to process them — we want dashboards and alerts to update instantly.<br><br>
     Customer Places Order → Kafka / Event Hub → Structured Streaming → Transformations → Delta Table → Power BI Dashboard</div></div>
@@ -6574,12 +6924,12 @@ query.awaitTermination()</code></pre>
     <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:10px 0;">
       <div style="padding:8px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--blue);">2️⃣ Input Sources</div>
       <div style="padding:10px 14px;">
-        <ul class="ul-2col" style="margin:0;">
-          <li><strong>Kafka</strong> — website click events, application logs</li>
-          <li><strong>Azure Event Hub</strong> — IoT devices, telemetry</li>
-          <li><strong>ADLS folder</strong> — CSV/JSON files arriving periodically (via Auto Loader)</li>
-          <li><strong>Socket</strong> — local testing only</li>
-        </ul>
+        
+          <p><strong>1. Kafka</strong> — website click events, application logs<br>
+          <strong>2. Azure Event Hub</strong> — IoT devices, telemetry<br>
+          <strong>3. ADLS folder</strong> — CSV/JSON files arriving periodically (via Auto Loader)<br>
+          <strong>4. Socket</strong> — local testing only</p>
+        
       </div>
     </div>
 
@@ -6664,12 +7014,12 @@ query.awaitTermination()</code></pre>
     <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:10px 0;">
       <div style="padding:8px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--blue);">8️⃣ Output Sinks</div>
       <div style="padding:10px 14px;">
-        <ul class="ul-2col" style="margin:0;">
-          <li><strong>Delta Lake</strong> — most common, ACID + time travel</li>
-          <li><strong>Kafka</strong> — publish processed events downstream</li>
-          <li><strong>Console</strong> — development/testing only</li>
-          <li><strong>Memory</strong> — create temp table for SQL queries</li>
-        </ul>
+        
+          <p><strong>1. Delta Lake</strong> — most common, ACID + time travel<br>
+          <strong>2. Kafka</strong> — publish processed events downstream<br>
+          <strong>3. Console</strong> — development/testing only<br>
+          <strong>4. Memory</strong> — create temp table for SQL queries</p>
+        
       </div>
     </div>
 
@@ -7038,6 +7388,7 @@ result.show()</code></pre></div>
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">Explain the difference between Vectorized UDF (pandas_udf) and standard UDF. Which is more efficient?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <p>I avoid Python UDFs whenever possible because they bypass Spark's Catalyst Optimizer and Whole-Stage Code Generation. Built-in Spark functions execute entirely within the JVM and can benefit from optimizations such as predicate pushdown and column pruning. In contrast, Python UDFs require serialization of data between the JVM and the Python process, introducing significant overhead and reducing performance. Therefore, I always look for an equivalent built-in Spark function first. If the business logic cannot be expressed using built-in functions, I consider using a Pandas UDF for better performance than a standard Python UDF</p>
       <p><strong>Standard UDF:</strong> A Python function registered to run row-by-row. Spark cannot optimize it — it's a black box. Each row is serialized from JVM → Python process → processed → serialized back. This overhead is enormous, and UDFs disable Catalyst optimizations like predicate pushdown.</p>
       <p><strong>Vectorized UDF (pandas_udf):</strong> Data is batched into Pandas Series using Apache Arrow for zero-copy serialization. Much faster — typically 3-10x compared to row-at-a-time UDFs.</p>
       <div class="split-grid">
@@ -7316,6 +7667,7 @@ spark.sql("DELETE FROM orders WHERE order_id = 12345")</code></pre></div>
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
+  <p>When queries on Delta tables are slow, I first analyze the execution plan using <code>EXPLAIN FORMATTED</code> and review the Spark UI to identify whether the bottleneck is due to excessive file scans, shuffles, poor partitioning, or inefficient joins. If the table contains many small files, I run <code>OPTIMIZE</code> to compact them. For frequently filtered columns, I use <code>ZORDER</code> to improve data skipping. I also ensure appropriate partitioning, enable predicate pushdown by filtering early, avoid <code>SELECT *</code> to benefit from column pruning, and broadcast small lookup tables where appropriate. Additionally, I keep table statistics updated with <code>ANALYZE TABLE</code> and use AQE for runtime optimization. Finally, I validate the improvements by comparing execution time, files scanned, shuffle metrics, and Spark UI statistics.</p>
     <p>"Slow Delta queries almost always come down to one of three things — too many small files, no partition pruning, or poor data skipping. I check them in that order."</p>
     <ul>
       <li><strong>Check file count first:</strong> <code>DESCRIBE DETAIL table_name</code> — if <code>numFiles</code> is in the thousands for a modest table, small file problem. Run OPTIMIZE.</li>
@@ -7393,6 +7745,8 @@ WHEN NOT MATCHED BY SOURCE THEN
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
+  <p>If a Delta Lake MERGE becomes slower after data volume increases, I first analyze the execution plan and Spark UI to determine whether the slowdown is caused by excessive file scans, shuffles, poor partitioning, small files, or data skew. I avoid merging the full dataset by processing only incremental changes using watermarks or Delta Change Data Feed. I optimize the target table with OPTIMIZE to compact small files and use ZORDER on frequently matched columns to improve data skipping.</p>
+  <p>MERGE performance is heavily influenced by the number of Delta files that must be scanned and rewritten. Even a small number of changed records can be slow if they are spread across many files. My goal is to minimize both the amount of source data processed and the number of target files touched.</p>
     <p>"MERGE scans the target table to find matching rows. As the table grows to terabytes, that scan gets expensive. The fix is to reduce how much of the target table MERGE needs to scan."</p>
     <p><strong>Root causes:</strong></p>
     <ul>
@@ -7479,8 +7833,9 @@ spark.sql("""
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
-    <p>"This is one of Delta Lake's most powerful features — the same table can be written to by a batch job and read from by a streaming job simultaneously, with full consistency. This is called the <strong>Lakehouse architecture</strong> and it eliminates the need to maintain separate batch and streaming pipelines."</p>
 
+    <p>"This is one of Delta Lake's most powerful features — the same table can be written to by a batch job and read from by a streaming job simultaneously, with full consistency. This is called the <strong>Lakehouse architecture</strong> and it eliminates the need to maintain separate batch and streaming pipelines."</p>
+    <p>Delta Lake stores data in the same table and uses its transaction log to coordinate concurrent batch and streaming operations. Batch readers access a consistent snapshot, while streaming readers track new committed versions through checkpoints and the _delta_log. This unified architecture eliminates duplicate pipelines and keeps both workloads synchronized.</p>
     <p><strong>How it works — unified table for both:</strong></p>
     <ul>
       <li>A batch ADF pipeline runs nightly and appends records to a Delta table.</li>
@@ -8913,6 +9268,7 @@ CREATE INDEX idx_customer_date ON orders(customer_id, order_date);
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How would you optimize a slow SQL query? What steps and tools do you use?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <p>When optimizing a slow SQL query, I follow a structured approach rather than making random changes. First, I analyze the execution plan to identify expensive operations such as full table scans, inefficient joins, or costly sorts. Next, I verify that appropriate indexes exist and are being used, review the WHERE clause to filter data as early as possible, and avoid unnecessary <code>SELECT *</code> statements. I also check table statistics, blocking sessions, and partitioning strategies for large tables. If needed, I rewrite inefficient subqueries using joins or window functions. Finally, I compare execution time, logical reads, CPU usage, and the execution plan before and after the changes to confirm the optimization.</p>
       <ol>
         <li><strong>Read the execution plan first:</strong> <code>EXPLAIN ANALYZE SELECT ...</code> — look for full table scans, sort operations, nested loops, and large gaps between estimated and actual row counts.</li>
         <li><strong>Check indexes:</strong> Is there an index on the filter columns (WHERE, JOIN ON)? Are existing indexes being used or bypassed by the optimizer?</li>
@@ -8929,6 +9285,7 @@ CREATE INDEX idx_customer_date ON orders(customer_id, order_date);
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Explain database indexing and its impact on performance.</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <p>A database index is a data structure that speeds up data retrieval by allowing the database to locate rows efficiently instead of scanning the entire table. It's similar to the index in a book, where you can directly locate a topic instead of reading every page. Indexes significantly improve the performance of SELECT queries, especially on columns used in WHERE clauses, JOIN conditions, ORDER BY, and GROUP BY operations. Common types include clustered, non-clustered, composite, and unique indexes. However, indexes also consume storage and add overhead to INSERT, UPDATE, and DELETE operations because they must be maintained. In production, I create indexes based on query patterns and validate their effectiveness using execution plans to ensure the database performs an Index Seek rather than a Full Table Scan.</p>
       <p>An index is a separate data structure (usually a B-tree) that stores a sorted copy of one or more columns along with pointers to the original rows. Instead of scanning every row, the database finds matching rows in O(log n) time.</p>
       <ul>
         <li><strong>Clustered index:</strong> The table's physical row order matches the index. One per table. Best for range queries on the clustered key.</li>
@@ -9315,6 +9672,7 @@ df.withColumn("avg_price",
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">How do you use Azure Key Vault and Managed Identities to eliminate hardcoded credentials?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+      <p>I eliminate hardcoded credentials by combining Azure Key Vault with Managed Identities. Azure Key Vault securely stores sensitive information such as database passwords, storage keys, and API secrets. Azure services like Data Factory, Synapse, and Databricks authenticate using their Managed Identity instead of embedded credentials. The Managed Identity is granted permission to retrieve secrets from Key Vault, and the application accesses them securely at runtime. This approach improves security, simplifies secret rotation, centralizes credential management, and ensures that no passwords or connection strings are stored in code or configuration files.</p>
       <p><strong>Azure Key Vault</strong> stores all secrets (passwords, connection strings, API keys) securely. Access is controlled via RBAC.</p>
       <p><strong>Managed Identity (MI)</strong> is an Azure AD identity automatically assigned to an Azure resource (ADF, Databricks, App Service). The identity has no password — Azure manages the credentials internally. You grant this identity access to Key Vault, and the resource authenticates using its MI, fetches the secret, and uses it — all without any hardcoded credentials.</p>
       <ul>
@@ -9334,6 +9692,7 @@ df.withColumn("avg_price",
     <div class="q-chevron">▼</div>
   </div>
   <div class="q-body">
+  <p>Managed Identity is an Microsoft Entra ID (formerly known as Azure Active Directory) identity that Azure automatically creates and manages for a service. It allows Azure resources such as Azure Data Factory and Azure Databricks to authenticate securely with Azure services like ADLS Gen2, Azure SQL Database, and Azure Key Vault without storing usernames or passwords. In Azure Data Factory, I enable the system-assigned managed identity, grant it the required Azure RBAC permissions on the target resource, and configure the linked service to use Managed Identity authentication. In Databricks, Managed Identity can be used to obtain Azure AD tokens for accessing supported Azure resources securely. This approach improves security, removes hardcoded credentials, simplifies credential management, and follows Azure security best practices.</p>
     <p>"Managed Identity is Azure's way of giving a service its own identity in Azure Active Directory — so it can authenticate to other Azure resources without needing a username, password, or connection string stored anywhere. The identity is managed by Azure itself, so there's nothing to rotate, nothing to leak."</p>
     <p><strong>Two types:</strong></p>
     <ul>
@@ -9382,14 +9741,17 @@ df = spark.read.format("delta").load("abfss://container@account.dfs.core.windows
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How do you implement Column Level Security and Row Level Security in a Lakehouse?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <p>In a Lakehouse architecture, I implement Column Level Security (CLS) to restrict access to sensitive columns such as salary, PAN, Aadhaar, or credit card numbers, and Row Level Security (RLS) to restrict access to specific rows based on the user's role, department, or region. In Azure Databricks, this is typically implemented using Unity Catalog, dynamic views, and Azure RBAC or Microsoft Entra ID groups.</p>
       <p><strong>Column-Level Security (CLS):</strong> Prevent specific users or roles from reading specific columns entirely.</p>
-      <pre><code class="language-sql">-- Synapse Dedicated Pool
+      <div class="split-pane sql-pane-card">
+        <div class="split-pane-header">&#x1F5C4; SQL</div>
+        <pre><code class="language-sql">-- Synapse Dedicated Pool
 DENY SELECT ON dbo.customers(ssn, credit_card) TO analyst_role;
 GRANT SELECT ON dbo.customers(customer_id, name, email) TO analyst_role;
 
 -- Databricks Unity Catalog
 GRANT SELECT ON TABLE customers TO analyst_role;
-REVOKE SELECT (ssn, credit_card) ON TABLE customers FROM analyst_role;</code></pre>
+REVOKE SELECT (ssn, credit_card) ON TABLE customers FROM analyst_role;</code></pre></div>
       <p><strong>Row-Level Security (RLS):</strong> Restrict which rows a user can see based on their identity. In Synapse, create a security predicate function that evaluates the current user's access context, then bind it to the table as a SECURITY POLICY with FILTER PREDICATE — every query on the table automatically runs through the predicate.</p>
       <p>In <strong>Databricks Unity Catalog</strong>: Define a column masking function and attach it to a column. Any query on that column runs through the masking function based on the caller's group membership — fine-grained, centrally managed access control across all tools querying through Unity Catalog.</p>
     </div>
@@ -9414,6 +9776,7 @@ REVOKE SELECT (ssn, credit_card) ON TABLE customers FROM analyst_role;</code></p
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How would you implement data masking in Azure SQL for sensitive columns?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <p>I implement Dynamic Data Masking in Azure SQL Database to protect sensitive columns such as salary, PAN, Aadhaar numbers, email addresses, and credit card information. Dynamic Data Masking does not modify the stored data; instead, it masks the values returned to users who do not have the required permissions. I configure masking functions such as default, email, partial, or random masks depending on the data type, and grant the UNMASK permission only to authorized users like HR or finance teams.</p>
       <p><strong>Dynamic Data Masking (DDM)</strong> is applied at the column definition level. Users without the UNMASK permission see masked values. Data is not changed on disk — masking is applied at query time.</p>
       <div class="split-grid">
           <div class="split-pane sql-pane-card">
@@ -11889,11 +12252,11 @@ first_dag()</code></pre></div>
     <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">What is Data Modelling?</div><div class="q-tags"><span class="q-tag tag-model">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Data Modelling is the Process of Creating a Visual and logical blueprint that defines how data is Structured, organized and Stored &amp; retrieved in a System.</p>
-      <ul>
-        <li>It makes data easier to understand &amp; use.</li>
-        <li>Improves query Performance.</li>
-        <li>Helps build Scalable System.</li>
-      </ul>
+      
+        <p>1. It makes data easier to understand &amp; use.<br>
+        2. Improves query Performance.<br>
+        3. Helps build Scalable System.</p>
+      
       <p><strong>Types of Data Models:</strong></p>
       <p><strong>1. Conceptual Data Model:</strong> It focuses on high-level business concepts and how data is used in an organization. This model defines the Scope of a data System by identifying the type and kind of data, the attributes &amp; the Relationships between them.</p>
       <p><strong>2. Logical Data Model:</strong> This model builds on the Conceptual data model by adding more detailed &amp; technical information, such as a defined Structure, organization &amp; relationship of the data, tables, Columns &amp; Constraints without specifying technical Storage.</p>
@@ -12352,19 +12715,19 @@ def validate_df(df, name):
     </div>
   </div>
 
-  <div class="hr-card q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Have you ever faced a production failure? How did you handle it?</div><div class="q-tags"><span class="q-tag tag-hr">Behavioral</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p>"Yes. One Monday evening, our ADF pipeline that loads source tables into ADLS Gen2 failed mid-run. The Databricks transformation job downstream had no data to process, which would have impacted the Monday 6 PM scheduled delivery.</p>
-      <p>I immediately checked ADF Monitor and found a timeout error on the Copy Activity connected to SQL Server via the SHIR. I SSH'd to the SHIR machine and found the disk was 97% full — accumulated ADF diagnostic logs had filled it up over weeks. I cleared the logs, freed disk space, and manually re-triggered the pipeline. It completed successfully within 40 minutes.</p>
-      <p>For prevention, I set up a disk usage alert on the SHIR VM through Azure Monitor, added a log rotation scheduled task, and increased the Copy Activity retry count to 3 with exponential backoff so transient issues wouldn't cause immediate failures. I also documented the incident in our team runbook."</p>
-      <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>The <strong>prevention steps</strong> are what separate a senior engineer from a junior one — always include what you did to stop it from happening again.</div></div>
-    </div>
-  </div>
+ 
 
    <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">Describe a production issue you handled end-to-end.</div><div class="q-tags"><span class="q-tag tag-debug">Scenario</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <p>One production issue I handled was when a scheduled ETL pipeline failed because the source system introduced a new column, causing a schema mismatch and the Spark job to fail. I first analyzed the ADF pipeline logs and Databricks job logs to identify the exact error and confirmed the root cause by comparing the source and target schemas.</p>
+    <p>After identifying the issue, I updated the ETL logic to handle the schema change, validated the fix in the lower environment, and deployed it through the standard release process. I then re-ran the failed pipeline, verified record counts and data quality, and confirmed that the downstream reports were generated successfully.</p>
+    <p>To prevent similar issues in the future, I recommended adding schema validation before processing and improving monitoring and alerting. This helped make the pipeline more resilient to future schema changes."</p>
+    <hr>
+    <p>Yes, I handled a production issue where a daily ETL pipeline completed successfully, but the business noticed that the report contained fewer records than expected. Since this impacted reporting, the incident was treated as high priority.</p>
+    <p>I analyzed the pipeline logs, compared the source and target record counts, and found that some records were being filtered out because of an unexpected NULL value in a key column. After identifying the root cause, I corrected the transformation logic, validated the data, and reprocessed the affected records.</p>
+    <p>Finally, I verified the record counts with the business team, confirmed that the reports were accurate, and added additional validation checks in the pipeline to detect similar issues proactively. This helped improve the reliability of future data loads.</p>
+    <hr>
       <p>"Our nightly ADF pipeline that loaded source tables from on-prem SQL Server into ADLS Gen2 started failing intermittently — specifically on some Mondays. Other days it ran fine, which made it harder to diagnose.</p>
       <p>I checked ADF Monitor and found the Copy Activity was timing out on the SHIR connection. I SSH'd into the SHIR machine and found the disk was at 98% capacity — weeks of ADF diagnostic logs had accumulated with no rotation policy in place. I cleared the logs, freed the disk, and manually re-triggered the pipeline. It completed in 35 minutes.</p>
       <p>For the fix: I added a Windows Scheduled Task on the SHIR VM to rotate logs weekly, configured an Azure Monitor alert to trigger at 80% disk usage (giving us reaction time before it became critical), and added a retry policy of 3 attempts with 5-minute intervals on the Copy Activity so transient issues don't cause immediate failure.</p>
@@ -12587,14 +12950,14 @@ def validate_df(df, name):
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">RDD vs DataFrame vs Dataset</div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
-      <p><strong>① RDD (Resilient Distributed Dataset)</strong> — Low-level distributed collection of objects in Spark.</p>
+      <p><strong>① RDD (Resilient Distributed Dataset)</strong> — is the fundamental, immutable, and fault-tolerant data structure in Apache Spark used for parallel processing of large datasets across a cluster. It is introduced in Spark 1.0.</p>
       <ul>
         <li><strong>Characteristics:</strong> Immutable, Distributed, Fault tolerant, Lazy evaluation, Supports functional programming.</li>
         <li><strong>Features:</strong> No Schema, No optimization, Full control to dev, Can store Structured/Unstructured data.</li>
         <li><strong>Advantages:</strong> Very flexible, Fine-grained transformations, Suitable for low-level operations.</li>
         <li><strong>Disadvantages:</strong> Slower, Higher memory consumption, No Catalyst optimization, No Tungsten optimization.</li>
       </ul>
-      <p><strong>② DataFrames</strong> — Distributed collection of data organized into named columns. Similar to SQL table, Pandas DataFrame.</p>
+      <p><strong>② DataFrames</strong> — Distributed collection of data organized into named columns. Similar to SQL table, Pandas DataFrame. It automatically infers schemas from data sources and uses the Catalyst Optimizer and Tungsten Execution Engine for better performance. DataFrames support SQL-like queries and are ideal for structured and semi-structured data (e.g., CSV, JSON, Parquet). </p>
       <ul>
         <li><strong>Characteristics:</strong> Schema based, Distributed, Optimized, Immutable.</li>
         <li><strong>Major optimizations:</strong> Catalyst Optimizer &amp; Tungsten Engine.</li>
@@ -12671,6 +13034,7 @@ aggregated.count()      # second action — reads from cache (fast)</code></pre>
     <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Explain how Spark processes data and ensures fault tolerance.</div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>How Spark processes data:</strong></p>
+      <p>When a Spark application starts, the Driver builds a logical plan from the transformations. Because Spark uses lazy evaluation, it postpones execution until an action is triggered. The Catalyst Optimizer then optimizes the query, after which Spark creates a DAG and divides it into stages based on shuffle boundaries. Each stage is split into tasks, where one task processes one partition. These tasks are scheduled across executor cores and run in parallel.</p>
     <ul>
       <li><strong>Driver:</strong> The brain of the application. Reads your code, builds the logical plan (DAG of transformations), optimizes it using Catalyst, and coordinates the work across executors.</li>
       <li><strong>Executors:</strong> Worker processes running on cluster nodes. Each executor has CPU cores and memory. They receive tasks from the driver and actually process the data.</li>
@@ -12699,37 +13063,33 @@ aggregated.count()      # second action — reads from cache (fast)</code></pre>
     <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">OOMs - Out of Memory Errors</div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Out of Memory happens when JVM heap memory gets exhausted and the process cannot allocate more memory.</p>
-      <ul>
-        <li><strong>① Driver OOM</strong> → Driver JVM</li>
-        <li><strong>② Executor OOM</strong> → Executor JVM</li>
-        <li><strong>③ Overhead OOM</strong> → Non-heap / Container memory</li>
-      </ul>
+      <p>In Spark, OOM can occur either on the Driver or on an Executor.</p>
       <p><strong>Understanding Driver Memory:</strong></p>
+      <p>Driver OOM usually happens when large datasets are brought to the Driver using operations like <code>collect()</code> or <code>toPandas()</code>, or when the Driver maintains excessive metadata.</p>
       <ul>
         <li>Driver JVM has limited heap memory (Ex → 4GB). If driver tries to hold too much metadata, huge collected data, or massive query plans, the memory exhausts.</li>
         <li>Driver is <strong>not</strong> meant for large-scale data processing. Executors should process data. Driver should only co-ordinate, manage metadata &amp; receive small summaries.</li>
         <li><code>Total Driver Container Memory = Driver Heap Memory + Driver Overhead Memory</code> (10% or min 384MB of total memory)</li>
       </ul>
       <p><strong>Why Driver OOM?</strong></p>
-      <ul>
-        <li><strong>① df.collect()</strong> → Entire distributed dataset comes to driver.</li>
-        <li><strong>② toPandas()</strong> → Very dangerous for big data — all distributed data converted into local Pandas df inside driver memory.</li>
-        <li><strong>③ Large Broadcast Variables</strong> — Driver creates broadcast object first → driver memory spike.</li>
-        <li><strong>④ Huge Number of Partitions</strong> → Driver stores task metadata. Millions of tiny partitions → massive metadata load.</li>
-        <li><strong>⑤ Complex Transformations</strong> — Nested joins, Unions, CTEs, Wide transformations → increase driver memory.</li>
-      </ul>
+      
+        <p><strong>1. df.collect()</strong> → Entire distributed dataset comes to driver.<br>
+        <strong>2. toPandas()</strong> → Very dangerous for big data — all distributed data converted into local Pandas df inside driver memory.<br>
+        <strong>3. Large Broadcast Variables</strong> — Driver creates broadcast object first → driver memory spike.<br>
+        <strong>4. Huge Number of Partitions</strong> → Driver stores task metadata. Millions of tiny partitions → massive metadata load.<br>
+        <strong>5. Complex Transformations</strong> — Nested joins, Unions, CTEs, Wide transformations → increase driver memory.</p>
+      
       <div class="callout warn"><span class="callout-icon">⚠️</span><div><code>spark.driver.memoryOverhead</code>: Default → max(384MB, driverMemory × 0.10). Ex: driver memory = 4GB → driver overhead = 1GB. If driver starts behaving like executor, OOM risk becomes huge.</div></div>
       <p><strong>Why Executor OOM?</strong> Occurs when executor JVM heap/off-heap memory exhausts.</p>
-      <ul>
-        <li><strong>① Data Skew</strong> → one executor processes too heavy partitions.</li>
-        <li><strong>② Large Shuffle</strong> → groupByKey, join, orderBy.</li>
-        <li><strong>③ Excessive Cache/Persist</strong> → storage memory full.</li>
-        <li><strong>④ Too many Concurrent Tasks</strong> → less memory per task.</li>
-        <li><strong>⑤ Using UDF</strong> → serializes data, uses Python worker memory heavily.</li>
-        <li><strong>⑥ Improper Partitioning</strong> → too few partitions, huge task memory load.</li>
-      </ul>
-      
-
+      <p>Executor OOM typically occurs because of data skew, large shuffle operations, oversized partitions, or memory-intensive processing. Spark automatically retries failed executor tasks, but if retries continue to fail, the stage and eventually the job fail.</p>
+     
+        <p><strong>1. Data Skew</strong> → one executor processes too heavy partitions.<br>
+          <strong>2. Large Shuffle</strong> → groupByKey, join, orderBy.<br>
+          <strong>3. Excessive Cache/Persist</strong> → storage memory full.<br>
+          <strong>4. Too many Concurrent Tasks</strong> → less memory per task.<br>
+          <strong>5. Using UDF</strong> → serializes data, uses Python worker memory heavily.<br>
+          <strong>6. Improper Partitioning</strong> → too few partitions, huge task memory load.</p>
+      <p>To prevent OOM, I avoid collecting large datasets to the Driver, filter data early, select only required columns, optimize joins using broadcast where appropriate, repartition skewed data, and tune Spark memory settings only after identifying the actual issue.</p>
       <p><strong>Task Execution Inside Executor:</strong></p>
       <ul>
         <li>If executor has 4 cores, then up to 4 tasks can run simultaneously.</li>
@@ -13159,11 +13519,11 @@ DELETE FROM orders WHERE customer_id = 'C1001';</code></pre></div>
     </ul>
 
     <p><u><strong>When to use Liquid Clustering:</strong></u></p>
-    <p>Tables often filtered by high-cardinality columns.</p>
-    <p>Tables with significant skew in data.</p>
-    <p>Tables that grow quickly &amp; require frequent maintenance and tuning.</p>
-    <p>Tables with access patterns that change over time.</p>
-    <p>Tables where a typical partition column could leave the table with too many or too few partitions.</p>
+    <p>1. Tables often filtered by high-cardinality columns.<br>
+       2. Tables with significant skew in data.<br>
+       3. Tables that grow quickly &amp; require frequent maintenance and tuning.<br>
+       4. Tables with access patterns that change over time.<br>
+       5. Tables where a typical partition column could leave the table with too many or too few partitions.</p>
 
     <div class="split-pane sql-pane-card">
     <pre><code class="language-sql">-- Create a new table with Liquid Clustering
@@ -13286,9 +13646,9 @@ print(f"Rows that changed: {changed.count()}")</code></pre>
     </p>
 
     <h4>Common CDC Methods</h4>    
-      <p><strong>1. Timestamp Based: </strong>Uses last modified timestamp to identify changed records.</p>
-      <p><strong>2. Trigger Based: </strong>Database triggers capture changes and store them in audit tables.</p>
-      <p><strong>3. Log Based: </strong>Reads database transaction logs to identify inserts, updates and deletes.</p>
+      <p><strong>1. Timestamp Based: </strong>Uses last modified timestamp to identify changed records.<br>
+      <strong>2. Trigger Based: </strong>Database triggers capture changes and store them in audit tables.<br>
+      <strong>3. Log Based: </strong>Reads database transaction logs to identify inserts, updates and deletes.</p>
 
     <p>
       Azure Data Factory (ADF) also provides built-in CDC capabilities.
@@ -13307,24 +13667,14 @@ print(f"Rows that changed: {changed.count()}")</code></pre>
     <p>
       Change Data Feed (CDF) is a Delta Lake feature that exposes row-level changes
       between table versions.
-    </p>
-
-    <p>
+    <br>
       It tracks Inserts, Updates and Deletes and is commonly used for
       incremental processing of Delta tables.
     </p>
 
-    <h4>Without CDF</h4>
+    <p><strong>Without CDF: </strong>Gold layer reads the entire Silver table every time.</p>
 
-    <p>
-      Gold layer reads the entire Silver table every time.
-    </p>
-
-    <h4>With CDF</h4>
-
-    <p>
-      Gold layer reads only the changed records since the previous run.
-    </p>
+    <p></p><strong>With CDF: </strong>Gold layer reads only the changed records since the previous run.</p>
 
     <h4>Enable CDF</h4>
 <div class="split-pane sql-pane-card">
@@ -13343,14 +13693,11 @@ SET TBLPROPERTIES (
 </pre></code></div>
 
     <h4><u>Benefits of CDF</u></h4>
-      <p>Incremental processing</p>
-      <p>Efficient downstream synchronization</p>
-      <p>Faster Gold layer processing</p>
-      <p>Reduced compute cost</p>
-      <p>Reduced data movement</p>
-
-    <div style="margin-top:12px;padding:8px 12px;background:var(--color-background-secondary);border-left:3px solid var(--color-accent);border-radius:4px;">
-
+      <p>1. Incremental processing<br>
+      2. Efficient downstream synchronization<br>
+      3. Faster Gold layer processing<br>
+      4. Reduced compute cost<br>
+      5. Reduced data movement</p>
       
   <div class="callout tip"><span class="callout-icon"></span>CDC captures changes from source systems and avoids full table loads. It identifies Inserts, Updates and Deletes using techniques such as Timestamp Based CDC, Trigger Based CDC and Log Based CDC. <br>
   CDF is a Delta Lake feature that exposes row-level changes between Delta table versions. Instead of reading an entire table, downstream layers can process only changed records, making incremental pipelines much faster and more cost efficient.
@@ -13360,8 +13707,6 @@ SET TBLPROPERTIES (
     </div>
 
   </div>
-</div>
-  
 
 <div class="q-card">
   <div class="q-header" onclick="toggle(this)">
@@ -13505,8 +13850,13 @@ SET TBLPROPERTIES (
   </div>
 </div>
 
+</div>
+  
 
-</div><!-- /handy -->
+
+
+
+<!-- /handy -->
 
 
 <!-- ════════════════════════════════════════════════════════
@@ -15775,6 +16125,86 @@ print(top_3)   # [('C001', 3), ('C002', 2), ('C003', 1)]</code></pre>
   </div>
 </div>
 
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Find the first non-repeating character in a string.</div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <div class="schema-box">
+      <strong>Input:</strong> <code>"salman"</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>"s"</code> &nbsp;(a repeats, s is first unique)<br>
+      <strong>Input:</strong> <code>"aabbcc"</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>None</code> &nbsp;(all repeat)<br>
+      <strong>Input:</strong> <code>"aabbc"</code> &nbsp;|&nbsp; <strong>Output:</strong> <code>"c"</code>
+    </div>
+    <div class="split-pane py-pane-card">
+      <div class="split-pane-header">&#x1F40D; Python</div>
+      <pre><code class="language-python"># Without library — two pass approach O(n)
+def first_non_repeating(s):
+    # Pass 1 — count frequency of each character
+    freq = {}
+    for ch in s:
+        freq[ch] = freq.get(ch, 0) + 1
+
+    # Pass 2 — find first character with count 1
+    # Preserves original order since we iterate the string again
+    for ch in s:
+        if freq[ch] == 1:
+            return ch
+
+    return None   # all characters repeat
+
+print(first_non_repeating("salman"))   # s
+print(first_non_repeating("aabbcc"))   # None
+print(first_non_repeating("aabbc"))    # c
+print(first_non_repeating("swiss"))    # w
+
+# With library — OrderedDict (single pass)
+from collections import OrderedDict
+
+def first_non_repeating_od(s):
+    freq = OrderedDict()
+    for ch in s:
+        freq[ch] = freq.get(ch, 0) + 1
+    # OrderedDict preserves insertion order
+    # First key with value 1 = first non-repeating character
+    for ch, count in freq.items():
+        if count == 1:
+            return ch
+    return None
+
+print(first_non_repeating_od("salman"))   # s
+
+# With library — Counter (cleanest, most Pythonic)
+from collections import Counter
+
+def first_non_repeating_counter(s):
+    freq = Counter(s)
+    for ch in s:          # iterate original string to preserve order
+        if freq[ch] == 1:
+            return ch
+    return None
+
+print(first_non_repeating_counter("salman"))   # s
+print(first_non_repeating_counter("swiss"))    # w
+
+# Index of first non-repeating character (variant asked in some interviews)
+def first_non_repeating_index(s):
+    freq = Counter(s)
+    for i, ch in enumerate(s):
+        if freq[ch] == 1:
+            return i   # return index, not character
+    return -1
+
+print(first_non_repeating_index("salman"))   # 0 → index of 's'
+print(first_non_repeating_index("aabbc"))    # 4 → index of 'c'</code></pre>
+    </div>
+    <div class="callout tip"><span class="callout-icon">💡</span><div><strong>Why not use set() here?</strong> A set tells you which characters are unique but loses the original order — you can't find the FIRST unique one. That's why we always iterate the original string in pass 2, not the frequency dict keys. Dict key order is insertion order in Python 3.7+, but iterating the original string is safer and more readable.</div></div>
+  </div>
+</div>
+
   <!-- Q4 -->
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)">
@@ -16781,7 +17211,7 @@ document.addEventListener("click",e=>{
     }
 });
 
-let suggestionsEnabled = true;
+let suggestionsEnabled = false;
 
 function toggleSuggestions(){
     suggestionsEnabled = !suggestionsEnabled;
